@@ -1,0 +1,5 @@
+func random() returns int, int {
+    Random r = Random();
+
+    return r.rand(0, 1000), r.seed();
+}

@@ -1,0 +1,38 @@
+func main() {
+    int j = 0;
+
+
+    block a = {
+        print("Executing A");
+        j = 100;
+    }
+
+    block b = {
+        print("Executing B");
+        j = j % 3;
+    }
+
+    block c = {
+        print("Executing C");
+        j = j + j;
+    }
+
+    block d = {
+        print("Executing D");
+        execute(b);
+        execute(c);
+    }
+
+    0 => a;
+    1 => b;
+    2 => c;
+    3 => d;
+
+    int i = 0;
+    while (i < 4) {
+        execute(match(i));
+        print("J's value is:");
+        print(j);
+        i = i + 1;
+    }
+}

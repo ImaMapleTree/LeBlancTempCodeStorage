@@ -1,0 +1,11 @@
+using core;
+
+func sleep_in() returns string {
+    int time, seed = core.random();
+
+    string sleep_in_string = "I am sleeping for " + time + "seconds.";
+
+    print(sleep_in_string);
+
+    return sleep_in_string;
+}

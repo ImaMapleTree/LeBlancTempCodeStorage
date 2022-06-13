@@ -1,0 +1,41 @@
+func main() {
+    print("The following 'compiles' during compile-time AND loads at the start of the program BEFORE execution.");
+    int age = 7; // HERE IS WHERE WE DEFINE AGE
+
+    print("Input age is:");
+    print(age);
+
+    string ageGroup = match(age) {
+        0 => "Baby";
+        1 => "Baby";
+        2 => "Toddler";
+        3 => "Toddler";
+        4 => "Toddler";
+        5 => "Child";
+        6 => "Child";
+        7 => "Child";
+        8 => "Child";
+        9 => "Child";
+        10 => "Pre-teen";
+    }
+
+    print("Matching age group:");
+    print(ageGroup);
+
+    int age = match(ageGroup) {
+       "Baby" => 0;
+       "Baby" => 1;
+       "Toddler" => 2;
+       "Toddler" => 3;
+       "Toddler" => 4;
+       "Child" => 5;
+       "Child" => 6;
+       "Child" => 7;
+       "Child" => 8;
+       "Child" => 9;
+       "Pre-teen" => 10;
+    }
+
+    print("Remapped age:");
+    print(age);
+}

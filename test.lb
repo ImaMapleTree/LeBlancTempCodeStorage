@@ -1,0 +1,17 @@
+
+
+global string a = "hello world!";
+global string c = "goodbye world!";
+
+func main(int a, int b) returns string, int, double {
+
+    string s = "my age: ";
+
+    a = 10;
+
+    s = s + 4;
+
+    c = "rawr";
+
+
+}

@@ -1,0 +1,66 @@
+func main() {
+    testInputs(testInputsAndReturns(testReturns()));
+    testConditional();
+    testWhileLoop();
+    testWhileAndConditional();
+}
+
+func testInputs(int a, int b, int c, int d) {
+    print(a);
+    print(b);
+    print(c);
+    print(d);
+}
+
+func testReturns() returns int, int, int, int {
+    return 1, 2, 3, 4;
+}
+
+func testInputsAndReturns(int a, int b, int c, int d) returns int, int, int, int {
+    returns a, b, c, d;
+}
+
+func testConditional() {
+    if (0 == 0){
+        print("Zero equals zero.");
+    }
+
+    if (0 == 1) {
+        print("Zero equals one.");
+    } else {
+        print("Zero does not equal one.");
+    }
+
+    if (0 == 1) {
+        print("Zero equals one.");
+    } elif (1 == 1) {
+        print("one equals one.");
+    } else {
+        print("one does not equal one.");
+    }
+}
+
+func testWhileLoop() {
+    int i = 0;
+    while (i < 5) {
+        print(i);
+        i = i + 1;
+    }
+    print("I is greater than 5!");
+}
+
+func testWhileAndConditional() {
+    int i = 0;
+    while (i < 5) {
+        if (i == 0) {
+            print("I equals 0");
+        } elif (i == 1) {
+            print("I equals 1");
+        } elif (i == 2) {
+            print("I equals 2");
+        } else {
+            print("I is greater than 2!");
+        }
+        i = i + 1;
+    }
+}

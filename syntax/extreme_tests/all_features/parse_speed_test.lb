@@ -1,0 +1,1186 @@
+func main() {
+    test1();
+    test2();
+    test3();
+    test4();
+    test5();
+    test6();
+    test7();
+    test8();
+}
+
+func test1() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test2() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test3() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test4() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test5() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test6() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test7() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test8() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test9() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test10() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test11() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test12() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test13() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test14() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test15() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test16() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test17() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test18() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test19() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test111() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test112() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test113() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test114() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test115() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test116() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test117() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test118() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test119() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test120() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test121() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test122() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test123() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test124() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test125() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test126() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test127() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test128() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test129() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test130() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test131() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test132() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test133() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test134() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test135() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test136() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test137() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test138() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test139() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}
+
+func test140() {
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    print("Hello!");
+    int i = 0;
+    while (i < 5) {
+        print("Hello");
+        print(i);
+        i = i + 1;
+    }
+
+}

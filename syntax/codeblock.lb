@@ -1,0 +1,19 @@
+func main() {
+
+    string s;
+
+    block question = {
+        s += "?";
+    }
+
+
+    s = "hello";
+    execute(question);
+
+    List list = [1, 2, 3];
+
+    list.iterate().filter(int i, i == 0);
+
+
+
+}

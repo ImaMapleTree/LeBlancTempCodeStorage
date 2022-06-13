@@ -1,0 +1,5 @@
+TODO
+   Solution for functions:
+    implemnent a new field in TypedToken which is Vec<TypedToken> that stores all of the types of the token rather than just one
+    if it's a function there's multiple values
+

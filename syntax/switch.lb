@@ -1,0 +1,38 @@
+string status;
+
+string status = match(b) {
+    2 => "hello";
+    3 => "goodbye";
+    default => "none";
+}
+
+when(b) {
+    2 => {
+        print("2!");
+    }
+    3 => {
+        print("Goodnight!");
+    }
+
+}
+
+
+2 => "hello";
+// Map 2 to hello
+
+
+match(b) {
+    2 => {
+
+    }
+
+}
+
+^^ block with mappings
+when -> map(b, block);
+
+
+2 => "hello";
+"hello"
+2
+=>

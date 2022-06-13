@@ -1,0 +1,29 @@
+
+Extension ColorStringExt of string {
+    // When extending a class we must declare new class variables we add as "property"
+    property boolean colored = false;
+
+    // "Self" is a fancy word that automatically has typing AND is a variable
+    // So we don't need to say string Self
+    func red(Self) returns string {
+        Self.colored = true;
+        return "\x1b[31m" + Self + "\x1b[0m";
+    }
+
+    func is_colored(Self) returns boolean {
+        return self.colored;
+    }
+
+
+
+}
+
+using ext ColorStringExt from extensions.lb;
+
+func main() {
+    string secret = "hello world!";
+
+    secret.red(); // "hello world!" but in red :D
+
+    secret.is_colored() // true
+}

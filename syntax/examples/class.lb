@@ -1,0 +1,17 @@
+Class myClass() {
+    string hotdog = "hotdog";
+
+    func test(string hotdog) {
+        print(hotdog);
+    }
+
+    func hamburger() {
+        string hamburger1 = "";
+        print(hamburger);
+    }
+
+    // During token parsing if the variable is within the class scope make it UNKNOWN(CLASS()) and then the scope
+    // So that we can make it reference the variable within the class scope
+
+
+}
