@@ -1,9 +1,11 @@
+use core::borrow::BorrowMut;
 use core::ffi::c_float;
 use core::num::dec2flt::float::RawFloat;
 use core::num::dec2flt::lemire::compute_float;
 use std::any::{Any, TypeId};
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter, write};
+use std::sync::{Arc, Mutex, Weak};
 use serde_value::{to_value, Value};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::method_handler::MethodHandle;
@@ -14,8 +16,12 @@ use crate::leblanc::core::module::Module;
 use crate::leblanc::core::native_types::block_type::NativeBlock;
 use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::Appendable;
 
 
+pub trait Callable {
+    fn call(&mut self, method_name: &str, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>;
+}
 
 pub trait Reflect {
     fn reflect(&self) -> Box<dyn Any + 'static>;
@@ -24,7 +30,7 @@ pub trait Reflect {
 #[derive(Debug, Clone)]
 pub struct LeBlancObject {
     pub data: LeBlancObjectData,
-    typing: LeBlancType,
+    pub(crate) typing: LeBlancType,
     pub methods: HashSet<Method>,
     pub members: HashMap<String, LeBlancObject>,
     pub context: VariableContext
@@ -35,11 +41,8 @@ impl LeBlancObject {
         return LeBlancObject {data, typing, methods, members, context};
     }
 
-    pub fn call(&self, method_name: &str, arguments: &[LeBlancObject]) -> LeBlancObject {
-        return self.methods.iter().filter(|m| {
-            m.matches(method_name.to_string(), passed_args_to_types(arguments))
-        }).last().unwrap().run(self, arguments);
-    }
+
+    pub fn is_error(&self) -> bool { return self.typing == LeBlancType::Exception }
 
     pub fn null() -> LeBlancObject {
         return LeBlancObject {
@@ -51,10 +54,10 @@ impl LeBlancObject {
         }
     }
 
-    pub fn internal_method(method: Method) -> LeBlancObject {
+    pub fn error() -> LeBlancObject {
         return LeBlancObject {
-            data: LeBlancObjectData::Function(method),
-            typing: LeBlancType::Function,
+            data: LeBlancObjectData::Null,
+            typing: LeBlancType::Exception,
             methods: HashSet::new(),
             members: HashMap::new(),
             context: VariableContext::empty()
@@ -140,18 +143,24 @@ impl Reflect for LeBlancObject {
             LeBlancObjectData::Double(item) => Box::new(item),
             LeBlancObjectData::Boolean(item) => Box::new(item),
             LeBlancObjectData::String(item) => Box::new(item),
+            LeBlancObjectData::Function(item) => Box::new(item),
             _ => Box::new(0),
         };
         return boxed;
     }
 }
 
-pub fn passed_args_to_types(args: &[LeBlancObject]) -> Vec<LeBlancArgument> {
+impl Reflect for Arc<Mutex<LeBlancObject>> {
+    fn reflect(&self) -> Box<dyn Any + 'static> {
+        return self.lock().unwrap().reflect();
+    }
+}
+
+pub fn passed_args_to_types(mut args: Vec<Arc<Mutex<LeBlancObject>>>) -> Vec<LeBlancArgument> {
     let mut arg_types = Vec::new();
     let mut i = 0;
-    for arg in args {
-        arg_types.insert(arg_types.len(), arg.to_leblanc_arg(i));
-        i += 1;
+    for i in 0..args.len() {
+        arg_types.append_item( args[i].lock().unwrap().to_leblanc_arg(i as u32));
     }
     return arg_types;
 
@@ -181,4 +190,18 @@ impl Display for LeBlancObjectData {
         };
         write!(f, "{}", s)
     }
+}
+
+impl Callable for Arc<Mutex<LeBlancObject>> {
+    fn call(&mut self, method_name: &str, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+        let mut method = self.lock().unwrap().methods.iter().cloned().filter(|m| {
+            m.matches(method_name.to_string(), passed_args_to_types(arguments.to_vec()))
+        }).next();
+        println!("Method: {:#?}", method);
+        if method.is_none() {
+            return Arc::new(Mutex::new(LeBlancObject::error()));
+        }
+        return method.unwrap().run( self.clone(), arguments);
+    }
+
 }

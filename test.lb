@@ -1,17 +1,20 @@
+using rust;
+
+func main() {
+    int a = 100;
+    int b = 3;
+
+    test(a, b);
+    print(a);
+    print(b);
 
 
-global string a = "hello world!";
-global string c = "goodbye world!";
+    function g = test;
+    g.call(a, b);
 
-func main(int a, int b) returns string, int, double {
-
-    string s = "my age: ";
-
-    a = 10;
-
-    s = s + 4;
-
-    c = "rawr";
+}
 
 
+func test(int a, int b) {
+    a += b;
 }

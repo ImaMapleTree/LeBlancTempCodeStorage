@@ -1,23 +1,28 @@
 use std::collections::{BTreeSet, HashSet};
 use std::fmt::{Debug, Display, Formatter, write};
 use std::hash::{Hash, Hasher};
+use std::sync::{Arc, Mutex, Weak};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
+use crate::leblanc::core::method_handler::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::method_handler::MethodHandle;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
+use crate::LeBlancType;
 
 pub struct Method {
     context: MethodStore,
     //handle: MethodHandle,
-    handle: fn(&LeBlancObject, &[LeBlancObject]) -> LeBlancObject,
+    leblanc_handle: Option<LeblancHandle>,
+    handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>,
     pub tags: BTreeSet<MethodTag>,
 }
 
 impl Method {
-    pub fn new(context: MethodStore, handle: fn(&LeBlancObject, &[LeBlancObject]) -> LeBlancObject, tags: BTreeSet<MethodTag>) -> Method {
+    pub fn new(context: MethodStore, handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>, tags: BTreeSet<MethodTag>) -> Method {
         return Method {
             context,
+            leblanc_handle: None,
             handle,
             tags
         }
@@ -26,16 +31,36 @@ impl Method {
     pub fn null() -> Method {
         return Method {
             context: MethodStore::no_args("null".to_string()),
+            leblanc_handle: None,
             handle: null_func,
             tags: BTreeSet::new()
         }
     }
 
-    pub fn default(context: MethodStore, handle: fn(&LeBlancObject, &[LeBlancObject]) -> LeBlancObject) -> Method {
+    pub fn error() -> Method {
+        return Method {
+            context: MethodStore::no_args("null".to_string()),
+            leblanc_handle: None,
+            handle: error_func,
+            tags: BTreeSet::new()
+        }
+    }
+
+    pub fn of_leblanc_handle(context: MethodStore, leblanc_handle: LeblancHandle, tags: BTreeSet<MethodTag>) -> Method {
+        return Method {
+            context,
+            leblanc_handle: Some(leblanc_handle),
+            handle: null_func,
+            tags
+        }
+    }
+
+    pub fn default(context: MethodStore, handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>) -> Method {
         return Method::new(context, handle, BTreeSet::new());
     }
 
-    pub fn run(&self, _self: &LeBlancObject, args: &[LeBlancObject]) -> LeBlancObject {
+    pub fn run(&self, _self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+        if self.leblanc_handle.is_some() {return self.leblanc_handle.as_ref().unwrap().clone().execute(args.to_vec())}
         return (self.handle)(_self, args);
     }
 
@@ -44,13 +69,21 @@ impl Method {
             for argument in arguments {
                 if !self.context.arguments.iter()
                     .filter(|a| a.position == argument.position)
-                    .any(|a| a.typing == argument.typing) {
+                    .any(|a| a.typing == argument.typing || argument.typing == LeBlancType::Flex) {
                     return false;
                 }
             }
             return true;
         }
         return false;
+    }
+
+    pub fn store(&self) -> &MethodStore { &self.context }
+
+    pub fn has_tag(&self, tag: MethodTag) -> bool { return self.tags.contains(&tag); }
+
+    pub fn has_tags(&self, tags: Vec<MethodTag>) -> bool {
+        return tags.iter().all(|tag| self.tags.contains(tag));
     }
 }
 
@@ -84,11 +117,25 @@ impl Debug for Method {
 
 impl Clone for Method {
     fn clone(&self) -> Self {
-        Method::new(self.context.clone(), self.handle, self.tags.clone())
+        let lb_handle = if self.leblanc_handle.is_some() {
+            Some(self.leblanc_handle.as_ref().unwrap().clone())
+        } else {
+            None
+        };
+
+        return Method {
+            context: self.context.clone(),
+            handle: self.handle,
+            leblanc_handle: lb_handle,
+            tags: self.tags.clone()
+        };
+        //Method::new(self.context.clone(), self.handle, self.tags.clone())
     }
 }
 
-fn null_func(_self: &LeBlancObject, args: &[LeBlancObject]) -> LeBlancObject {return LeBlancObject::null()}
+fn null_func(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {return Arc::new(Mutex::new(LeBlancObject::null()))}
+
+fn error_func(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {return Arc::new(Mutex::new(LeBlancObject::error()))}
 
 impl Display for Method {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

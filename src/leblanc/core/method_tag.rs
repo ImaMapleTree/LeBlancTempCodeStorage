@@ -4,7 +4,8 @@ use std::hash::{Hash, Hasher};
 #[derive(Eq, PartialEq, Ord, Hash, PartialOrd, Debug, Copy, Clone)]
 pub enum MethodTag {
     Addition,
-    Subtraction
+    Subtraction,
+    InPlaceAddition
 }
 
 impl Display for MethodTag {

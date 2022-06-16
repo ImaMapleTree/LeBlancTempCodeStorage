@@ -2,6 +2,7 @@ use std::process::Child;
 use std::sync::Arc;
 use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, CompileVocab};
 use crate::leblanc::compiler::identifier::typed_token::TypedToken;
+use crate::leblanc::compiler::lang::leblanc_operators::LBOperator;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::relationship::{child_adapter, Node, NodeData, to_node_vec};
 
@@ -33,7 +34,10 @@ pub fn create_stack<'a>(mut tokens: &mut Vec<Node<TypedToken>>, stack: &'a mut V
         else {
             stack.push(consumed.value.clone());
             if consumed.value.lang_type().matches("operator") {
-
+                if consumed.value.lang_type() == CompileVocab::OPERATOR(LBOperator::Assign) {
+                    create_stack(&mut tokens.drain(0..marker).into_iter().collect(), stack);
+                    create_stack(&mut tokens, stack);
+                }
             }
             else if consumed.value.lang_type().matches("function") {
                 let mut new_tokens = Vec::new();

@@ -3,7 +3,8 @@ use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_,
 use crate::leblanc::core::internal::methods::internal_math::_internal_add_number_;
 use crate::leblanc::core::method_handler::MethodHandle;
 use crate::leblanc::core::leblanc_argument::{LeBlancArgument, number_argset};
-use crate::leblanc::core::leblanc_object::LeBlancObject;
+use crate::leblanc::core::leblanc_context::VariableContext;
+use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_handler::internal_base_toString::INTERNAL_TO_STRING;
 use crate::leblanc::core::method_store::MethodStore;
@@ -22,6 +23,18 @@ pub fn base_methods() -> HashSet<Method> {
     method_map.insert(Method::default(base_clone_method(), INTERNAL_TO_STRING));
     method_map.insert(Method::default(base_field_method(), _internal_field_));
     return method_map;
+}
+
+pub fn internal_method(method: Method) -> LeBlancObject {
+    let mut methods = base_methods();
+    methods.insert(method.clone());
+    return LeBlancObject {
+        data: LeBlancObjectData::Function(method),
+        typing: Function,
+        methods,
+        members: HashMap::new(),
+        context: VariableContext::empty()
+    }
 }
 
 pub fn base_to_string_method() -> MethodStore {

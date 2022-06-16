@@ -7,7 +7,7 @@ use crate::leblanc::compiler::identifier::token_typer::create_typed_tokens;
 use crate::leblanc::compiler::lang::leblanc_constants::constant_type;
 use crate::leblanc::compiler::lang::leblanc_lang::is_special;
 use crate::leblanc::compiler::lang::leblanc_operators::{is_operator, LBOperator, operator_type};
-use crate::leblanc::compiler::partial::PartialFabric;
+use crate::leblanc::compiler::fabric::Fabric;
 use crate::leblanc::compiler::symbols::{Symbol, SymbolType};
 use crate::leblanc::compiler::symbols::SymbolType::Whitespace;
 use crate::leblanc::compiler::identifier::typed_token::TypedToken;
@@ -16,7 +16,7 @@ use crate::leblanc::rustblanc::exception::leblanc_base_exception::LeblancBaseExc
 use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, colorize, ColorString};
 
 
-pub fn create_tokens(char_reader: &mut CharReader, mode: CompilationMode) -> PartialFabric {
+pub fn create_tokens(char_reader: &mut CharReader, mode: CompilationMode) -> Fabric {
     let mut partial_errors: Vec<ErrorStub> = Vec::new();
 
 

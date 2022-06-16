@@ -13,7 +13,7 @@ use crate::leblanc::core::native_types::LeBlancType;
 pub enum CompileVocab {
     CONSTANT(LeBlancType),
     VARIABLE(LeBlancType),
-    FUNCTION,
+    FUNCTION(FunctionType),
     OPERATOR(LBOperator),
     SPECIAL(Specials),
     KEYWORD(LBKeyword),
@@ -33,6 +33,32 @@ impl Symbol {
 pub enum QuotationTypes {
     Single,
     Double
+}
+
+#[derive(PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Debug, Copy)]
+pub enum FunctionType {
+    Header,
+    Call,
+    DNE
+}
+
+pub fn function_type_value(string: &str) -> FunctionType {
+    return match string {
+        "header" => FunctionType::Header,
+        "call" => FunctionType::Call,
+        _=> FunctionType::DNE
+    };
+}
+
+impl Display for FunctionType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        let s = match self {
+            FunctionType::Header => "header",
+            FunctionType::Call => "call",
+            _ => "DNE"
+        };
+        write!(f, "{}", s)
+    }
 }
 
 #[derive(PartialEq, Eq, Copy, Hash, Clone, Debug)]
@@ -79,7 +105,7 @@ impl CompileVocab {
         return match self {
             CompileVocab::CONSTANT(_) => pat.to_lowercase() == "constant",
             CompileVocab::VARIABLE(_) => pat.to_lowercase() == "variable",
-            CompileVocab::FUNCTION => pat.to_lowercase() == "function",
+            CompileVocab::FUNCTION(_) => pat.to_lowercase() == "function",
             CompileVocab::OPERATOR(_) => pat.to_lowercase() == "operator",
             CompileVocab::SPECIAL(_) => pat.to_lowercase() == "special",
             CompileVocab::KEYWORD(_) => pat.to_lowercase() == "keyword",
@@ -106,7 +132,7 @@ impl CompileVocab {
             CompileVocab::MODULE(_) => 20,
             CompileVocab::CLASS(_) => 30,
             CompileVocab::EXTENSION(_) => 40,
-            CompileVocab::FUNCTION => 50,
+            CompileVocab::FUNCTION(_) => 50,
             CompileVocab::CONSTRUCTOR(_) => 60,
             CompileVocab::TYPE(_) => 70,
             CompileVocab::VARIABLE(_) => 80,
@@ -123,7 +149,7 @@ impl Display for CompileVocab {
         let s = match self {
             CompileVocab::CONSTANT(inner) => "constant.".to_string() + &inner.to_string(),
             CompileVocab::VARIABLE(inner) => "variable.".to_string() + &inner.to_string(),
-            CompileVocab::FUNCTION => "function".to_string(),
+            CompileVocab::FUNCTION(inner) => "function.".to_string() + &inner.to_string(),
             CompileVocab::OPERATOR(inner) => "operator.".to_string() + &inner.to_string(),
             CompileVocab::SPECIAL(inner) => "special.".to_string() + &inner.to_string(),
             CompileVocab::KEYWORD(inner) => "keyword.".to_string() + &inner.to_string(),

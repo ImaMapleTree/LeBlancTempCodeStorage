@@ -18,6 +18,7 @@ use crate::leblanc::compiler::symbols::Symbol;
 use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::core::native_types::LeBlancType::*;
+use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::leblanc::rustblanc::relationship::Node;
 use crate::TypedToken;
@@ -66,15 +67,13 @@ impl RuleAnalyzer {
     pub fn evaluate_rule1(&self, errors: &mut Vec<ErrorStub>) {
         // RULE 0 Evaluation
         let t = LeBlancType::Class(0);
-        self.open_parenthesis.iter().filter(|p| !(CompileVocab::FUNCTION.eq(&p.vocab) || CompileVocab::CONSTRUCTOR(t).eq(&p.vocab)))
-            .for_each(|p| errors.insert(errors.len(), ErrorStub::ImbalancedDelimiter(p.symbol)));
-        self.closed_parenthesis.iter().filter(|p| !(CompileVocab::FUNCTION.eq(&p.vocab) || CompileVocab::CONSTRUCTOR(t).eq(&p.vocab)))
-            .for_each(|p| errors.insert(errors.len(), ErrorStub::ImbalancedDelimiter(p.symbol)));
+        self.open_parenthesis.iter().for_each(|p| errors.append_item(ErrorStub::ImbalancedDelimiter(p.symbol)));
+        self.closed_parenthesis.iter().for_each(|p| errors.append_item(ErrorStub::ImbalancedDelimiter(p.symbol)));
     }
 
     pub fn evaluate_rule2(&self, errors: &mut Vec<ErrorStub>, tokens: &mut Vec<TypedToken>) {
         tokens.iter().filter(|t| t.lang_type().clone() == CompileVocab::UNKNOWN(Class(0)))
-            .for_each(|t| { errors.insert(errors.len(), ErrorStub::UndeclaredVariable(t.clone())) });
+            .for_each(|t| { errors.append_item( ErrorStub::UndeclaredVariable(t.clone())) });
     }
 
     /*
@@ -88,9 +87,9 @@ impl RuleAnalyzer {
                 let next_token = tokens.get(i+1).unwrap();
                 if let CompileVocab::VARIABLE(match_type) = prior_token.lang_type() {
                     match next_token.lang_type() {
-                        CompileVocab::CONSTANT(token_type) => { if match_type != token_type { errors.insert(errors.len(), ErrorStub::IncompatibleType(prior_token.clone())) } }
-                        CompileVocab::VARIABLE(token_type) => { if match_type != token_type { errors.insert(errors.len(), ErrorStub::IncompatibleType(prior_token.clone())) } }
-                        CompileVocab::CONSTRUCTOR(token_type) => { if match_type != token_type { errors.insert(errors.len(), ErrorStub::IncompatibleType(prior_token.clone())) } }
+                        CompileVocab::CONSTANT(token_type) => { if match_type != token_type { errors.append_item(ErrorStub::IncompatibleType(prior_token.clone())) } }
+                        CompileVocab::VARIABLE(token_type) => { if match_type != token_type { errors.append_item(ErrorStub::IncompatibleType(prior_token.clone())) } }
+                        CompileVocab::CONSTRUCTOR(token_type) => { if match_type != token_type { errors.append_item(ErrorStub::IncompatibleType(prior_token.clone())) } }
                         _ => {}
                     }
                 }

@@ -4,6 +4,7 @@ use crate::leblanc::compiler::char_reader::CharReader;
 use crate::leblanc::compiler::compiler_util::{CharMarker, line_strip_and_join, strip_start_of_line};
 use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab::{CONSTRUCTOR, FUNCTION};
 use crate::leblanc::compiler::identifier::typed_token::TypedToken;
+use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::leblanc::rustblanc::exception::leblanc_base_exception::LeblancBaseException;
 use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, ColorBright, colorize, colorize_str, ColorString};
@@ -180,8 +181,7 @@ pub fn error_report(cr: &mut CharReader, tokens: &Vec<TypedToken>, errors: &Vec<
         error_message += &error_message_extra;
     }
 
-    complete_errors.insert(complete_errors.len(),
-       LeblancBaseException::new(&error_message, true, 5009003));
+    complete_errors.append_item(LeblancBaseException::new(&error_message, true, 5009003));
 
     for error in complete_errors {
         error.output();
@@ -219,8 +219,10 @@ fn repair_incompatible_type_error(text: String, token: &TypedToken, fix_type: St
 }
 
 fn repair_var_already_defined_error(text: String, old_name: String, new_name: String) -> String {
-    let stripped = strip_start_of_line(text.clone()).replacen(old_name.as_str(), &colorize(new_name, Bright(BrightGreen)), 1);
-    return colorize(stripped, Color::Yellow);
+    let stripped = strip_start_of_line(text.clone());
+    let re = Regex::new(&format!("{}{}{}", r"\b", old_name.as_str(), r"\b")).unwrap();
+    let stripped = re.replace(&stripped, &colorize(new_name, Bright(BrightGreen)));
+    return colorize(stripped.to_string(), Color::Yellow);
 }
 
 fn generate_error_name(text: &str, line_number: u32, symbol_number: u32) -> String {

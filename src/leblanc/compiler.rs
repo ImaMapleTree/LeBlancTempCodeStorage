@@ -6,7 +6,7 @@ pub mod symbols;
 pub mod lang;
 pub mod compiler_util;
 pub mod compile_error_reporter;
-pub mod partial;
+pub mod fabric;
 pub mod syntax_rules;
 pub mod token_stack_generator;
 pub mod identifier;

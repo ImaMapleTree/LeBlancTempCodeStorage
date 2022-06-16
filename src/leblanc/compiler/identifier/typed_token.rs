@@ -1,6 +1,7 @@
 use std::borrow::BorrowMut;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 use std::intrinsics::size_of;
 use std::mem;
 use std::ops::Deref;
@@ -11,10 +12,10 @@ use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab;
 use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::LeBlancType;
 
-#[derive(Debug, PartialEq, Hash, Eq)]
+#[derive(Debug, Eq)]
 pub struct PartialToken {
     token: String,
-    lang_type: CompileVocab
+    pub lang_type: CompileVocab
 }
 
 impl PartialToken {
@@ -26,12 +27,26 @@ impl PartialToken {
     }
 }
 
+impl PartialEq for PartialToken {
+    fn eq(&self, other: &Self) -> bool {
+        if self.token != other.token { return false; }
+        if self.lang_type.to_string() == other.lang_type.to_string() { return true; }
+        return self.lang_type.matches("function") && other.lang_type.matches("function")
+    }
+}
+
+impl Hash for PartialToken {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.token.hash(state);
+    }
+}
+
 #[derive(Debug, PartialEq, Hash, Eq)]
 pub struct TypedToken{
     base: Token,
     lang_type: CompileVocab,
     scope: i32,
-    a_typing: Vec<LeBlancType>,
+    a_typing: Vec<Vec<LeBlancType>>,
     global: bool
 }
 
@@ -44,7 +59,7 @@ impl TypedToken {
             base: token,
             lang_type: vocab,
             scope,
-            a_typing: vec![],
+            a_typing: vec![vec![], vec![]],
             global
         }
     }
@@ -54,7 +69,7 @@ impl TypedToken {
             base: Token::empty(),
             lang_type: CompileVocab::UNKNOWN(LeBlancType::Class(0)),
             scope: -1,
-            a_typing: vec![],
+            a_typing: vec![vec![], vec![]],
             global: false
         }
     }
@@ -65,7 +80,9 @@ impl TypedToken {
 
     pub fn token(&self) -> &Token { &self.base }
 
-    pub fn typing(&self) -> &Vec<LeBlancType> { &self.a_typing }
+    pub fn typing(&self) -> &Vec<Vec<LeBlancType>> { &self.a_typing }
+
+    pub fn typing_mut(&mut self) -> &mut Vec<Vec<LeBlancType>> { &mut self.a_typing }
 
     pub fn global(&self) -> bool { self.global }
 
@@ -77,7 +94,12 @@ impl TypedToken {
 
     pub fn set_scope(&mut self, scope: i32) { self.scope = scope; }
 
-    pub fn set_typing(&mut self, typing: Vec<LeBlancType>) { self.a_typing = typing }
+    pub fn set_typing_args(&mut self, typing: &mut Vec<LeBlancType>) {
+        self.a_typing[0].append( typing) }
+
+    pub fn set_typing_returns(&mut self, typing: Vec<LeBlancType>) { self.a_typing[1] = typing }
+
+    pub fn set_typing(&mut self, typing: Vec<Vec<LeBlancType>>) { self.a_typing = typing; }
 
     pub fn set_global(&mut self, global: bool) { self.global = global }
 
@@ -93,7 +115,7 @@ impl TypedToken {
         } else {
             "0".to_string()
         };
-        let typings = self.a_typing.iter().map(|t| t.to_string() + "|").collect::<String>();
+        let typings = self.a_typing.iter().map(|t| t[1].to_string() + "|").collect::<String>();
 
 
 
@@ -109,12 +131,13 @@ impl Display for TypedToken {
 
 impl Clone for TypedToken {
     fn clone(&self) -> Self {
-        return TypedToken::new(
-            self.base.copy(),
-            self.lang_type.clone(),
-            self.scope,
-            self.global
-        )
+        return TypedToken {
+            base: self.base.copy(),
+            lang_type: self.lang_type.clone(),
+            scope: self.scope,
+            a_typing: self.a_typing.clone(),
+            global: self.global
+        }
     }
 }
 

@@ -1,30 +1,148 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::fs::File;
 use std::hash::{Hash, Hasher};
-use crate::{BraceOpen, CompileVocab, LeBlancType, Semicolon, TypedToken};
+use std::io::Write;
+use crate::{BraceOpen, CompilationMode, CompileVocab, Fabric, LeBlancType, Semicolon, TypedToken};
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
-use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType;
-use crate::LeBlancType::Function;
+use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, FunctionType};
+use crate::leblanc::core::bytecode::file_body::FileBodyBytecode;
+use crate::leblanc::core::bytecode::file_header::FileHeaderBytecode;
+use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
+use crate::leblanc::core::bytecode::{LeblancBytecode, ToBytecode};
+use crate::leblanc::core::bytecode::instruction_line_bytes::InstructionBytecode;
+use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
+use crate::leblanc::core::interpreter::instructions::InstructionBase;
+use crate::leblanc::core::interpreter::instructions::InstructionBase::*;
+use crate::leblanc::core::partial_function::PartialFunction;
+use crate::leblanc::rustblanc::{Appendable, AppendCloneable, Hexable};
+use crate::leblanc::rustblanc::hex::Hexadecimal;
+use crate::leblanc::rustblanc::utils::{decode_hex, encode_hex};
 
 
-pub fn write_bytecode(stack: Vec<TypedToken>) {
+pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: CompilationMode) {
     let mut globals: HashMap<String, u64> = HashMap::new();
-    let function_map: HashMap<Function, u64> = HashMap::new();
-    let mut function = Function::new("_EMPTY_".to_string());
-    for token in &stack {
-        if token.lang_type() == CompileVocab::KEYWORD(LBKeyword::Func) {
-            function = build_function(stack[0..stack.iter().enumerate().filter(|(_, r)| r.lang_type() == CompileVocab::BOUNDARY(Semicolon) || r.lang_type() == CompileVocab::BOUNDARY(BraceOpen)).map(|(index, _)| index+1).next().unwrap()].to_vec());
+
+    let mut partial_functions = create_partial_functions();
+    stack.iter().filter(|t| t.lang_type() == CompileVocab::FUNCTION(FunctionType::Header)).for_each(|t| {
+        let p = PartialFunction::from_token_args(&t);
+        if !partial_functions.contains(&p) {
+            partial_functions.push(p);
         }
-        else if token.global() {
-            globals.insert(token.as_string(), globals.len() as u64);
+    });
+
+
+    let mut functions: Vec<Function> = vec![];
+    let mut function = Function::new("__GLOBAL__".to_string());
+    let mut last_instruction = Zero;
+    let mut instruction = Zero;
+    let mut last_line = 0;
+    let mut line_bytes = last_line.to_hex(4);
+
+    let mut instruction_bytes = InstructionBytecode::new();
+    stack.reverse();
+
+
+    while !stack.is_empty() {
+        let token_ref = &stack[stack.len()-1];
+        if token_ref.token().line_number() != last_line {
+            last_line = token_ref.token().line_number();
+
+            let generated = instruction_bytes.generate();
+            if generated.len() > 4 {
+                function.add_bytes(generated);
+            }
+
+            instruction_bytes = InstructionBytecode::new();
+            instruction_bytes.set_line_number(last_line);
+        }
+
+
+        if token_ref.lang_type() == CompileVocab::KEYWORD(LBKeyword::Func) {
+            functions.push(function);
+            function = build_function(&mut stack);
         }
         else {
-            let instruction = token.lang_type().as_instruction();
+            let token = stack.pop().unwrap();
+            last_instruction = instruction;
+            instruction = InstructionBase::from_compile_vocab(&token);
+
+            let mut arg_byte = Hexadecimal::from_string("0000".to_string());
+            if instruction == StoreUndefined {
+                instruction = match last_instruction {
+                    LoadGlobal => StoreGlobal,
+                    _ => StoreLocal
+                };
+                arg_byte = instruction_bytes.remove().1;
+
+            } else if instruction == LoadConstant {
+                arg_byte = (function.constants.len() as u16).to_hex(2);
+                function.constants.append_clone(&token);
+            } else if instruction == LoadLocal {
+                arg_byte = function.variable(token.as_string()).to_hex(2);
+            } else if instruction == CallFunction {
+                let partial_function = partial_functions.iter().filter(|&p| *p == PartialFunction::from_token_args(&token)).next();
+                if partial_function.is_none() {
+                    println!("{:#?}", partial_functions);
+                    println!("{:?}", PartialFunction::from_token_args(&token));
+                    panic!("This should be an actual error");
+                } else {
+                    instruction_bytes.add_instruction(LoadFunction.to_hex(2), arg_byte);
+                    arg_byte = (partial_function.unwrap().args.len() as u16).to_hex(2);
+                }
+            }
+
+            let mut instruct_byte = instruction.to_hex(2);
+
+            if instruction != Zero {
+                instruction_bytes.add_instruction(instruct_byte, arg_byte);
+            } else {
+                instruction = last_instruction;
+            }
         }
 
     }
+    let generated = instruction_bytes.generate();
+    if generated.len() != 4 {
+        function.add_bytes(generated);
+    }
+    functions.push(function);
+
+    let mut header = FileHeaderBytecode::new();
+    for import in fabric.imports() {
+        header.add_import_name(import);
+    }
+
+    let mut body = FileBodyBytecode::new();
+    for function in functions {
+        let mut function_bytecode = FunctionBytecode::new();
+        function_bytecode.set_name(function.name);
+        for constant in function.constants {
+            let native_type = constant.lang_type().extract_native_type().clone();
+            //println!("{:?}, {} | {}", constant, native_type, native_type.transform(constant.as_string()));
+            function_bytecode.add_constant(native_type.transform(constant.as_string()), native_type.enum_id() as u16);
+        }
+        for variable in function.variables {
+            function_bytecode.add_variable(variable.0, variable.1 as u32);
+        }
+        for bytearray in function.bytearrays {
+            function_bytecode.add_instruction_line(bytearray);
+        }
+        body.add_function(function_bytecode);
+    }
+
+    let mut bytecode = LeblancBytecode::new(header, body);
+    //println!("{:?}", bytecode.generate());
+    let mut file = File::options().write(true).create(true).open(fabric.path.replace(".lb", ".lbbc"));
+    let generated = bytecode.generate();
+
+    fabric.bytecode = generated;
+    if mode != CompilationMode::Realtime {
+        file.unwrap().write_all(&hex::decode(fabric.bytecode.to_string()).unwrap()).unwrap();
+    }
 }
 
-fn build_function(mut tokens: Vec<TypedToken>) -> Function {
+fn build_function(mut tokens: &mut Vec<TypedToken>) -> Function {
+    //println!("Tokens: {:#?}", tokens);
     tokens.pop();
     let name_token = tokens.pop().unwrap();
 
@@ -32,6 +150,7 @@ fn build_function(mut tokens: Vec<TypedToken>) -> Function {
 
     let mut next_token = tokens.pop().unwrap();
     while next_token.lang_type() != CompileVocab::BOUNDARY(BoundaryType::ParenthesisClosed) {
+        //println!("Next token: {:?}", next_token);
         if let CompileVocab::VARIABLE(lb_type) = next_token.lang_type() {
             func.add_arg(next_token.as_string(), lb_type);
         }
@@ -39,7 +158,7 @@ fn build_function(mut tokens: Vec<TypedToken>) -> Function {
     };
     while next_token.lang_type() == CompileVocab::BOUNDARY(BoundaryType::Comma) || !next_token.lang_type().matches("boundary") {
         if let CompileVocab::TYPE(lb_type) = next_token.lang_type() {
-            func.return_types.insert(func.return_types.len(), lb_type);
+            func.return_types.append_item(lb_type);
         }
         next_token = tokens.pop().unwrap();
     }
@@ -53,7 +172,8 @@ struct Function {
     pub arg_types: Vec<LeBlancType>,
     pub return_types: Vec<LeBlancType>,
     pub variables: HashMap<String, u64>,
-    pub bytes: Vec<String>
+    pub constants: Vec<TypedToken>,
+    pub bytearrays: Vec<Hexadecimal>
 }
 
 impl Function {
@@ -63,13 +183,27 @@ impl Function {
             arg_types: vec![],
             return_types: vec![],
             variables: HashMap::new(),
-            bytes: vec![]
+            constants: vec![],
+            bytearrays: vec![]
         }
     }
 
     pub fn add_arg(&mut self, name: String, lb_type: LeBlancType) {
         self.variables.insert(name, self.variables.len() as u64);
-        self.arg_types.insert(self.arg_types.len(), lb_type);
+        self.arg_types.append_item(lb_type);
+    }
+
+    pub fn add_bytes(&mut self, bytes: Hexadecimal) {
+        self.bytearrays.append_item( bytes);
+    }
+
+    pub fn variable(&mut self, name: String) -> u64 {
+        if self.variables.contains_key(&name) {
+            return *self.variables.get(&name).unwrap();
+        }
+        let value = self.variables.len() as u64;
+        self.variables.insert(name, value);
+        return value;
     }
 }
 

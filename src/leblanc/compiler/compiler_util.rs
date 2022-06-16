@@ -1,5 +1,6 @@
 use crate::leblanc::rustblanc::relationship::Node;
 use crate::{to_node_vec, TypedToken};
+use crate::leblanc::rustblanc::AppendCloneable;
 
 pub struct CharMarker {
     pub(crate) ch: char,
@@ -62,7 +63,7 @@ pub fn string_is_in_array(string: &String, array: &[String]) -> bool {
 pub fn flatmap_node_tokens(tokens: &mut Vec<Node<TypedToken>>) -> Vec<TypedToken> {
     let mut flatmap = vec![];
     for token in tokens {
-        flatmap.insert(flatmap.len(), token.value.clone());
+        flatmap.append_clone(&token.value);
         if !token.children.read().unwrap().is_empty() {
             flatmap.append(&mut flatmap_node_tokens(&mut to_node_vec(&token.children)));
         }

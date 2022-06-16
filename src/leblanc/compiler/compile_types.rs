@@ -1,5 +1,6 @@
 pub mod stub_compiler;
-mod full_compiler;
+pub mod full_compiler;
+pub mod full_reader;
 
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum CompilationMode {

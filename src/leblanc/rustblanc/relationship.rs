@@ -77,11 +77,17 @@ type Child<T> = NodeDataRef<T>;
 /// ```
 pub struct NodeData<T>
     where
-        T: Display,
+        T: Display + Clone,
 {
     pub value: T,
     pub parent: Parent<T>,
     pub children: Children<T>,
+}
+
+impl<T: Display + Clone> NodeData<T> {
+    pub fn get_value(&self) -> &T {
+        return &self.value;
+    }
 }
 
 /// This struct is used to own a [`NodeData`] inside an [`Arc`], which can be shared, so that it can
@@ -112,12 +118,12 @@ pub struct NodeData<T>
 /// ```
 
 #[derive(Debug, Clone)]
-pub struct Node<T: Display> {
+pub struct Node<T: Display + Clone> {
     arc_ref: NodeDataRef<T>,
 }
 impl<T> Node<T>
     where
-        T: Display,
+        T: Display + Clone,
 {
     pub fn new(value: T) -> Node<T> {
         let new_node = NodeData {
@@ -178,7 +184,7 @@ impl<T> Node<T>
 /// <https://doc.rust-lang.org/book/ch19-03-advanced-traits.html#using-the-newtype-pattern-to-implement-external-traits-on-external-types>
 impl<T> Deref for Node<T>
     where
-        T: Display,
+        T: Display + Clone,
 {
     type Target = NodeData<T>;
 
@@ -265,7 +271,7 @@ fn test_tree_simple_api() {
 
 impl<T> fmt::Debug for NodeData<T>
     where
-        T: Debug + Display,
+        T: Debug + Display + Clone,
 {
     fn fmt(
         &self,
@@ -293,12 +299,17 @@ impl DerefMut for Node<TypedToken> {
     }
 }
 
-pub fn child_adapter<T: Display>(c: NodeDataRef<T>) -> Node<T> {
+pub fn child_adapter<T: Display + Clone>(c: NodeDataRef<T>) -> Node<T> {
     return Node {
         arc_ref: c,
     }
 }
 
-pub fn to_node_vec<T: Display>(c: &RwLock<Vec<Child<T>>>) -> Vec<Node<T>> {
+pub fn to_node_vec<T: Display + Clone>(c: &RwLock<Vec<Child<T>>>) -> Vec<Node<T>> {
     c.read().unwrap().iter().map(|f| child_adapter(f.clone())).collect()
+}
+
+pub fn to_vec<T: Display + Clone>(c: &RwLock<Vec<Child<T>>>) -> Vec<T> {
+    println!("to vec");
+    c.read().unwrap().iter().map(|f| f.value.clone()).collect()
 }

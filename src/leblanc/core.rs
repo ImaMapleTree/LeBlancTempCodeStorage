@@ -9,3 +9,5 @@ pub mod module;
 pub mod method_tag;
 pub mod internal;
 pub mod interpreter;
+pub mod partial_function;
+pub mod bytecode;

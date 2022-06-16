@@ -12,7 +12,7 @@ pub struct ColorString {
     is_enabled: bool
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum Color {
     Black,
     Red,
@@ -27,7 +27,7 @@ pub enum Color {
     None
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum ColorBright {
     BrightBlack,
     BrightRed,

@@ -4,6 +4,7 @@
 #![feature(core_intrinsics)]
 
 extern crate core;
+extern crate alloc;
 
 use std::io;
 use std::fs::File;
@@ -13,11 +14,12 @@ use clicolors_control::set_colors_enabled;
 use crate::leblanc::compiler::compile::compile;
 use crate::leblanc::compiler::compile_error_reporter::error_report;
 use crate::leblanc::compiler::compile_types::CompilationMode;
+use crate::leblanc::compiler::compile_types::full_reader::read_file;
 use crate::leblanc::compiler::identifier::typed_token::TypedToken;
 use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{BraceOpen, BracketOpen, Semicolon};
 use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab;
 use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab::BOUNDARY;
-use crate::leblanc::compiler::partial::PartialFabric;
+use crate::leblanc::compiler::fabric::Fabric;
 use crate::leblanc::compiler::token_stack_generator::create_stack;
 use crate::leblanc::compiler::tokenizer::create_tokens;
 use crate::leblanc::core::interpreter::interactive::start;
@@ -35,6 +37,8 @@ static INTERACTIVE: bool = false;
 fn main() -> io::Result<()> {
     let DEBUG = true;
     playground::playground();
+
+    exit(0);
 
     if INTERACTIVE {
         start();
@@ -54,6 +58,7 @@ fn main() -> io::Result<()> {
 
     compile("test.lb".to_string(), CompilationMode::Full);
 
+    read_file("test.lb".to_string());
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.6?}", elapsed);
