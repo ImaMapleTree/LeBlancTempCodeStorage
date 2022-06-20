@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use clicolors_control::{colors_enabled, set_colors_enabled};
+use clicolors_control::colors_enabled;
 use clicolors_control::terminfo::supports_colors;
 
 pub struct ColorString {
@@ -68,8 +68,7 @@ impl Color {
             Color::White => "\x1b[37m",
             Color::Reset => "\x1b[0m",
             Color::None => "",
-            Color::Bright(color) => color.ansi(),
-            _ => ""
+            Color::Bright(color) => color.ansi()
         }
     }
 }

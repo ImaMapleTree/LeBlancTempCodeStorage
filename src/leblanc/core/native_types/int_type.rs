@@ -1,17 +1,13 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
-use crate::leblanc::core::internal::methods::internal_math::_internal_add_number_;
-use crate::leblanc::core::leblanc_argument::{LeBlancArgument, number_argset};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
-use crate::leblanc::core::method::Method;
-use crate::leblanc::core::method_store::MethodStore;
-use crate::leblanc::core::method_tag::MethodTag;
 use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 
 pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
-    let mut base_methods = base_methods();
-    base_methods.insert(int_addition_method());
+    let base_methods = base_methods();
+
 
     return LeBlancObject::new(
         LeBlancObjectData::Int(integer),
@@ -22,7 +18,7 @@ pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
     )
 }
 
-fn int_addition_method() -> Method {
+/*fn int_addition_method() -> Method {
     let method_store = MethodStore {
         name: "addition".to_string(),
         arguments: number_argset(),
@@ -35,10 +31,9 @@ fn int_addition_method() -> Method {
         _internal_add_number_,
         method_tag
     )
-}
+}*/
 
 impl ToLeblanc for i32 {
-    fn create(&self) -> LeBlancObject {
-        return leblanc_object_int(*self);
-    }
+    fn create(&self) -> LeBlancObject { return leblanc_object_int(*self); }
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { return Arc::new(Mutex::new(self.create())) }
 }

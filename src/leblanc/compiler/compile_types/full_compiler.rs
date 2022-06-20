@@ -1,8 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::Write;
-use crate::{BraceOpen, CompilationMode, CompileVocab, Fabric, LeBlancType, Semicolon, TypedToken};
+use crate::{CompilationMode, CompileVocab, Fabric, LeBlancType, TypedToken};
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
 use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, FunctionType};
 use crate::leblanc::core::bytecode::file_body::FileBodyBytecode;
@@ -16,11 +16,10 @@ use crate::leblanc::core::interpreter::instructions::InstructionBase::*;
 use crate::leblanc::core::partial_function::PartialFunction;
 use crate::leblanc::rustblanc::{Appendable, AppendCloneable, Hexable};
 use crate::leblanc::rustblanc::hex::Hexadecimal;
-use crate::leblanc::rustblanc::utils::{decode_hex, encode_hex};
 
 
 pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: CompilationMode) {
-    let mut globals: HashMap<String, u64> = HashMap::new();
+    let globals: HashMap<String, u64> = HashMap::new();
 
     let mut partial_functions = create_partial_functions();
     stack.iter().filter(|t| t.lang_type() == CompileVocab::FUNCTION(FunctionType::Header)).for_each(|t| {
@@ -36,7 +35,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
     let mut last_instruction = Zero;
     let mut instruction = Zero;
     let mut last_line = 0;
-    let mut line_bytes = last_line.to_hex(4);
+    let line_bytes = last_line.to_hex(4);
 
     let mut instruction_bytes = InstructionBytecode::new();
     stack.reverse();
@@ -80,18 +79,20 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
             } else if instruction == LoadLocal {
                 arg_byte = function.variable(token.as_string()).to_hex(2);
             } else if instruction == CallFunction {
-                let partial_function = partial_functions.iter().filter(|&p| *p == PartialFunction::from_token_args(&token)).next();
-                if partial_function.is_none() {
+                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(index, p)| *p == PartialFunction::from_token_args(&token)).next();
+                if index_partial.is_none() {
                     println!("{:#?}", partial_functions);
                     println!("{:?}", PartialFunction::from_token_args(&token));
                     panic!("This should be an actual error");
                 } else {
-                    instruction_bytes.add_instruction(LoadFunction.to_hex(2), arg_byte);
-                    arg_byte = (partial_function.unwrap().args.len() as u16).to_hex(2);
+                    let index = index_partial.as_ref().unwrap().0;
+                    let partial_function = index_partial.unwrap().1;
+                    instruction_bytes.add_instruction(LoadFunction.to_hex(2), index.to_hex(2));
+                    arg_byte = (partial_function.args.len() as u16).to_hex(2);
                 }
             }
 
-            let mut instruct_byte = instruction.to_hex(2);
+            let instruct_byte = instruction.to_hex(2);
 
             if instruction != Zero {
                 instruction_bytes.add_instruction(instruct_byte, arg_byte);
@@ -101,6 +102,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
         }
 
     }
+    println!("partial functions: {:#?}", partial_functions);
     let generated = instruction_bytes.generate();
     if generated.len() != 4 {
         function.add_bytes(generated);
@@ -109,7 +111,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
 
     let mut header = FileHeaderBytecode::new();
     for import in fabric.imports() {
-        header.add_import_name(import);
+        header.add_import_name(&import.source);
     }
 
     let mut body = FileBodyBytecode::new();
@@ -132,7 +134,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
 
     let mut bytecode = LeblancBytecode::new(header, body);
     //println!("{:?}", bytecode.generate());
-    let mut file = File::options().write(true).create(true).open(fabric.path.replace(".lb", ".lbbc"));
+    let file = File::options().truncate(true).write(true).create(true).open(fabric.path.replace(".lb", ".lbbc"));
     let generated = bytecode.generate();
 
     fabric.bytecode = generated;
@@ -141,7 +143,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
     }
 }
 
-fn build_function(mut tokens: &mut Vec<TypedToken>) -> Function {
+fn build_function(tokens: &mut Vec<TypedToken>) -> Function {
     //println!("Tokens: {:#?}", tokens);
     tokens.pop();
     let name_token = tokens.pop().unwrap();

@@ -10,10 +10,7 @@ use crate::leblanc::compiler::lang::leblanc_operators::{is_operator, LBOperator,
 use crate::leblanc::compiler::fabric::Fabric;
 use crate::leblanc::compiler::symbols::{Symbol, SymbolType};
 use crate::leblanc::compiler::symbols::SymbolType::Whitespace;
-use crate::leblanc::compiler::identifier::typed_token::TypedToken;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
-use crate::leblanc::rustblanc::exception::leblanc_base_exception::LeblancBaseException;
-use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, colorize, ColorString};
 
 
 pub fn create_tokens(char_reader: &mut CharReader, mode: CompilationMode) -> Fabric {
@@ -119,6 +116,7 @@ pub fn create_tokens(char_reader: &mut CharReader, mode: CompilationMode) -> Fab
 
 
     tokens.reverse();
+    println!("Typing");
     let mut fabric = create_typed_tokens(tokens, partial_errors, mode);
     fabric.path = char_reader.path().clone();
     return fabric;
@@ -177,9 +175,4 @@ fn add_token(tokens: &mut Vec<Token>, token: Token) {
             tokens.push(token);
         }
     }
-}
-
-
-fn print_string(string: &String) {
-    println!("{}", string);
 }

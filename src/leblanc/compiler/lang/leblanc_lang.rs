@@ -1,12 +1,9 @@
-use std::borrow::Borrow;
 use std::fmt::{Display, Formatter};
 use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{BraceClosed, BraceOpen, BracketClosed, BracketOpen, Comma, DNE, ParenthesisClosed, ParenthesisOpen, Semicolon};
 use crate::leblanc::compiler::symbols::Symbol;
-use crate::leblanc::core::native_types::LeBlancType::*;
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
 use crate::leblanc::compiler::lang::leblanc_lang::Specials::{BlockCommentCloser, BlockCommentOpener, InlineComment, TagCloser, TagOpener};
 use crate::leblanc::compiler::lang::leblanc_operators::LBOperator;
-use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Clone, Debug, Copy, Hash, PartialEq, Eq)]
@@ -20,7 +17,7 @@ pub enum CompileVocab {
     MODULE(u64),
     BOUNDARY(BoundaryType),
     CONSTRUCTOR(LeBlancType),
-    EXTENSION(LeBlancType),
+    EXTENSION(ExtensionType),
     CLASS(LeBlancType),
     TYPE(LeBlancType),
     UNKNOWN(LeBlancType)
@@ -61,6 +58,18 @@ impl Display for FunctionType {
     }
 }
 
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
+pub enum ExtensionType {
+    ExtensionTypeImport(u32),
+    ExtensionTypeExport(u32)
+}
+
+impl Display for ExtensionType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
 #[derive(PartialEq, Eq, Copy, Hash, Clone, Debug)]
 pub enum BoundaryType {
     BracketOpen,
@@ -93,7 +102,6 @@ impl CompileVocab {
         return match self {
             CompileVocab::CONSTANT(native_type) => native_type,
             CompileVocab::VARIABLE(native_type) => native_type,
-            CompileVocab::EXTENSION(native_type) => native_type,
             CompileVocab::CONSTRUCTOR(native_type) => native_type,
             CompileVocab::TYPE(native_type) => native_type,
             CompileVocab::UNKNOWN(native_type) => native_type,
@@ -116,6 +124,18 @@ impl CompileVocab {
             CompileVocab::TYPE(_) => pat.to_lowercase() == "type",
             CompileVocab::UNKNOWN(_) => pat.to_lowercase() == "unknown",
             CompileVocab::CLASS(_) => pat.to_lowercase() == "class"
+        }
+    }
+
+    pub fn stores_native_type(&self) -> bool {
+        return match self {
+            CompileVocab::FUNCTION(_) => false,
+            CompileVocab::OPERATOR(_) => false,
+            CompileVocab::SPECIAL(_) => false,
+            CompileVocab::KEYWORD(_) => false,
+            CompileVocab::MODULE(_) => false,
+            CompileVocab::BOUNDARY(_) => false,
+            _ => true
         }
     }
 

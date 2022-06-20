@@ -1,11 +1,12 @@
-use crate::leblanc::core::interpreter::instructions::InstructionBase;
+use std::sync::{Arc, Mutex};
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
 use crate::leblanc::rustblanc::utils::{decode_hex, encode_hex};
 use strum::{EnumIter, IntoEnumIterator};
 use strum_macros::EnumVariantNames;
 use strum::VariantNames;
-use crate::leblanc::core::internal::methods::builtins::builtin_print::_BUILTIN_PRINT_METHOD_;
+use crate::leblanc::core::internal::methods::builtins::builtin_print::{_BUILTIN_PRINT_METHOD_, _BUILTIN_PRINT_OBJECT_};
+use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::partial_function::PartialFunction;
 
 pub mod builtin_print;
@@ -17,6 +18,11 @@ pub enum BuiltinFunctions {
 
 pub fn create_partial_functions() -> Vec<PartialFunction> {
     return vec![PartialFunction::from_method(_BUILTIN_PRINT_METHOD_())]
+}
+
+pub fn create_builtin_function_objects() -> Vec<Arc<Mutex<LeBlancObject>>> {
+    unsafe { builtin_print::setup_timings(); }
+    return vec![Arc::new(Mutex::new(_BUILTIN_PRINT_OBJECT_()))];
 }
 
 impl Hexable for BuiltinFunctions {

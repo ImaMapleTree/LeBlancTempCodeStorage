@@ -1,20 +1,13 @@
 using rust;
 
 func main() {
-    int a = 100;
-    int b = 3;
-
-    test(a, b);
-    print(a);
-    print(b);
-
-
-    function g = test;
-    g.call(a, b);
-
+    print(rust.returns_three());
 }
 
+func test(int a, int b) returns int {
+    return a + b;
+}
 
-func test(int a, int b) {
-    a += b;
+func test(string s) returns string {
+    return "goodbye world";
 }

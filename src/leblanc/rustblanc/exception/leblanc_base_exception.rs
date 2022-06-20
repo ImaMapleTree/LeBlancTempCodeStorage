@@ -50,7 +50,7 @@ impl LeblancBaseException {
         eprintln!("{}", self.message);
     }
 
-    pub fn code(&self) -> u32 { self.code() }
+    pub fn code(&self) -> u32 { self.error_code as u32 }
 }
 
 #[derive(Debug)]

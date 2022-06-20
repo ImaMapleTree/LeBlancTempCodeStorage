@@ -1,9 +1,9 @@
 use std::fs::File;
-use crate::{BraceOpen, CompileVocab, create_stack, create_tokens, error_report, leblanc, Fabric, Semicolon, TypedToken};
+use crate::{BraceOpen, CompileVocab, create_stack, create_tokens, error_report, Fabric, Semicolon, TypedToken};
 use crate::leblanc::compiler::char_reader::CharReader;
 use crate::leblanc::compiler::compile_types::CompilationMode;
 use crate::leblanc::compiler::compile_types::full_compiler::write_bytecode;
-use crate::leblanc::compiler::compile_types::stub_compiler::{create_stub_dump, read_from_stub_dump};
+use crate::leblanc::compiler::compile_types::stub_compiler::read_from_stub_dump;
 use crate::leblanc::compiler::compiler_util::flatmap_node_tokens;
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
 use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::BraceClosed;
@@ -30,7 +30,9 @@ pub fn compile(string: String, mode: CompilationMode) -> Fabric {
     else if fabric.is_null() {
         let f = File::open(string).unwrap();
         let mut cr = CharReader::new(f);
+        println!("Spin in");
         fabric = partial_spin(&mut cr, mode);
+        println!("Spin out");
     }
 
     if mode == CompilationMode::StubFile {
@@ -39,8 +41,8 @@ pub fn compile(string: String, mode: CompilationMode) -> Fabric {
         }
         return fabric;
     } else {
-        let tokens = create_execution_stack(&mut fabric);
 
+        let tokens = create_execution_stack(&mut fabric);
 
 
         write_bytecode(tokens, &mut fabric, mode);
@@ -55,7 +57,7 @@ pub fn compile(string: String, mode: CompilationMode) -> Fabric {
 // 😎 (Sunglasses emoji)
 pub fn partial_spin(cr: &mut CharReader, mode: CompilationMode) -> Fabric {
     let mut fabric = create_tokens(cr, mode);
-
+    println!("Done creating tokens");
 
     if DEBUG {
         println!("imports: {:?}", fabric.imports());

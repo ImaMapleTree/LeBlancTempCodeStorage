@@ -1,7 +1,7 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use filepath::FilePath;
-use crate::{BOUNDARY, CompileVocab, LeBlancType, Fabric, TypedToken};
+use crate::{BOUNDARY, CompileVocab, Fabric, TypedToken};
 use crate::CompileVocab::{CLASS, CONSTANT, CONSTRUCTOR, EXTENSION, FUNCTION, KEYWORD, MODULE, OPERATOR, SPECIAL, TYPE, UNKNOWN, VARIABLE};
 use crate::leblanc::compiler::identifier::token::Token;
 use crate::leblanc::compiler::lang::leblanc_keywords::keyword_value;
@@ -14,30 +14,29 @@ use crate::leblanc::rustblanc::relationship::Node;
 use crate::LeBlancType::Class;
 
 pub fn create_stub_dump(fabric: &mut Fabric) {
-    let mut output = fabric.imports().join("|") + "\n";
+    let mut output = fabric.imports().iter().map(|i| i.source.clone()).collect::<Vec<String>>().join("|") + "\n";
 
-    let mut file = File::create(fabric.path.replace(".lb", ".lbsf"));
+    let file = File::create(fabric.path.replace(".lb", ".lbsf"));
     println!("File: {:?}", file);
     fabric.tokens().iter().for_each(|t| output += &(t.value.as_stub_string() + "\n"));
     file.unwrap().write_all(output.as_bytes()).unwrap();
 }
 
-pub fn read_from_stub_dump(mut file: File) -> Fabric {
+pub fn read_from_stub_dump(file: File) -> Fabric {
     let path = file.path().unwrap().to_str().unwrap().to_string();
-    let file_path = file.path().unwrap().to_str().unwrap().to_string();
     let file_reader = BufReader::new(file);
     let mut tokens = vec![];
 
     let mut lines = file_reader.lines();
     let imports = lines.next().unwrap().unwrap();
-    let imports = imports.split("|").map(|s| s.to_string()).collect::<Vec<String>>();
+    //let imports = imports.split("|").map(|s| s.to_string()).collect::<Vec<String>>();
 
 
     for line in lines {
         tokens.append_item(Node::new(parse_stub_token(line.unwrap())));
     }
 
-    return Fabric::new(path, tokens, imports, vec![]);
+    return Fabric::new(path, tokens, vec![], vec![]);
 }
 
 pub fn parse_stub_token(line: String) -> TypedToken {
@@ -104,7 +103,6 @@ fn match_leblanc_type(vocab_string: String) -> CompileVocab {
         "constant" => CONSTANT(type_value(&second_vocab)),
         "variable" => VARIABLE(type_value(&second_vocab)),
         "constructor" => CONSTRUCTOR(type_value(&second_vocab)),
-        "extension" => EXTENSION(type_value(&second_vocab)),
         "class" => CLASS(type_value(&second_vocab)),
         "type" => TYPE(type_value(&second_vocab)),
         "unknown" => UNKNOWN(type_value(&second_vocab)),

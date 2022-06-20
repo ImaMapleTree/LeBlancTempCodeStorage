@@ -182,6 +182,23 @@ impl Hexable for usize {
     }
 }
 
+impl Hexable for isize {
+    fn to_hex(&self, bytes: usize) -> Hexadecimal {
+        let usize_bytes = (isize::BITS/8) as usize;
+        let mut bytes = bytes;
+        if bytes as usize > usize_bytes {
+            bytes = usize_bytes;
+        }
+        let bytes = bytes as usize;
+        encode_hex(&self.to_be_bytes()[usize_bytes-bytes..usize_bytes])
+    }
+
+    fn from_hex(hex: &Hexadecimal) -> Self {
+        let bytes = decode_hex(hex).unwrap();
+        isize::from_be_bytes(<[u8; 8]>::try_from(bytes).unwrap())
+    }
+}
+
 impl Hexable for bool {
     fn to_hex(&self, bytes: usize) -> Hexadecimal {
         if *self {

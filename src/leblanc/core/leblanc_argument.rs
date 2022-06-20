@@ -1,9 +1,9 @@
-use std::collections::{BTreeSet, HashSet};
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
 
-#[derive(Eq, Hash, PartialEq, Clone, Debug)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub struct LeBlancArgument {
     pub typing: LeBlancType,
     pub position: u32,
@@ -44,5 +44,17 @@ pub fn number_argset() -> Vec<LeBlancArgument> {
 impl Display for LeBlancArgument {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}: {}", self.position, self.typing)
+    }
+}
+
+impl Hash for LeBlancArgument {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.position.hash(state);
+        match self.typing {
+            LeBlancType::Flex => {},
+            _ => self.typing.hash(state)
+        }
+        self.variable.hash(state);
+        self.position.hash(state);
     }
 }

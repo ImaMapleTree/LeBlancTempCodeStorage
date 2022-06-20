@@ -1,14 +1,14 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, Reflect};
+use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, Reflect, Stringify};
 use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::core::native_types::string_type::leblanc_object_string;
 
 pub fn _internal_field_(_self: Arc<Mutex<LeBlancObject>>, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
-    let string: String = unsafe {(arguments[0].lock().unwrap().reflect().downcast_ref_unchecked::<String>())}.clone();
+    let string: String = unsafe {arguments[0].lock().unwrap().reflect().downcast_ref_unchecked::<String>()}.clone();
 
     return Arc::new(Mutex::new(_self.lock().unwrap().members.get(string.as_str()).unwrap_or(&LeBlancObject::null()).clone()));
 }
@@ -43,4 +43,8 @@ pub fn _internal_expose_(_self: Arc<Mutex<LeBlancObject>>, arguments: &mut [Arc<
 
 
     return Arc::new(Mutex::new(expose_object));
+}
+
+pub fn _internal_to_string_(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+    _self.to_string().create_mutex()
 }

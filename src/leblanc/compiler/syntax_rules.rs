@@ -15,8 +15,6 @@ use crate::leblanc::compiler::compiler_util::flatmap_node_tokens;
 use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab;
 use crate::leblanc::compiler::lang::leblanc_operators::LBOperator::Assign;
 use crate::leblanc::compiler::symbols::Symbol;
-use crate::leblanc::core::native_types::class_type::ClassMeta;
-use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::core::native_types::LeBlancType::*;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
@@ -66,7 +64,6 @@ impl RuleAnalyzer {
 
     pub fn evaluate_rule1(&self, errors: &mut Vec<ErrorStub>) {
         // RULE 0 Evaluation
-        let t = LeBlancType::Class(0);
         self.open_parenthesis.iter().for_each(|p| errors.append_item(ErrorStub::ImbalancedDelimiter(p.symbol)));
         self.closed_parenthesis.iter().for_each(|p| errors.append_item(ErrorStub::ImbalancedDelimiter(p.symbol)));
     }

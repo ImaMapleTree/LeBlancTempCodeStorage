@@ -1,0 +1,10 @@
+extension StringMethods of string {
+    func replace(Self, string oldChar, string newChar) returns Self {
+
+
+
+    }
+
+
+
+}

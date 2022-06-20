@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 
@@ -6,6 +7,14 @@ pub enum MethodTag {
     Addition,
     Subtraction,
     InPlaceAddition
+}
+
+impl MethodTag {
+    pub fn singleton(&self) -> BTreeSet<MethodTag> {
+        let mut set = BTreeSet::new();
+        set.insert(*self);
+        return set;
+    }
 }
 
 impl Display for MethodTag {

@@ -1,32 +1,23 @@
-use std::any::Any;
-use std::borrow::{BorrowMut, Cow};
 use std::collections::HashMap;
-use std::hash::Hash;
-use std::path::is_separator;
-use std::rc::{Rc, Weak};
-use regex::internal::Input;
 use crate::leblanc::compiler::compiler_util::string_is_in_array;
 use crate::leblanc::compiler::identifier::token::Token;
 use crate::leblanc::compiler::identifier::token_identifier::identify;
 use crate::leblanc::compiler::lang::leblanc_constants::{constant_type, is_constant};
 use crate::leblanc::compiler::lang::leblanc_keywords::{is_keyword, keyword_value, LBKeyword};
-use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{Extension, Func, Of, Using};
-use crate::leblanc::compiler::lang::leblanc_lang::{boundary_value, is_special, special_value, CompileVocab, BoundaryType, FunctionType};
+use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{Extension, Func, Of};
+use crate::leblanc::compiler::lang::leblanc_lang::{boundary_value, is_special, special_value, CompileVocab, FunctionType, ExtensionType};
 use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab::{CLASS, CONSTANT, EXTENSION, FUNCTION, KEYWORD, MODULE, TYPE, UNKNOWN, VARIABLE};
-use crate::leblanc::compiler::lang::leblanc_operators::{is_operator, LBOperator, operator_type};
-use crate::leblanc::compiler::lang::leblanc_operators::LBOperator::{Not, Plus};
+use crate::leblanc::compiler::lang::leblanc_operators::{is_operator, operator_type};
 use crate::leblanc::compiler::fabric::Fabric;
-use crate::leblanc::compiler::symbols::Symbol;
 use crate::leblanc::compiler::syntax_rules::RuleAnalyzer;
 use crate::leblanc::compiler::identifier::token_typer::GlobalScopeMarker::*;
 use crate::leblanc::compiler::identifier::typed_token::TypedToken;
-use crate::leblanc::core::native_types::LeBlancType::{Class, Flex};
+use crate::leblanc::core::native_types::LeBlancType::Class;
 use crate::leblanc::core::native_types::{is_native_type, type_value};
-use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
-use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub::FlexReassignment;
-use crate::leblanc::rustblanc::relationship::Node;
 use crate::{CompilationMode, compile, LeBlancType};
+use crate::leblanc::compiler::import::{Import, ImportType};
+use crate::leblanc::compiler::lang::leblanc_lang::ExtensionType::ExtensionTypeImport;
 use crate::leblanc::rustblanc::Appendable;
 
 
@@ -34,7 +25,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
     let UNKNOWN_TYPE: LeBlancType = Class(0);
     let UNKNOWN_VOCAB: CompileVocab = UNKNOWN(UNKNOWN_TYPE);
 
-    let mut imports: Vec<String> = Vec::new();
+    let mut imports: Vec<Import> = Vec::new();
 
     let mut typed_tokens: Vec<TypedToken> = Vec::new();
     let mut type_map: HashMap<String, Vec<Vec<CompileVocab>>> = HashMap::new();
@@ -44,12 +35,13 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
     let mut scope_value = 0;
     let mut class_scope: u32 = 0;
     let mut global_scope = NotGlobal;
-    let mut lock_global_scope = false;
+    let lock_global_scope = false;
 
     let mut token = Token::empty();
     let mut next_token = tokens.pop().unwrap_or(Token::empty());
 
-    let follower_types = &["func".to_string(), "Extension".to_string(), "Class".to_string()];
+    let follower_types = &["func".to_string(), "Extension".to_string(), "Class".to_string(), "ext".to_string(),
+        "from".to_string(), "of".to_string(), "using".to_string()];
 
     //Code Analysis
     let mut analysis = RuleAnalyzer::new();
@@ -114,28 +106,55 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                     _ => {}
                 }
                 CompileVocab::BOUNDARY(boundary_value(first_symbol.char()))
-            } else if typed_tokens.len() > 0 && typed_tokens[typed_tokens.len() - 1].as_string().as_str() == "using" {
-                let index = imports.iter().position(|r| r == &token_string);
-                let index = match index {
+            } else if typed_tokens.len() > 0 && typed_tokens[typed_tokens.len() - 1].lang_type() == KEYWORD(Extension){
+                let import = Import::new(&token_string, &token_string, ImportType::Extension);
+                let index = match imports.iter().cloned().position(|i| i == import) {
+                    Some(position) => position,
                     None => {
-                        let mut import_name = token_string.clone();
-                        if !import_name.ends_with(".lb") {
-                            import_name += ".lb";
-                        }
-                        imports.append_item( import_name);
+                        imports.push(import);
                         imports.len() - 1
                     }
-                    Some(position) => position
                 };
-                MODULE(index as u64)
+                EXTENSION(ExtensionTypeImport(index as u32))
             } else if typed_tokens.len() > 0 && string_is_in_array(&typed_tokens[typed_tokens.len() - 1].as_string(), follower_types) {
                 let last_token_type = typed_tokens[typed_tokens.len() - 1].lang_type();
                 if let KEYWORD(value) = last_token_type {
                     match value {
+                        LBKeyword::Using => {
+                            if !(token_string == "ext" || token_string == "extension") {
+                                let import = Import::new(&token_string, &token_string, ImportType::File);
+                                let index = match imports.iter().cloned().position(|i| i == import) {
+                                    Some(position) => position,
+                                    None => {
+                                        imports.push(import);
+                                        imports.len() - 1
+                                    }
+                                };
+                                MODULE(index as u64)
+                            } else {
+                                EXTENSION(ExtensionTypeImport(0))
+                            }
+                        }
                         Func => {
                             FUNCTION(FunctionType::Header)
-                        },
-                        Extension => EXTENSION(UNKNOWN_TYPE),
+                        }
+                        LBKeyword::From => {
+                            let incorrect_import = imports.pop().unwrap();
+                            let import_type = if incorrect_import.import_type == ImportType::Extension { ImportType::Extension } else { ImportType::SubImport };
+                            let import = Import::new(&incorrect_import.name, &token_string, import_type);
+                            let index = match imports.iter().cloned().position(|i| i == import) {
+                                Some(position) => position,
+                                None => {
+                                    imports.push(import);
+                                    imports.len() - 1
+                                }
+                            };
+                            if import_type == ImportType::Extension {
+                                EXTENSION(ExtensionTypeImport(index as u32))
+                            } else {
+                                MODULE(index as u64)
+                            }
+                        }
                         LBKeyword::Class => {
                             new_class_counter += 1;
                             CLASS(Class(0))
@@ -196,9 +215,9 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
         }
 
         if type_map.contains_key(token_string.as_str()) {
-            let mut nested_vec: &mut Vec<Vec<CompileVocab>> = type_map.get_mut(token_string.as_str()).unwrap();
+            let nested_vec: &mut Vec<Vec<CompileVocab>> = type_map.get_mut(token_string.as_str()).unwrap();
             if nested_vec.len() > scope_value {
-                let mut type_vec: &mut Vec<CompileVocab> = nested_vec.get_mut(scope_value).unwrap();
+                let type_vec: &mut Vec<CompileVocab> = nested_vec.get_mut(scope_value).unwrap();
                 type_vec.append_item( vocab);
             } else {
                 for i in 0..scope_value - nested_vec.len() {
@@ -225,7 +244,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
             }
         }
 
-        let mut typed_token = TypedToken::new(token, vocab, scope_value as i32, global_scope != NotGlobal);
+        let typed_token = TypedToken::new(token, vocab, scope_value as i32, global_scope != NotGlobal);
 
         scope_value = temp_scope_value;
 
@@ -271,10 +290,16 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
     }
 
     let mut import_tokens = vec![];
-    imports.iter().for_each(|import| import_tokens.append(compile(import.clone(), CompilationMode::StubFile).tokens()));
+    imports.iter_mut().for_each(|import| {
+        if !import.source.contains(".") {
+            import.source = import.source.clone() + ".lb";
+        }
+        import_tokens.append(compile(import.source.clone(), CompilationMode::StubFile).tokens())
+    });
 
+    println!("Identifying!");
     let mut node_tokens = identify(typed_tokens, import_tokens, &mut type_map, &mut errors, mode);
-
+    println!("Identifying!2");
 
 
     analysis.evaluate(&mut errors, &mut node_tokens);

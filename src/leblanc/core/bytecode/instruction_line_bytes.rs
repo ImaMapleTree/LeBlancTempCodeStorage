@@ -58,8 +58,8 @@ impl InstructionBytecode {
     }
 
     pub fn remove(&mut self) -> (Hexadecimal, Hexadecimal) {
-        let mut instruction = self.instructions.pop().unwrap();
-        let mut arg = self.instruction_arguments.pop().unwrap();
+        let instruction = self.instructions.pop().unwrap();
+        let arg = self.instruction_arguments.pop().unwrap();
         return (instruction, arg);
     }
 }

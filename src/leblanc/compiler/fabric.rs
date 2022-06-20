@@ -1,21 +1,20 @@
-use std::rc::Weak;
-use crate::leblanc::compiler::identifier::token::Token;
+use crate::leblanc::compiler::import::Import;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::leblanc::rustblanc::relationship::Node;
-use crate::{CompileVocab, TypedToken};
+use crate::TypedToken;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 
 #[derive(Debug)]
 pub struct Fabric {
     pub path: String,
     tokens: Vec<Node<TypedToken>>,
-    imports: Vec<String>,
+    imports: Vec<Import>,
     errors: Vec<ErrorStub>,
     pub bytecode: Hexadecimal
 }
 
 impl Fabric {
-    pub fn new(path: String, tokens: Vec<Node<TypedToken>>, imports: Vec<String>, errors: Vec<ErrorStub>) -> Fabric {
+    pub fn new(path: String, tokens: Vec<Node<TypedToken>>, imports: Vec<Import>, errors: Vec<ErrorStub>) -> Fabric {
         return Fabric {
             path,
             tokens,
@@ -25,7 +24,7 @@ impl Fabric {
         }
     }
 
-    pub fn no_path(tokens: Vec<Node<TypedToken>>, imports: Vec<String>, errors: Vec<ErrorStub>) -> Fabric {
+    pub fn no_path(tokens: Vec<Node<TypedToken>>, imports: Vec<Import>, errors: Vec<ErrorStub>) -> Fabric {
         return Fabric::new("".to_string(), tokens, imports, errors);
     }
 
@@ -33,7 +32,7 @@ impl Fabric {
 
     pub fn errors(&self) -> &Vec<ErrorStub> { &self.errors }
 
-    pub fn imports(&self) -> &Vec<String> { &self.imports }
+    pub fn imports(&self) -> &Vec<Import> { &self.imports }
 
     pub fn is_null(&self) -> bool { self.tokens.is_empty() }
 

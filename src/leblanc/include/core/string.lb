@@ -1,0 +1,9 @@
+extension string_methods of string {
+    func replace(Self, string target, string replacement) returns string {
+        Self.replace(target, replacement, -1);
+    }
+
+    func replace(Self, string target, string replacement, int number) returns string {
+
+    }
+}

@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
 use crate::leblanc::compiler::symbols::Symbol;
 use crate::leblanc::rustblanc::exception::leblanc_base_exception::LeblancBaseException;

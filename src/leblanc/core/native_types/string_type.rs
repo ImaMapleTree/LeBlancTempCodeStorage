@@ -1,10 +1,12 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
+use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 
 pub fn leblanc_object_string(string: String) -> LeBlancObject {
-    let base_methods = HashSet::new();
+    let base_methods = base_methods();
 
 
     return LeBlancObject::new(
@@ -14,4 +16,11 @@ pub fn leblanc_object_string(string: String) -> LeBlancObject {
         HashMap::new(),
         VariableContext::empty(),
     )
+}
+
+impl ToLeblanc for String {
+    fn create(&self) -> LeBlancObject {
+        return leblanc_object_string(self.clone());
+    }
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { return Arc::new(Mutex::new(self.create())) }
 }

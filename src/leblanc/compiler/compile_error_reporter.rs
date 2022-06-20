@@ -1,8 +1,7 @@
 use std::process::exit;
 use regex::Regex;
 use crate::leblanc::compiler::char_reader::CharReader;
-use crate::leblanc::compiler::compiler_util::{CharMarker, line_strip_and_join, strip_start_of_line};
-use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab::{CONSTRUCTOR, FUNCTION};
+use crate::leblanc::compiler::compiler_util::strip_start_of_line;
 use crate::leblanc::compiler::identifier::typed_token::TypedToken;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
@@ -19,7 +18,7 @@ fn create_dashes_to_symbol(number: u32, symbol_number: u32, string: String) -> S
     } else {
         0
     };
-    for i in 0..real_number {
+    for _i in 0..real_number {
         s += "-";
     }
 

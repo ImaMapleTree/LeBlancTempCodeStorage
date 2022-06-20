@@ -1,0 +1,4 @@
+extension base_methods of class {
+    func to_string(Self) returns string {}
+    func expose(Self) returns class;
+}

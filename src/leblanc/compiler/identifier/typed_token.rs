@@ -1,15 +1,7 @@
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
-use std::intrinsics::size_of;
-use std::mem;
-use std::ops::Deref;
-use std::ptr::null;
-use std::rc::{Rc, Weak};
 use crate::leblanc::compiler::identifier::token::Token;
 use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab;
-use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Debug, Eq)]
@@ -107,7 +99,7 @@ impl TypedToken {
 
     pub fn as_stub_string(&self) -> String {
         let stub_string =  &self.base.line_number().to_string();
-        let mut symbol_string = self.base.first_symbol_or_empty().symbol_number().to_string() + "|" + &self.as_string();
+        let symbol_string = self.base.first_symbol_or_empty().symbol_number().to_string() + "|" + &self.as_string();
         let comp_type_string = self.lang_type.to_string();
         let scope_string = self.scope.to_string();
         let global_string = if self.global {

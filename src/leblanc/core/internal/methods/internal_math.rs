@@ -1,16 +1,11 @@
-use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
-use serde_value::{to_value, Value};
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, Reflect};
 use crate::leblanc::core::native_types::base_type::ToLeblanc;
 
 pub fn _internal_add_number_(_self: Arc<Mutex<LeBlancObject>>, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
-    let n1: i64 = unsafe {*(_self.reflect().downcast_ref_unchecked())};
-    let n2: i64 = unsafe {*(arguments[0].lock().unwrap().reflect().downcast_ref_unchecked())};
-
-    let result = n1 + n2;
-
-    return Arc::new(Mutex::new(result.create()));
+    let n1: i128 = _self.lock().unwrap().data.as_i128();
+    let n2: i128  = arguments[0].lock().unwrap().data.as_i128();
+    return Arc::new(Mutex::new((n1 + n2).create()));
 }
 
 pub fn _internal_add_double_(_self: Arc<Mutex<LeBlancObject>>, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {

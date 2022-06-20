@@ -1,11 +1,7 @@
 use core::str::FromStr;
-use std::any::Any;
 use std::fmt::{Display, Formatter};
-use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::LeBlancType::*;
 
-use strum_macros::EnumVariantNames;
-use strum::VariantNames;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
 
@@ -22,7 +18,8 @@ pub mod double_type;
 pub mod float_type;
 pub mod short_type;
 pub mod class_type;
-pub mod function_type;
+pub mod char_type;
+pub mod attributes;
 
 static VARIANTS: [&str; 16] = ["flex", "char", "short", "int", "int64", "in128", "arch", "float", "double", "boolean", "string", "block", "function", "module", "class", "dynamic"];
 
@@ -135,6 +132,10 @@ impl LeBlancType {
         VARIANTS.iter().position(|&s| s == self.as_str()).unwrap() as u32
     }
 
+    pub fn from_enum_id(id: u16) -> LeBlancType {
+        type_value(VARIANTS[id as usize])
+    }
+
     pub fn transform(&self, string: std::string::String) -> Hexadecimal {
         return match self {
             Char => string.chars().next().unwrap().to_hex(128),
@@ -146,7 +147,7 @@ impl LeBlancType {
             Float => f32::from_str(string.as_str()).unwrap().to_hex(128),
             Double => f64::from_str(string.as_str()).unwrap().to_hex(128),
             Boolean => bool::from_str(string.as_str()).unwrap().to_hex(128),
-            String => string.to_hex(128),
+            String => string[1..string.len()-1].to_string().to_hex(128),
             _ => string.to_hex(128)
         }
     }

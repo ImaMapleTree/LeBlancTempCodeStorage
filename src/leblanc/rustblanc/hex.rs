@@ -26,7 +26,7 @@ impl Hexadecimal {
         }
     }
 
-    pub fn from_string(mut string: String) -> Hexadecimal {
+    pub fn from_string(string: String) -> Hexadecimal {
         let mut hex_vec = vec![];
         for mut i in 0..string.len()/2 {
             hex_vec.push((string[(i*2)..(i*2)+2].to_string()));
@@ -89,6 +89,14 @@ impl Hexadecimal {
         for i in 0..bytes-self.bytes.len() {
             self.bytes.insert(0, "00".to_string());
         }
+    }
+
+    pub fn to_new_length(&self, bytes: usize) -> Hexadecimal {
+        let mut new_bytes = self.clone();
+        for i in 0..bytes-self.bytes.len() {
+            new_bytes.bytes.insert(0, "00".to_string());
+        }
+        return new_bytes;
     }
 
     pub fn bytes_at(&mut self, index: usize, size: usize) -> Hexadecimal {

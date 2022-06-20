@@ -155,4 +155,11 @@ impl ByteRestriction {
         self.segments.pop()
     }
 
+    pub fn remove(&mut self, index: usize) -> Option<Hexadecimal> {
+        if !self.repeated {
+            return None;
+        }
+        Some(self.segments.remove(index))
+    }
+
 }

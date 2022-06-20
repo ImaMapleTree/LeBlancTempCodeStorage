@@ -1,26 +1,26 @@
-use core::borrow::BorrowMut;
-use core::ffi::c_float;
-use core::num::dec2flt::float::RawFloat;
-use core::num::dec2flt::lemire::compute_float;
-use std::any::{Any, TypeId};
+use std::any::Any;
 use std::collections::{HashMap, HashSet};
-use std::fmt::{Debug, Display, Formatter, write};
-use std::sync::{Arc, Mutex, Weak};
-use serde_value::{to_value, Value};
+use std::fmt::{Debug, Display, Formatter};
+use std::hash::Hasher;
+use std::sync::{Arc, Mutex};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
-use crate::leblanc::core::method_handler::MethodHandle;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::method::Method;
-use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::module::Module;
 use crate::leblanc::core::native_types::block_type::NativeBlock;
 use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
 
+static mut NULL: Option<Arc<Mutex<LeBlancObject>>> = None;
+
+static mut ERROR: Option<Arc<Mutex<LeBlancObject>>> = None;
+
+static mut NO_ARGS: [Arc<Mutex<LeBlancObject>>; 0] = [];
 
 pub trait Callable {
     fn call(&mut self, method_name: &str, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>;
+    fn call_name(&mut self, method_name: &str) -> Arc<Mutex<LeBlancObject>>;
 }
 
 pub trait Reflect {
@@ -31,13 +31,13 @@ pub trait Reflect {
 pub struct LeBlancObject {
     pub data: LeBlancObjectData,
     pub(crate) typing: LeBlancType,
-    pub methods: HashSet<Method>,
+    pub methods: Arc<HashSet<Method>>,
     pub members: HashMap<String, LeBlancObject>,
     pub context: VariableContext
 }
 
 impl LeBlancObject {
-    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: HashSet<Method>, members: HashMap<String, LeBlancObject>, context: VariableContext) -> LeBlancObject {
+    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<HashSet<Method>>, members: HashMap<String, LeBlancObject>, context: VariableContext) -> LeBlancObject {
         return LeBlancObject {data, typing, methods, members, context};
     }
 
@@ -48,9 +48,23 @@ impl LeBlancObject {
         return LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Class(0),
-            methods: HashSet::new(),
+            methods: Arc::new(HashSet::new()),
             members: HashMap::new(),
             context: VariableContext::empty()
+        }
+    }
+
+    pub fn unsafe_null() -> Arc<Mutex<LeBlancObject>> {
+        return unsafe {
+            match NULL.as_ref() {
+                None => {
+                    NULL = Some(Arc::new(Mutex::new(LeBlancObject::null())));
+                    NULL.as_ref().unwrap().clone()
+                }
+                Some(null) => {
+                    null.clone()
+                }
+            }
         }
     }
 
@@ -58,9 +72,23 @@ impl LeBlancObject {
         return LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Exception,
-            methods: HashSet::new(),
+            methods: Arc::new(HashSet::new()),
             members: HashMap::new(),
             context: VariableContext::empty()
+        }
+    }
+
+    pub fn unsafe_error() -> Arc<Mutex<LeBlancObject>> {
+        return unsafe {
+            match ERROR.as_ref() {
+                None => {
+                    ERROR = Some(Arc::new(Mutex::new(LeBlancObject::error())));
+                    ERROR.as_ref().unwrap().clone()
+                }
+                Some(error) => {
+                    error.clone()
+                }
+            }
         }
     }
 
@@ -105,6 +133,16 @@ impl LeBlancObject {
 
     pub fn to_leblanc_arg(&self, position: u32) -> LeBlancArgument {
         return LeBlancArgument::default(self.typing.clone(), position);
+    }
+
+    pub fn _clone(&self) -> LeBlancObject {
+        return LeBlancObject {
+            data: self.data.clone(),
+            typing: self.typing,
+            methods: self.methods.clone(),
+            members: self.members.clone(),
+            context: self.context.clone()
+        }
     }
 }
 
@@ -156,9 +194,8 @@ impl Reflect for Arc<Mutex<LeBlancObject>> {
     }
 }
 
-pub fn passed_args_to_types(mut args: Vec<Arc<Mutex<LeBlancObject>>>) -> Vec<LeBlancArgument> {
+pub fn passed_args_to_types(args: &Vec<Arc<Mutex<LeBlancObject>>>) -> Vec<LeBlancArgument> {
     let mut arg_types = Vec::new();
-    let mut i = 0;
     for i in 0..args.len() {
         arg_types.append_item( args[i].lock().unwrap().to_leblanc_arg(i as u32));
     }
@@ -194,14 +231,55 @@ impl Display for LeBlancObjectData {
 
 impl Callable for Arc<Mutex<LeBlancObject>> {
     fn call(&mut self, method_name: &str, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
-        let mut method = self.lock().unwrap().methods.iter().cloned().filter(|m| {
-            m.matches(method_name.to_string(), passed_args_to_types(arguments.to_vec()))
-        }).next();
-        println!("Method: {:#?}", method);
+        let argument_vec = arguments.to_vec();
+        let args = passed_args_to_types(&argument_vec);
+
+
+        let self_clone = Arc::clone(self);
+        let method = self_clone.lock().unwrap().methods.iter().filter(|m| {
+            m.matches(method_name.to_string(), &args)
+        }).next().cloned();
         if method.is_none() {
             return Arc::new(Mutex::new(LeBlancObject::error()));
         }
         return method.unwrap().run( self.clone(), arguments);
     }
 
+    fn call_name(&mut self, method_name: &str) -> Arc<Mutex<LeBlancObject>> {
+        let handle = self.lock().unwrap().methods.iter().find(|m| m.context.name == method_name).unwrap().handle;
+        unsafe { handle(self.clone(), &mut NO_ARGS) }
+    }
+}
+
+pub trait Stringify {
+    fn to_string(&self) -> String;
+}
+
+impl Stringify for Arc<Mutex<LeBlancObject>> {
+    fn to_string(&self) -> String {
+        self.lock().unwrap().data.to_string()
+    }
+}
+
+impl LeBlancObjectData {
+    pub fn retrieve_self_as_function(&mut self) -> Option<&mut Method> {
+        return match self {
+            LeBlancObjectData::Function(function) => Some(function),
+            _ => None
+        }
+    }
+    pub fn as_i128(&mut self) -> i128 {
+        return match self {
+            LeBlancObjectData::Char(item) => (*item).to_digit(10).unwrap() as i128,
+            LeBlancObjectData::Short(item) => *item as i128,
+            LeBlancObjectData::Int(item) => *item as i128,
+            LeBlancObjectData::Int64(item) => *item as i128,
+            LeBlancObjectData::Int128(item) => *item as i128,
+            LeBlancObjectData::Arch(item) => *item as i128,
+            LeBlancObjectData::Float(item) => *item as i128,
+            LeBlancObjectData::Double(item) => *item as i128,
+            LeBlancObjectData::Boolean(item) => *item as i128,
+            _ => 0
+        }
+    }
 }

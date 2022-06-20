@@ -1,12 +1,9 @@
-use std::ops::Index;
-use std::str::FromStr;
 use strum_macros::EnumVariantNames;
 use strum::VariantNames;
 use crate::leblanc::rustblanc::Hexable;
 use crate::leblanc::rustblanc::utils::{decode_hex, encode_hex};
 use strum::{EnumIter, IntoEnumIterator};
 use crate::{CompileVocab, TypedToken};
-use crate::CompileVocab::KEYWORD;
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
 use crate::leblanc::compiler::lang::leblanc_lang::FunctionType;
 use crate::leblanc::compiler::lang::leblanc_operators::LBOperator;

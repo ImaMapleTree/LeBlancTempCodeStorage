@@ -1,5 +1,4 @@
-use core::slice::{Iter, IterMut};
-use std::iter::Map;
+use core::slice::Iter;
 use crate::leblanc::core::bytecode::byte_limiter::ByteLimit::{Limited, Undefined};
 use crate::leblanc::core::bytecode::byte_limiter::ByteRestriction;
 use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
@@ -54,7 +53,7 @@ impl FileBodyBytecode {
 
 impl ToBytecode for FileBodyBytecode {
     fn generate(&mut self) -> Hexadecimal {
-        let mut functions = self.function_size.join_uncloned(&mut self.function);
+        let functions = self.function_size.join_uncloned(&mut self.function);
         self.total_body_size.consume_bytes(functions.len().to_hex(128)).unwrap();
         let mut body_size = self.total_body_size.bytes();
         body_size.consume(functions);

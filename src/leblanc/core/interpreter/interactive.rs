@@ -41,7 +41,7 @@ fn retrieve_input() -> String {
         final_line = final_line.replace("...", "");
         print!("{}", console);
         std::io::stdout().flush().unwrap();
-        let b1 = std::io::stdin().read_line(&mut line).unwrap();
+        std::io::stdin().read_line(&mut line).unwrap();
         line.pop().unwrap();
         line.lines().map(|l| l.chars()).for_each(|c| c.into_iter().for_each(|ch| dc.check(ch)));
         final_line += &line;

@@ -62,7 +62,7 @@ impl CharReader {
     }
 
     pub fn from_line(line: String) -> CharReader {
-        let mut lines: Vec<String> = line.lines().map(|line| line.to_string()).collect::<Vec<String>>();
+        let lines: Vec<String> = line.lines().map(|line| line.to_string()).collect::<Vec<String>>();
         let file_path = "leblanc.exe".to_string();
         let characters: Vec<char> = line.chars().collect();
         let next_char: char = **characters.get(0).get_or_insert(&'\0');

@@ -1,4 +1,3 @@
-use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::LeBlancType;
 
 pub fn is_constant(string: &str) -> bool { return constant_type(string) != LeBlancType::Class(0) }
