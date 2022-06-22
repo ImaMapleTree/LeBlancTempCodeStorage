@@ -44,7 +44,11 @@ pub fn create_tokens(char_reader: &mut CharReader, mode: CompilationMode) -> Fab
             token.add_symbol(current_symbol)
         } else if token.last_symbol_or_empty().is_end_quote {
             add_token(&mut tokens, token);
-            token = Token::from(current_symbol);
+            if current_symbol.symbol_type == Whitespace {
+                token = Token::empty();
+            } else {
+                token = Token::from(current_symbol);
+            }
         }
         else if token.as_string().starts_with("//") {
             token.add_symbol(current_symbol);
@@ -62,24 +66,30 @@ pub fn create_tokens(char_reader: &mut CharReader, mode: CompilationMode) -> Fab
         }
         // Here we check if the current symbol + next symbol is an operator so that we can with things like "=="
         else if is_operator((current_symbol.as_string() + &next_symbol.as_string()).as_str()) {
-            add_token(&mut tokens, token);
-            token = Token::from(current_symbol);
+            if current_symbol.symbol_type != SymbolType::Alphabetic {
+                add_token(&mut tokens, token);
+                token = Token::from(current_symbol);
+            } else {
+                token.add_symbol(current_symbol);
+            }
         }
         else if is_special((current_symbol.as_string() + &next_symbol.as_string()).as_str()) {
+            println!("Token: {}", (current_symbol.as_string() + &next_symbol.as_string()).as_str());
             add_token(&mut tokens, token);
             token = Token::from(current_symbol);
             let csymbol = next_symbol;
             next_symbol = get_next_symbol(char_reader, current_symbol, &mut quote_marker);
             token.add_symbol(csymbol);
-            if !(token.as_string().starts_with("//") || token.as_string().starts_with("/*")) {
+            next_symbol = get_next_symbol(char_reader, current_symbol, &mut quote_marker);
+            if !(token.as_string().starts_with("//") || token.as_string().starts_with("/*")) && next_symbol.symbol_type != Whitespace{
                 add_token(&mut tokens, token);
                 token = Token::empty();
             }
         }
         // Check if the symbol is a character that counts as an individual token or operator
-        else if current_symbol.is_boundary() || is_operator(current_symbol.as_string().as_str()) {
+        else if current_symbol.is_boundary() || is_operator(current_symbol.as_string().as_str()) || *current_symbol.char() == '.' {
             // If the last token is only an operator then we can add the new operator to it
-            if operator_type(current_symbol.as_string().as_str()) == LBOperator::Attribute && constant_type(token.as_string().as_str()).is_numeric() {
+            if *current_symbol.char() == '.' && constant_type(token.as_string().as_str()).is_numeric() {
                 token.add_symbol(current_symbol);
             }
             else if is_operator(current_symbol.as_string().as_str()) && is_operator(token.as_string().as_str()) {
@@ -169,7 +179,7 @@ fn check_end_quote(ch: char, quote_marker: char) -> bool {
 }
 
 fn add_token(tokens: &mut Vec<Token>, token: Token) {
-    //println!("Adding token: {}", token.as_string());
+    println!("Adding token: {}", token.as_string());
     if !(token.as_string().starts_with("//") || token.as_string().starts_with("/*")) {
         if token.borrow().len() > 0 {
             tokens.push(token);

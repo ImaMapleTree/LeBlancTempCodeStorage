@@ -5,7 +5,7 @@ use crate::leblanc::rustblanc::utils::{decode_hex, encode_hex};
 use strum::{EnumIter, IntoEnumIterator};
 use crate::{CompileVocab, TypedToken};
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
-use crate::leblanc::compiler::lang::leblanc_lang::FunctionType;
+use crate::leblanc::compiler::lang::leblanc_lang::{FunctionType, Specials};
 use crate::leblanc::compiler::lang::leblanc_operators::LBOperator;
 use crate::leblanc::core::interpreter::instructions::InstructionBase::*;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
@@ -15,6 +15,7 @@ use crate::leblanc::rustblanc::hex::Hexadecimal;
 pub enum InstructionBase {
     Zero,
     NotImplemented,
+    Dummy(u32),
     InPlaceAdd,
     BinaryAdd,
     BinarySubtract,
@@ -31,10 +32,12 @@ pub enum InstructionBase {
     BinaryXor,
 
     Equality(u8),
-    Comparator(u8),
+    Comparator_If,
+    Comparator_ElseIf,
+    Comparator_Else,
 
-    For,
-    While,
+    ForLoop,
+    WhileLoop,
 
     LoadConstant,
     LoadLocal,
@@ -44,11 +47,15 @@ pub enum InstructionBase {
     StoreGlobal,
     StoreUndefined,
 
+    CallClassMethod,
     CallFunction,
     Return,
     Cast,
     AttributeAccess,
     AttributeStore,
+
+    QuickList(u16),
+
 
     UseModule,
     MapMatch,
@@ -70,6 +77,11 @@ impl Hexable for InstructionBase {
 }
 
 impl InstructionBase {
+    pub fn to_value(&self) -> u32 {
+        let variants: &[&'static str] = InstructionBase::VARIANTS;
+        (variants.iter().position(|s| s.to_string() == self.to_string()).unwrap() as u32)
+    }
+
     pub fn from_compile_vocab(token: &TypedToken) -> InstructionBase {
         return match token.lang_type() {
             CompileVocab::CONSTANT(_) => LoadConstant,
@@ -80,6 +92,8 @@ impl InstructionBase {
             CompileVocab::FUNCTION(ft) => {
                 if ft == FunctionType::Header {
                     Zero
+                } else if ft == FunctionType::Reference {
+                    LoadFunction
                 } else {
                     CallFunction
                 }
@@ -104,8 +118,10 @@ impl InstructionBase {
                     LBOperator::LShift => BinaryLShift,
                     LBOperator::RShift => BinaryRShift,
                     LBOperator::Match => MapMatch,
+                    LBOperator::Increment => Dummy(1),
                     LBOperator::Cast => Cast,
-                    LBOperator::Attribute => AttributeAccess,
+                    LBOperator::QuickList => QuickList(0),
+                    LBOperator::AssignEach => Zero,
                     LBOperator::NULL => Zero,
                 }
             }
@@ -113,15 +129,21 @@ impl InstructionBase {
                 match keyword {
                     LBKeyword::Using => UseModule,
                     LBKeyword::Return => Return,
-                    LBKeyword::For => For,
-                    LBKeyword::While => While,
-                    LBKeyword::If => Comparator(0),
-                    LBKeyword::ElseIf => Comparator(1),
-                    LBKeyword::Else => Comparator(2),
+                    LBKeyword::For => ForLoop,
+                    LBKeyword::While => WhileLoop,
+                    LBKeyword::If => Comparator_If,
+                    LBKeyword::ElseIf => Comparator_ElseIf,
+                    LBKeyword::Else => Comparator_Else,
                     LBKeyword::Class => NotImplemented,
                     _ => Zero
                 }
             }
+            CompileVocab::SPECIAL(special, val) => {
+                match special {
+                    Specials::RangeMarker => QuickList(val),
+                    _ => Zero
+                }
+            },
             CompileVocab::CONSTRUCTOR(_) => NotImplemented,
             CompileVocab::CLASS(_) => NotImplemented,
             _ => Zero
@@ -146,6 +168,14 @@ impl Instruction {
             instruct,
             arg,
             line_number
+        }
+    }
+
+    pub fn empty() -> Instruction {
+        return Instruction {
+            instruct: InstructionBase::Zero,
+            arg: 0,
+            line_number: 0
         }
     }
 

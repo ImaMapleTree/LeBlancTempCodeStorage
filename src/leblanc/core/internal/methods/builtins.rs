@@ -7,7 +7,7 @@ use strum_macros::EnumVariantNames;
 use strum::VariantNames;
 use crate::leblanc::core::internal::methods::builtins::builtin_print::{_BUILTIN_PRINT_METHOD_, _BUILTIN_PRINT_OBJECT_};
 use crate::leblanc::core::leblanc_object::LeBlancObject;
-use crate::leblanc::core::partial_function::PartialFunction;
+use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
 
 pub mod builtin_print;
 

@@ -5,6 +5,7 @@ pub mod function_bytes;
 pub mod instruction_line_bytes;
 pub mod precompiled;
 pub mod decompiled_constant;
+pub mod extension_bytes;
 
 use crate::leblanc::core::bytecode::file_body::FileBodyBytecode;
 use crate::leblanc::core::bytecode::file_header::FileHeaderBytecode;

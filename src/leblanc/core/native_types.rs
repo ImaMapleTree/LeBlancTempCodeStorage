@@ -1,5 +1,6 @@
 use core::str::FromStr;
 use std::fmt::{Display, Formatter};
+use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::LeBlancType::*;
 
 use crate::leblanc::rustblanc::hex::Hexadecimal;
@@ -20,14 +21,15 @@ pub mod short_type;
 pub mod class_type;
 pub mod char_type;
 pub mod attributes;
+pub mod derived;
 
-static VARIANTS: [&str; 16] = ["flex", "char", "short", "int", "int64", "in128", "arch", "float", "double", "boolean", "string", "block", "function", "module", "class", "dynamic"];
+static VARIANTS: [&str; 17] = ["flex", "Self", "char", "short", "int", "int64", "in128", "arch", "float", "double", "boolean", "string", "block", "function", "module", "class", "dynamic"];
 
 #[derive(Eq, Clone, Copy, Debug, Ord, PartialOrd, Hash)]
 pub enum LeBlancType {
     Class(u32), // User defined class with ID
     Flex,
-    RealFlex, // internal implementation of "flex"
+    SelfType, // internal implementation of "flex"
     Char,
     Short,
     Int,
@@ -42,7 +44,8 @@ pub enum LeBlancType {
     Function,
     Module,
     Dynamic,
-    Exception // internal implementation of "dynamic
+    Exception, // internal implementation of "dynamic
+    Derived(DerivedType)
 }
 
 pub fn is_native_type(string: &str) -> bool { type_value(string) != Class(0) }
@@ -66,6 +69,7 @@ pub fn type_value(string: &str) -> LeBlancType {
         "module" => Module,
         "dynamic" => Dynamic,
         "exception" => Exception,
+        "Self" => SelfType,
         Other => {
             if Other.starts_with("class.") {
                 let class_value = Other[6..].parse::<u32>().unwrap();
@@ -92,6 +96,14 @@ impl LeBlancType {
         }
     }
 
+    pub fn is_native(&self) -> bool {
+        return match self {
+            Class(value) => *value == 0,
+            Derived(_) => false,
+            _ => true
+        }
+    }
+
     pub fn as_str_real(&self) -> std::string::String {
         return match self {
             Class(v) => "class.".to_owned() + &v.to_string(),
@@ -102,7 +114,7 @@ impl LeBlancType {
     pub fn as_str(&self) ->&str {
         return match self {
             Flex => "flex",
-            RealFlex => "flex",
+            SelfType => "Self",
             Char => "char",
             Short => "short",
             Int => "int",
@@ -124,7 +136,12 @@ impl LeBlancType {
                 }
             }
             Dynamic => "dynamic",
-            Exception => "exception"
+            Exception => "exception",
+            Derived(Derive) => {
+                match Derive {
+                    DerivedType::List => "list"
+                }
+            }
         }
     }
 

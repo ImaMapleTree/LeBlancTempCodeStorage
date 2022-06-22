@@ -4,11 +4,11 @@ use crate::leblanc::compiler::symbols::SymbolType::{Alphabetic, ControlCharacter
 #[derive(Copy, Clone, Eq, Hash)]
 pub struct Symbol {
     character: char,
-    pre_whitespace: bool,
-    post_whitespace: bool,
+    pub pre_whitespace: bool,
+    pub post_whitespace: bool,
     pub is_start_quote: bool,
     pub is_end_quote: bool,
-    symbol_type: SymbolType,
+    pub symbol_type: SymbolType,
     symbol_number: u32,
     line_number: u32
 }

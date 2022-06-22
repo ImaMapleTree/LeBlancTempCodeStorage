@@ -10,6 +10,7 @@ pub enum LBOperator {
     Modulo,
     Not,
     Assign,
+    AssignEach,
     Inverse,
     NotEquals,
     Equals,
@@ -20,8 +21,9 @@ pub enum LBOperator {
     LShift,
     RShift,
     Match,
+    QuickList,
+    Increment,
     Cast,
-    Attribute,
     NULL
 }
 
@@ -49,8 +51,10 @@ pub fn operator_type(value: &str) -> LBOperator {
         "<<" => LBOperator::LShift,
         ">>" => LBOperator::RShift,
         "=>" => LBOperator::Match,
-        "." => LBOperator::Attribute,
-        "to" => LBOperator::Cast,
+        "to" => LBOperator::QuickList,
+        "in" => LBOperator::AssignEach,
+        "by" => LBOperator::Increment,
+        "as" => LBOperator::Cast,
         _ => LBOperator::NULL,
     }
 }
@@ -76,8 +80,10 @@ impl Display for LBOperator {
             LBOperator::LShift => "<<",
             LBOperator::RShift => ">>",
             LBOperator::Match => "=>",
-            LBOperator::Cast => "to",
-            LBOperator::Attribute => ".",
+            LBOperator::AssignEach => "in",
+            LBOperator::Increment => "by",
+            LBOperator::QuickList => "to",
+            LBOperator::Cast => "as",
             LBOperator::NULL => "null"
         };
         write!(f, "{}", s)

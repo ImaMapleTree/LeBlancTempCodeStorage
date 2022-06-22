@@ -2,9 +2,9 @@ use crate::{LeBlancType, TypedToken};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Hash)]
 pub struct PartialFunction {
-    name: String,
+    pub name: String,
     pub args: Vec<LeBlancType>
 }
 

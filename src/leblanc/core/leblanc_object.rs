@@ -1,4 +1,5 @@
 use std::any::Any;
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::Hasher;
@@ -9,6 +10,7 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::module::Module;
 use crate::leblanc::core::native_types::block_type::NativeBlock;
 use crate::leblanc::core::native_types::class_type::ClassMeta;
+use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
 
@@ -27,7 +29,7 @@ pub trait Reflect {
     fn reflect(&self) -> Box<dyn Any + 'static>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LeBlancObject {
     pub data: LeBlancObjectData,
     pub(crate) typing: LeBlancType,
@@ -108,6 +110,13 @@ impl LeBlancObject {
         }
     }
 
+    pub fn copy_data(&mut self, other: &Self) {
+        self.members = other.members.clone();
+        self.methods = other.methods.clone();
+        self.typing = other.typing;
+        self.data = other.data.clone();
+    }
+
     pub fn cast(self, cast: LeBlancType) -> LeBlancObject {
         let object_data = match cast {
             LeBlancType::Char => LeBlancObjectData::Char(unsafe {*self.reflect().downcast_ref_unchecked()}),
@@ -146,7 +155,7 @@ impl LeBlancObject {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum LeBlancObjectData {
     Flex(&'static LeBlancObjectData),
     Char(char),
@@ -164,6 +173,7 @@ pub enum LeBlancObjectData {
     Module(Module),
     Class(ClassMeta), // User defined class with ID
     Dynamic(&'static LeBlancObjectData),
+    List(LeblancList),
     Error,
     Null,
 }
@@ -182,6 +192,7 @@ impl Reflect for LeBlancObject {
             LeBlancObjectData::Boolean(item) => Box::new(item),
             LeBlancObjectData::String(item) => Box::new(item),
             LeBlancObjectData::Function(item) => Box::new(item),
+            LeBlancObjectData::List(item) => Box::new(item),
             _ => Box::new(0),
         };
         return boxed;
@@ -222,6 +233,7 @@ impl Display for LeBlancObjectData {
             LeBlancObjectData::Module(data) => data.to_string(),
             LeBlancObjectData::Class(data) => data.to_string(),
             LeBlancObjectData::Dynamic(data) => data.to_string(),
+            LeBlancObjectData::List(data) => data.to_string(),
             LeBlancObjectData::Error => "error".to_string(),
             LeBlancObjectData::Null => "null".to_string()
         };
@@ -251,6 +263,7 @@ impl Callable for Arc<Mutex<LeBlancObject>> {
     }
 }
 
+
 pub trait Stringify {
     fn to_string(&self) -> String;
 }
@@ -258,6 +271,16 @@ pub trait Stringify {
 impl Stringify for Arc<Mutex<LeBlancObject>> {
     fn to_string(&self) -> String {
         self.lock().unwrap().data.to_string()
+    }
+}
+
+pub trait ArcType {
+    fn leblanc_type(&self) -> LeBlancType;
+}
+
+impl ArcType for Arc<Mutex<LeBlancObject>> {
+    fn leblanc_type(&self) -> LeBlancType {
+        return self.lock().unwrap().typing;
     }
 }
 
@@ -281,5 +304,11 @@ impl LeBlancObjectData {
             LeBlancObjectData::Boolean(item) => *item as i128,
             _ => 0
         }
+    }
+}
+
+impl PartialOrd for LeBlancObject {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        return self.data.partial_cmp(&other.data);
     }
 }

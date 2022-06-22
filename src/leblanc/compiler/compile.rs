@@ -12,10 +12,11 @@ use crate::leblanc::rustblanc::Appendable;
 static DEBUG: bool = false;
 
 pub fn compile(string: String, mode: CompilationMode) -> Fabric {
+    println!("Compiling: {}", string);
     let filesf_name = string.replace(".lb", ".lbsf");
     let filesf = File::open(filesf_name);
     let mut stub_file_exists = false;
-    let mut fabric = Fabric::no_path(vec![], vec![], vec![]);
+    let mut fabric = Fabric::no_path(vec![], vec![], vec![],vec![]);
     if filesf.is_ok() {
         fabric = read_from_stub_dump(filesf.unwrap());
         stub_file_exists = true;
@@ -70,7 +71,7 @@ pub fn partial_spin(cr: &mut CharReader, mode: CompilationMode) -> Fabric {
     println!("Errors: {:?}", fabric.errors());
 
     if fabric.errors().len() > 0 {
-        error_report(cr, &fabric.tokens().iter().cloned().map(|t| t.value.clone()).collect(), fabric.errors());
+        //error_report(cr, &fabric.tokens().iter().cloned().map(|t| t.value.clone()).collect(), fabric.errors());
     }
 
     return fabric;
@@ -93,8 +94,11 @@ pub fn create_execution_stack(fabric: &mut Fabric) -> Vec<TypedToken> {
         .collect::<Vec<_>>();
     boundary_index.insert(0, 0);
     boundary_index.append_item(fabric.tokens().len()-1);
+
+    let stack_print = true;
+
     for i in 0..boundary_index.len()-1 {
-        //println!("-----------");
+        if stack_print {println!("-----------");}
         let mut mini_stack = Vec::new();
         if fabric.tokens()[boundary_index[i]].value.lang_type() == CompileVocab::KEYWORD(LBKeyword::Func) {
             for token in flatmap_node_tokens(&mut fabric.tokens()[boundary_index[i]..boundary_index[i + 1]].to_vec()) { mini_stack.insert(mini_stack.len(), token) }
@@ -102,11 +106,13 @@ pub fn create_execution_stack(fabric: &mut Fabric) -> Vec<TypedToken> {
             create_stack(&mut fabric.tokens()[boundary_index[i]..boundary_index[i + 1]].to_vec(), &mut mini_stack);
             mini_stack.reverse();
         }
-        /*for token in &mini_stack {
-            if token.lang_type().matches("boundary") { /*println!("{:?}", token);*/ } else {
-               println!("{:?}", token);
+        if stack_print {
+            for token in &mini_stack {
+                if token.lang_type().matches("boundary") { println!("{:?}", token); } else {
+                   println!("{:?}", token);
+                }
             }
-        }*/
+        }
         stack.append(&mut mini_stack);
     }
 

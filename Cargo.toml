@@ -1,5 +1,5 @@
 [package]
-name = "hello-rust"
+name = "leblanc"
 version = "0.1.0"
 edition = "2021"
 
@@ -20,6 +20,7 @@ strum_macros = "0.24"
 chrono = "0.4.19"
 hex = "0.4.3"
 num = "0.4.0"
+prettytable-rs = "0.8.0"
 
 [profile.dev]
 opt-level = 1

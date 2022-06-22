@@ -23,8 +23,7 @@ pub unsafe fn print_timings() {
 
 fn _BUILTIN_PRINT_(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
     //let now = Instant::now();
-
-    let result = args[0].call_name("toString");
+    let result = args[0].call_name("to_string");
     //let result = args[0].call("toString", &mut []);
     //unsafe { TIMING.add_timing("toStringCall".to_string(), now.elapsed().as_secs_f64()); }
     //let now = Instant::now();

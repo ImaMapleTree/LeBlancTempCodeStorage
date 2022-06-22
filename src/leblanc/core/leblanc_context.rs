@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, Hash)]
+#[derive(Debug, Hash, PartialEq, PartialOrd)]
 pub struct VariableContext {
     pub name: String,
     pub line_number: u32,
@@ -43,7 +43,7 @@ impl Clone for VariableContext {
     }
 }
 
-#[derive(Debug, Copy, Clone, Hash)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, PartialOrd)]
 pub enum VariableState {
     Global,
     Local,

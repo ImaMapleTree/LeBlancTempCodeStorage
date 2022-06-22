@@ -49,30 +49,30 @@ pub fn internal_method(method: Method) -> LeBlancObject {
 }
 
 pub fn base_to_string_method() -> MethodStore {
-    return MethodStore::no_args("toString".to_string());
+    return MethodStore::no_args("to_string".to_string());
 }
 
-fn base_expose_method() -> MethodStore {
+pub fn base_expose_method() -> MethodStore {
     return MethodStore::no_args("expose".to_string());
 }
 
-fn base_equals_method() -> MethodStore {
+pub fn base_equals_method() -> MethodStore {
     return MethodStore {
         name: "equals".to_string(),
-        arguments: vec![LeBlancArgument::default(LeBlancType::RealFlex, 0)],
+        arguments: vec![LeBlancArgument::default(Flex, 0)],
     }
 }
 
-fn base_clone_method() -> MethodStore {
+pub fn base_clone_method() -> MethodStore {
     return MethodStore::no_args("clone".to_string());
 }
 
-fn base_field_method() -> MethodStore { return MethodStore::new("field".to_string(),
+pub fn base_field_method() -> MethodStore { return MethodStore::new("field".to_string(),
                                                                 vec![LeBlancArgument::default(LeBlancType::String, 0)])}
 
 
 pub fn base_addition_method() -> Method {
-    let method_store = MethodStore::new("add".to_string(), number_argset());
+    let method_store = MethodStore::new("_ADD_".to_string(), number_argset());
     return Method::new(
         method_store,
         _internal_add_number_,

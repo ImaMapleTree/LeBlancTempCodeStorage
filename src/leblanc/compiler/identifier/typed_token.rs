@@ -1,37 +1,9 @@
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
+use crate::leblanc::compiler::compile_types::partial_token::PartialToken;
 use crate::leblanc::compiler::identifier::token::Token;
 use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab;
 use crate::leblanc::core::native_types::LeBlancType;
-
-#[derive(Debug, Eq)]
-pub struct PartialToken {
-    token: String,
-    pub lang_type: CompileVocab
-}
-
-impl PartialToken {
-    pub fn from(token: &TypedToken) -> PartialToken {
-        return PartialToken {
-            token: token.as_string(),
-            lang_type: token.lang_type()
-        }
-    }
-}
-
-impl PartialEq for PartialToken {
-    fn eq(&self, other: &Self) -> bool {
-        if self.token != other.token { return false; }
-        if self.lang_type.to_string() == other.lang_type.to_string() { return true; }
-        return self.lang_type.matches("function") && other.lang_type.matches("function")
-    }
-}
-
-impl Hash for PartialToken {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.token.hash(state);
-    }
-}
 
 #[derive(Debug, PartialEq, Hash, Eq)]
 pub struct TypedToken{
@@ -39,20 +11,22 @@ pub struct TypedToken{
     lang_type: CompileVocab,
     scope: i32,
     a_typing: Vec<Vec<LeBlancType>>,
-    global: bool
+    global: bool,
+    class_member: bool
 }
 
 // line-number | char | symbol-number... | lang_type (0-255) | LeBlancType (0-255) . u32 | amount | LeBlancType
 
 
 impl TypedToken {
-    pub fn new(token: Token, vocab: CompileVocab, scope: i32, global: bool) -> TypedToken {
+    pub fn new(token: Token, vocab: CompileVocab, scope: i32, global: bool, class_member: bool) -> TypedToken {
         return TypedToken {
             base: token,
             lang_type: vocab,
             scope,
             a_typing: vec![vec![], vec![]],
-            global
+            global,
+            class_member
         }
     }
 
@@ -62,7 +36,8 @@ impl TypedToken {
             lang_type: CompileVocab::UNKNOWN(LeBlancType::Class(0)),
             scope: -1,
             a_typing: vec![vec![], vec![]],
-            global: false
+            global: false,
+            class_member: false
         }
     }
 
@@ -77,6 +52,8 @@ impl TypedToken {
     pub fn typing_mut(&mut self) -> &mut Vec<Vec<LeBlancType>> { &mut self.a_typing }
 
     pub fn global(&self) -> bool { self.global }
+
+    pub fn class_member(&self) -> bool {self.class_member}
 
     pub fn as_string(&self) -> String { self.base.as_string() }
 
@@ -107,11 +84,16 @@ impl TypedToken {
         } else {
             "0".to_string()
         };
+        let class_member = if self.class_member {
+            "1".to_string()
+        } else {
+            "0".to_string()
+        };
         let typings = self.a_typing.iter().map(|t| t[1].to_string() + "|").collect::<String>();
 
 
 
-        return stub_string.to_owned() + "|" + &symbol_string.len().to_string() + "|"  + &symbol_string + &comp_type_string + "|" + &scope_string + "|" + &global_string + "|" + &typings + "&&";
+        return stub_string.to_owned() + "|" + &symbol_string.len().to_string() + "|"  + &symbol_string + &comp_type_string + "|" + &scope_string + "|" + &global_string + "|" + &class_member + "|" + &typings + "&&";
     }
 }
 
@@ -128,7 +110,8 @@ impl Clone for TypedToken {
             lang_type: self.lang_type.clone(),
             scope: self.scope,
             a_typing: self.a_typing.clone(),
-            global: self.global
+            global: self.global,
+            class_member: self.class_member
         }
     }
 }

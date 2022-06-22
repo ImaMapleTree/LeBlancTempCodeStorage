@@ -6,6 +6,8 @@
 #![feature(arc_unwrap_or_clone)]
 #![feature(mutex_unlock)]
 #![feature(get_mut_unchecked)]
+#![feature(fn_traits)]
+#![feature(total_cmp)]
 
 extern crate core;
 extern crate alloc;
@@ -43,6 +45,7 @@ fn main() -> io::Result<()> {
     if INTERACTIVE {
         start();
     }
+    let now = Instant::now();
 
 
 
@@ -60,11 +63,10 @@ fn main() -> io::Result<()> {
 
 
     let bc = read_file("test.lb".to_string());
-    let now = Instant::now();
     run(bc);
 
     let elapsed = now.elapsed();
-    println!("Elapsed: {}", elapsed.as_secs_f64());
+    println!("Total Elapsed: {}", elapsed.as_secs_f64());
 
     Ok(())
 }

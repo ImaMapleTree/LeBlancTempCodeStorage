@@ -4,7 +4,7 @@ use std::hash::{Hash, Hasher};
 use std::io::Write;
 use crate::{CompilationMode, CompileVocab, Fabric, LeBlancType, TypedToken};
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
-use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, FunctionType};
+use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, FunctionType, Specials};
 use crate::leblanc::core::bytecode::file_body::FileBodyBytecode;
 use crate::leblanc::core::bytecode::file_header::FileHeaderBytecode;
 use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
@@ -13,7 +13,9 @@ use crate::leblanc::core::bytecode::instruction_line_bytes::InstructionBytecode;
 use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
 use crate::leblanc::core::interpreter::instructions::InstructionBase;
 use crate::leblanc::core::interpreter::instructions::InstructionBase::*;
-use crate::leblanc::core::partial_function::PartialFunction;
+use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
+use crate::leblanc::compiler::identifier::token::Token;
+use crate::leblanc::compiler::symbols::{Symbol, SymbolType};
 use crate::leblanc::rustblanc::{Appendable, AppendCloneable, Hexable};
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 
@@ -42,6 +44,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
 
 
     while !stack.is_empty() {
+        let mut arg_byte = Hexadecimal::from_string("0000".to_string());
         let token_ref = &stack[stack.len()-1];
         if token_ref.token().line_number() != last_line {
             last_line = token_ref.token().line_number();
@@ -55,17 +58,59 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
             instruction_bytes.set_line_number(last_line);
         }
 
+        if token_ref.lang_type() == CompileVocab::KEYWORD(LBKeyword::For) || token_ref.lang_type() == CompileVocab::KEYWORD(LBKeyword::If) || token_ref.lang_type() == CompileVocab::KEYWORD(LBKeyword::ElseIf) || token_ref.lang_type() == CompileVocab::KEYWORD(LBKeyword::Else) {
+            let mut block_opener = 1;
+            let mut inline_counter = 0;
+            let mut i = stack.len()-2;
+            let mut instruction_count = 0;
+            while i > 0 {
+                match &stack[i].lang_type() {
+                    CompileVocab::BOUNDARY(BoundaryType::BraceOpen) => block_opener += 1,
+                    CompileVocab::BOUNDARY(BoundaryType::BraceClosed) => {
+                        block_opener -= 1;
+                        if block_opener == 0 { break;}
+                    }
+                    CompileVocab::SPECIAL(Specials::StackAppend, _) => {
+                        if (block_opener == 0 || block_opener == 1) && instruction_count != 0 { inline_counter += 1; }
+                    }
+                    CompileVocab::BOUNDARY(BoundaryType::Semicolon) => {
+                        inline_counter -= 1;
+                        if inline_counter == 0 { break; }
+                    }
+                    _ => {
+                        let instruction = InstructionBase::from_compile_vocab(&stack[i]);
+                        match instruction {
+                            Dummy(1) => instruction_count -= 1,
+                            Dummy(_) => {}
+                            Zero => {}
+                            NotImplemented => {}
+                            StoreUndefined | StoreLocal | StoreGlobal => {},
+                            QuickList(_) => instruction_count += 2,
+                            CallFunction => instruction_count += 2,
+                            _ => instruction_count += 1
+                        }
+                    }
+                }
+                if i == 0 { break; }
+                i -= 1;
+            }
+            arg_byte = instruction_count.to_hex(2);
+        }
+
 
         if token_ref.lang_type() == CompileVocab::KEYWORD(LBKeyword::Func) {
             functions.push(function);
             function = build_function(&mut stack);
         }
+
+
+
+
         else {
             let token = stack.pop().unwrap();
             last_instruction = instruction;
             instruction = InstructionBase::from_compile_vocab(&token);
 
-            let mut arg_byte = Hexadecimal::from_string("0000".to_string());
             if instruction == StoreUndefined {
                 instruction = match last_instruction {
                     LoadGlobal => StoreGlobal,
@@ -78,6 +123,13 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
                 function.constants.append_clone(&token);
             } else if instruction == LoadLocal {
                 arg_byte = function.variable(token.as_string()).to_hex(2);
+            } else if token.class_member() && instruction == CallFunction {
+                arg_byte = (function.constants.len() as u16).to_hex(2);
+                function.constants.append_clone(&token);
+                instruction_bytes.add_instruction(LoadConstant.to_hex(2), arg_byte);
+                let account_for_self = if *token.typing()[0].get(0).unwrap_or(&LeBlancType::Exception) == LeBlancType::SelfType { 1 } else { 0 }; // If the first type is Self we still count no args
+                arg_byte = ((token.typing()[0].len() - (account_for_self as usize)) as u16).to_hex(2);
+                instruction = CallClassMethod
             } else if instruction == CallFunction {
                 let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(index, p)| *p == PartialFunction::from_token_args(&token)).next();
                 if index_partial.is_none() {
@@ -90,15 +142,64 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
                     instruction_bytes.add_instruction(LoadFunction.to_hex(2), index.to_hex(2));
                     arg_byte = (partial_function.args.len() as u16).to_hex(2);
                 }
+            } else if instruction == LoadFunction {
+                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(index, p)| *p.name == token.as_string()).next();
+                if index_partial.is_none() {
+                    println!("{:#?}", partial_functions);
+                    println!("{:?}", PartialFunction::from_token_args(&token));
+                    panic!("This should be an actual error");
+                } else {
+                    let index = index_partial.as_ref().unwrap().0;
+                    arg_byte = index.to_hex(2);
+                }
+            }
+            else if instruction.to_value() == QuickList(0).to_value() {
+                if last_instruction != Dummy(1) {
+                    let mut token = Token::empty();
+                    token.add_symbol(Symbol::new('1', false, false, false, false, SymbolType::Digit, 0,0));
+                    let temp_arg_byte = (function.constants.len() as u16).to_hex(2);
+                    function.constants.push(TypedToken::new(token, CompileVocab::CONSTANT(LeBlancType::Int), 0, false, false));
+                    instruction_bytes.add_instruction(LoadConstant.to_hex(2), temp_arg_byte);
+                }
+            } else if let Equality(eq) = instruction {
+                arg_byte = (eq as u16).to_hex(2);
             }
 
-            let instruct_byte = instruction.to_hex(2);
 
-            if instruction != Zero {
+
+            let instruct_byte = instruction.to_hex(2);
+            println!("Instruction: {:?} ({}) | Arg: {} << {}", instruction, instruction.to_value(), arg_byte.to_hexable::<u16>(), token.as_string());
+
+            if instruction == Dummy(1) {
+
+            } else if instruction != Zero {
                 instruction_bytes.add_instruction(instruct_byte, arg_byte);
             } else {
                 instruction = last_instruction;
             }
+
+            /*if let QuickList(value) = last_instruction {
+                match value {
+                    82 | 84 => {
+                        let last_var = instruction_bytes.remove();
+                        let last_to = instruction_bytes.remove();
+                        instruction_bytes.add_instruction(last_var.0, last_var.1);
+                        instruction_bytes.add_instruction(last_to.0, last_to.1);
+                        if value == 84 {
+                            instruction = QuickList(82);
+                        }
+                    }
+                    83 => {
+                        let last_var = instruction_bytes.remove();
+                        let last_to = instruction_bytes.remove();
+                        let last_const = instruction_bytes.remove();
+                        instruction_bytes.add_instruction(last_var.0, last_var.1);
+                        instruction_bytes.add_instruction(last_const.0, last_const.1);
+                        instruction_bytes.add_instruction(last_to.0, last_to.1);
+                    }
+                    _ => {}
+                }
+            }*/
         }
 
     }
@@ -119,9 +220,15 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
         let mut function_bytecode = FunctionBytecode::new();
         function_bytecode.set_name(function.name);
         for constant in function.constants {
-            let native_type = constant.lang_type().extract_native_type().clone();
+            let mut constant_string = constant.as_string();
+            let native_type = if constant.lang_type() == CompileVocab::FUNCTION(FunctionType::Call) {
+                constant_string = "\"".to_owned() + &constant_string + "\"";
+                LeBlancType::String
+            } else {
+                constant.lang_type().extract_native_type().clone()
+            };
             //println!("{:?}, {} | {}", constant, native_type, native_type.transform(constant.as_string()));
-            function_bytecode.add_constant(native_type.transform(constant.as_string()), native_type.enum_id() as u16);
+            function_bytecode.add_constant(native_type.transform(constant_string), native_type.enum_id() as u16);
         }
         for variable in function.variables {
             function_bytecode.add_variable(variable.0, variable.1 as u32);
@@ -131,6 +238,8 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
         }
         body.add_function(function_bytecode);
     }
+
+    println!("About to generate bytecode");
 
     let mut bytecode = LeblancBytecode::new(header, body);
     //println!("{:?}", bytecode.generate());

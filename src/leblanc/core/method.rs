@@ -1,4 +1,5 @@
 use core::borrow::BorrowMut;
+use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
@@ -65,8 +66,8 @@ impl Method {
     pub fn run(&mut self, _self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
         return match self.leblanc_handle.null {
             false => {
-                self.leblanc_handle.variables = args.to_vec();
-                self.leblanc_handle.borrow_mut().execute(args.to_vec())
+                //self.leblanc_handle.variables = args.to_vec();
+                self.leblanc_handle.borrow_mut().execute(Arc::new(Mutex::new(args.to_vec())))
             }
             true => (self.handle)(_self, args)
         }
@@ -75,8 +76,8 @@ impl Method {
     pub fn run_with_vec(&mut self, _self: Arc<Mutex<LeBlancObject>>, args: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Arc<Mutex<LeBlancObject>> {
         return match self.leblanc_handle.null {
             false => {
-                self.leblanc_handle.variables = args.clone();
-                self.leblanc_handle.borrow_mut().execute(args.to_vec())
+                //self.leblanc_handle.variables = args.clone();
+                self.leblanc_handle.borrow_mut().execute(Arc::new(Mutex::new(args.to_vec())))
             }
             true => (self.handle)(_self, args)
         }
@@ -150,6 +151,12 @@ impl Clone for Method {
             tags: self.tags.clone()
         };
         //Method::new(self.context.clone(), self.handle, self.tags.clone())
+    }
+}
+
+impl PartialOrd for Method {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.context.partial_cmp(&other.context)
     }
 }
 

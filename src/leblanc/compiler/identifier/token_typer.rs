@@ -4,8 +4,8 @@ use crate::leblanc::compiler::identifier::token::Token;
 use crate::leblanc::compiler::identifier::token_identifier::identify;
 use crate::leblanc::compiler::lang::leblanc_constants::{constant_type, is_constant};
 use crate::leblanc::compiler::lang::leblanc_keywords::{is_keyword, keyword_value, LBKeyword};
-use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{Extension, Func, Of};
-use crate::leblanc::compiler::lang::leblanc_lang::{boundary_value, is_special, special_value, CompileVocab, FunctionType, ExtensionType};
+use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{Extension, ExtensionImport, Func, Of};
+use crate::leblanc::compiler::lang::leblanc_lang::{boundary_value, is_special, special_value, CompileVocab, FunctionType, ExtensionType, Specials};
 use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab::{CLASS, CONSTANT, EXTENSION, FUNCTION, KEYWORD, MODULE, TYPE, UNKNOWN, VARIABLE};
 use crate::leblanc::compiler::lang::leblanc_operators::{is_operator, operator_type};
 use crate::leblanc::compiler::fabric::Fabric;
@@ -17,7 +17,7 @@ use crate::leblanc::core::native_types::{is_native_type, type_value};
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::{CompilationMode, compile, LeBlancType};
 use crate::leblanc::compiler::import::{Import, ImportType};
-use crate::leblanc::compiler::lang::leblanc_lang::ExtensionType::ExtensionTypeImport;
+use crate::leblanc::compiler::lang::leblanc_lang::ExtensionType::{ExtensionTypeParam, ExtensionTypeExport, ExtensionTypeImport};
 use crate::leblanc::rustblanc::Appendable;
 
 
@@ -26,6 +26,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
     let UNKNOWN_VOCAB: CompileVocab = UNKNOWN(UNKNOWN_TYPE);
 
     let mut imports: Vec<Import> = Vec::new();
+    let mut extensions: Vec<String> = Vec::new();
 
     let mut typed_tokens: Vec<TypedToken> = Vec::new();
     let mut type_map: HashMap<String, Vec<Vec<CompileVocab>>> = HashMap::new();
@@ -63,7 +64,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
 
         let type_scopes = type_map.get(token_string.as_str());
 
-        let vocab =
+        let mut vocab =
             if type_scopes.is_some() && !is_keyword(token.as_string().as_str()) && !first_symbol.is_boundary() && type_scopes.unwrap().len()  > scope_value {
                 let type_scopes = type_scopes.unwrap();
                 if *next_token.first_symbol_or_empty().char() == '(' {
@@ -78,7 +79,10 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
             }
 
             else if is_special(token_string.as_str()) {
-                CompileVocab::SPECIAL(special_value(token_string.as_str()))
+                match token_string.as_str() {
+                    "->" => CompileVocab::SPECIAL(special_value(token_string.as_str()), 0),
+                    _ => CompileVocab::SPECIAL(special_value(token_string.as_str()), 120)
+                }
             } else if is_operator(token_string.as_str()) {
                 CompileVocab::OPERATOR(operator_type(token_string.as_str()))
             } else if is_keyword(token_string.as_str()) {
@@ -106,7 +110,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                     _ => {}
                 }
                 CompileVocab::BOUNDARY(boundary_value(first_symbol.char()))
-            } else if typed_tokens.len() > 0 && typed_tokens[typed_tokens.len() - 1].lang_type() == KEYWORD(Extension){
+            } else if typed_tokens.len() > 0 && typed_tokens[typed_tokens.len() - 1].lang_type() == KEYWORD(ExtensionImport){
                 let import = Import::new(&token_string, &token_string, ImportType::Extension);
                 let index = match imports.iter().cloned().position(|i| i == import) {
                     Some(position) => position,
@@ -140,7 +144,9 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                         }
                         LBKeyword::From => {
                             let incorrect_import = imports.pop().unwrap();
+                            println!("Incorrect import: {:#?}", incorrect_import);
                             let import_type = if incorrect_import.import_type == ImportType::Extension { ImportType::Extension } else { ImportType::SubImport };
+
                             let import = Import::new(&incorrect_import.name, &token_string, import_type);
                             let index = match imports.iter().cloned().position(|i| i == import) {
                                 Some(position) => position,
@@ -155,6 +161,16 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                                 MODULE(index as u64)
                             }
                         }
+                        LBKeyword::Extension => {
+                            global_scope = GlobalScopeMarker::ExtensionDeclaration;
+                            let index = if extensions.contains(&token_string) {
+                                extensions.iter().position(|ext| ext == &token_string).unwrap()
+                            } else {
+                                extensions.push(token_string.clone());
+                                extensions.len() - 1
+                            };
+                            EXTENSION(ExtensionTypeExport(index as u32))
+                        }
                         LBKeyword::Class => {
                             new_class_counter += 1;
                             CLASS(Class(0))
@@ -166,7 +182,9 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 }
 
             } else {
-                if is_native_type(token_string.as_str()) {
+                if token_string == "class" {
+                    TYPE(Class(0))
+                } else if is_native_type(token_string.as_str()) {
                     let vocab_type = TYPE(type_value(token_string.as_str()));
                     vocab_type
                 } else {
@@ -190,7 +208,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                                 if is_constant(next_token.as_string().as_str()) {
                                     UNKNOWN_VOCAB
                                 } else {
-                                    if next_token.as_string() == "=" {
+                                    if next_token.as_string() == "=" || next_token.as_string() == "->" {
                                         UNKNOWN(Class(0))
                                     } else {
                                         new_class_counter += 1;
@@ -203,6 +221,10 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 }
             };
 
+
+        if global_scope == GlobalScopeMarker::ExtensionDeclaration && vocab == UNKNOWN_VOCAB {
+            vocab = EXTENSION(ExtensionTypeParam(type_value(&token_string)))
+        }
 
         if vocab == KEYWORD(LBKeyword::Global) || vocab.matches("class") {
             global_scope = GlobalBlock;
@@ -233,18 +255,34 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 nested_vec.push(Vec::new());
             }
             let mut type_vec = Vec::new();
-            type_vec.push(vocab);
-            nested_vec.append_item( type_vec);
-            type_map.insert(token_string, nested_vec);
+            if let EXTENSION(extension_type) = vocab {
+                if let ExtensionTypeParam(type_param)  = extension_type {
+                    // This code is really gross
+                } else {
+                    type_vec.push(vocab);
+                    nested_vec.append_item( type_vec);
+                    type_map.insert(token_string, nested_vec);
+                }
+
+            } else {
+                if !vocab.matches("special") {
+                    type_vec.push(vocab);
+                    nested_vec.append_item(type_vec);
+                    type_map.insert(token_string, nested_vec);
+                }
+            }
+
         }
+
+        let class_member = typed_tokens.len() > 0 && typed_tokens[typed_tokens.len() - 1].lang_type() == CompileVocab::SPECIAL(Specials::Dot, 120);
 
         if vocab.matches("type") {
             if exists_in_scope(&type_map, next_token.as_string(), scope_value as i32) && !next_token.first_symbol_or_empty().is_boundary() {
-                errors.push(ErrorStub::VariableAlreadyDefined(TypedToken::new(next_token.copy(), vocab.clone(), scope_value as i32, global_scope != NotGlobal)))
+                errors.push(ErrorStub::VariableAlreadyDefined(TypedToken::new(next_token.copy(), vocab.clone(), scope_value as i32, global_scope != NotGlobal, class_member)))
             }
         }
 
-        let typed_token = TypedToken::new(token, vocab, scope_value as i32, global_scope != NotGlobal);
+        let typed_token = TypedToken::new(token, vocab, scope_value as i32, global_scope != NotGlobal, class_member);
 
         scope_value = temp_scope_value;
 
@@ -284,7 +322,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
             class_scope = type_map.get("Class").unwrap().len() as u32;
         }
 
-        println!("typed token: {:?}", typed_token);
+        //println!("typed token: {:?}", typed_token);
 
         typed_tokens.append_item(typed_token);
     }
@@ -297,14 +335,12 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
         import_tokens.append(compile(import.source.clone(), CompilationMode::StubFile).tokens())
     });
 
-    println!("Identifying!");
     let mut node_tokens = identify(typed_tokens, import_tokens, &mut type_map, &mut errors, mode);
-    println!("Identifying!2");
 
 
     analysis.evaluate(&mut errors, &mut node_tokens);
 
-    return Fabric::no_path(node_tokens, imports, errors);
+    return Fabric::no_path(node_tokens, imports, vec![], errors);
 }
 
 fn exists_in_scope(type_map: &HashMap<String, Vec<Vec<CompileVocab>>>, value: String, scope_value: i32) -> bool {
@@ -325,6 +361,7 @@ fn exists_in_scope(type_map: &HashMap<String, Vec<Vec<CompileVocab>>>, value: St
 enum GlobalScopeMarker {
     FuncDeclaration,
     ClassDeclaration,
+    ExtensionDeclaration,
     GlobalBlock,
     GlobalLine,
     NotGlobal
@@ -334,6 +371,7 @@ fn allow_global_scope_end(scope: GlobalScopeMarker, ch: char) -> bool {
     return match scope {
         FuncDeclaration => ch == '{',
         ClassDeclaration => ch == '}',
+        ExtensionDeclaration => ch == '{',
         GlobalBlock => ch == '}',
         GlobalLine => ch == ';',
         NotGlobal => ch == '\0',

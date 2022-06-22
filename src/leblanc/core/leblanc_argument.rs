@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
 
-#[derive(Eq, PartialEq, Clone, Debug)]
+#[derive(Eq, PartialEq, Clone, Debug, PartialOrd)]
 pub struct LeBlancArgument {
     pub typing: LeBlancType,
     pub position: u32,

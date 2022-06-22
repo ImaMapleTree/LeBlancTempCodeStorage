@@ -36,7 +36,7 @@ pub fn read_from_stub_dump(file: File) -> Fabric {
         tokens.append_item(Node::new(parse_stub_token(line.unwrap())));
     }
 
-    return Fabric::new(path, tokens, vec![], vec![]);
+    return Fabric::new(path, tokens, vec![], vec![], vec![]);
 }
 
 pub fn parse_stub_token(line: String) -> TypedToken {
@@ -74,7 +74,11 @@ pub fn parse_stub_token(line: String) -> TypedToken {
     let global_value = line[0..global_sep].to_string().parse::<i32>().unwrap();
     let global = global_value == 1;
 
-    let mut typed_token = TypedToken::new(token, vocab_type, scope, global);
+    let class_member_sep = line.find("|").unwrap();
+    let class_member_value = line[0..class_member_sep].to_string().parse::<i32>().unwrap();
+    let class_member = class_member_value == 1;
+
+    let mut typed_token = TypedToken::new(token, vocab_type, scope, global, class_member);
 
     let mut line = line[scope_sep+1..].to_string();
     let mut typings = vec![];
@@ -107,7 +111,7 @@ fn match_leblanc_type(vocab_string: String) -> CompileVocab {
         "type" => TYPE(type_value(&second_vocab)),
         "unknown" => UNKNOWN(type_value(&second_vocab)),
         "operator" => OPERATOR(operator_type(&second_vocab)),
-        "special" => SPECIAL(special_value(&second_vocab)),
+        "special" => SPECIAL(special_value(&second_vocab), 120),
         "keyword" => KEYWORD(keyword_value(&second_vocab)),
         "module" => MODULE(second_vocab.parse::<u64>().unwrap()),
         "boundary" => BOUNDARY(boundary_value(&second_vocab.chars().next().unwrap())),

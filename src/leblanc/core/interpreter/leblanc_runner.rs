@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use std::time::Instant;
 use crate::leblanc::core::exception::StackTrace;
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Reflect};
 use crate::leblanc::core::method::Method;
@@ -24,7 +25,10 @@ impl LeBlancRunner {
 
         let main_object = self.globals.iter_mut().filter(|g| g.lock().unwrap().typing == LeBlancType::Function)
             .filter(|g| g.reflect().downcast_ref::<Method>().unwrap().context.name == "main").next();
+
+        let main_elapsed = Instant::now();
         main_object.unwrap().call("main", &mut []);
+        println!("Execution Elapsed: {}", main_elapsed.elapsed().as_secs_f64());
     }
 }
 

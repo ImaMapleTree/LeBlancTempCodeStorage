@@ -3,6 +3,9 @@ use crate::LeBlancType;
 pub mod stub_compiler;
 pub mod full_compiler;
 pub mod full_reader;
+pub mod partial_function;
+pub mod partial_class;
+pub mod partial_token;
 
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum CompilationMode {

@@ -1,13 +1,7 @@
-using rust;
-
 func main() {
-    print(rust.returns_three());
-}
-
-func test(int a, int b) returns int {
-    return a + b;
-}
-
-func test(string s) returns string {
-    return "goodbye world";
+    for int i in 1 to 500000 {
+        for int j in 1 to 1000 {
+            print(500000-i);
+        }
+    }
 }

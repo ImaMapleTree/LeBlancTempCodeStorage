@@ -21,7 +21,7 @@ pub fn run(mut bytecode: LeblancBytecode) {
     for mut function in bytecode.body().functions() {
         let arguments = &function.arguments();
         let name = function.name();
-        println!("bc: {} | {:#?}", function.name(), function);
+        //println!("bc: {} | {:#?}", function.name(), function);
         let leblanc_handle = LeblancHandle::from_function_bytecode(function);
         let method_store = MethodStore::new(name.clone(), LeBlancArgument::from_positional(arguments));
         let method = Method::of_leblanc_handle(method_store, leblanc_handle, BTreeSet::new());

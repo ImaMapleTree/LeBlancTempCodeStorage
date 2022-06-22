@@ -3,7 +3,7 @@ use std::hash::{Hash, Hasher};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::method_tag::MethodTag;
 
-#[derive(Eq, Hash, PartialEq, Debug, Clone)]
+#[derive(Eq, Hash, PartialEq, Debug, Clone, PartialOrd)]
 pub struct MethodStore {
     pub name: String,
     pub arguments: Vec<LeBlancArgument>,

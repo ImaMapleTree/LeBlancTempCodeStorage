@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use crate::{BraceOpen, CompilationMode, CompileVocab, LeBlancType, Semicolon, TypedToken};
-use crate::CompileVocab::FUNCTION;
-use crate::leblanc::compiler::identifier::typed_token::PartialToken;
-use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{Func, Returns};
+use crate::CompileVocab::{FUNCTION, UNKNOWN};
+use crate::leblanc::compiler::compile_types::partial_token::PartialToken;
+use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{Func, Returns, SelfRT};
 use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, FunctionType};
 use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{Comma, ParenthesisClosed};
 use crate::leblanc::rustblanc::Appendable;
@@ -24,9 +24,15 @@ pub fn identify(mut typed_tokens: Vec<TypedToken>, mut import_tokens: Vec<Node<T
     }
 
     for token in &mut typed_tokens {
-        let partial_token = token.as_partial();
+        let mut partial_token = token.as_partial();
+        let mut function_ref = false;
+        if partial_token.lang_type == UNKNOWN(Class(0)) {
+            partial_token.lang_type = FUNCTION(FunctionType::Call);
+            function_ref = true;
+        }
         if func_matcher.contains_key(&partial_token) {
             token.set_typing_returns(func_matcher.get(&partial_token).unwrap().clone());
+            if function_ref { token.set_type(FUNCTION(FunctionType::Reference))}
         }
     }
 
@@ -50,6 +56,7 @@ pub fn identify_caller_function_args(typed_tokens: &mut Vec<TypedToken>, left_bo
             let mut can_add_type = true;
             let mut j_addition = 0;
             for mut j in i+1..length {
+                /*println!("J token: {}", typed_tokens[j]);*/
                 j = j + j_addition;
                 if can_add_type && typed_tokens[j].lang_type() == FUNCTION(FunctionType::Call) {
                     let j_index = j;
@@ -66,7 +73,7 @@ pub fn identify_caller_function_args(typed_tokens: &mut Vec<TypedToken>, left_bo
                     can_add_type = true;
                 }
                 else if typed_tokens[j].lang_type() == CompileVocab::BOUNDARY(ParenthesisClosed) || typed_tokens[j].lang_type() == CompileVocab::BOUNDARY(Semicolon) {
-                    i_addition = j - j_addition;
+                    i_addition = i_addition + j_addition;
                     break;
                 }
 
@@ -108,17 +115,24 @@ pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, errors: &mut Vec<E
                 typed_tokens[ndi].set_typing_args(&mut arg_types);
                 return_types = vec![];
                 ndi = 0;
+            } else if token.lang_type() == CompileVocab::KEYWORD(SelfRT) {
+
             } else if let CompileVocab::TYPE(return_type) = token.lang_type() {
                 return_types.append_item(return_type);
             } else if token.lang_type() != CompileVocab::BOUNDARY(Comma) {
                 errors.append_item(InvalidSyntax(token.clone()));
             }
         }
-        else if let CompileVocab::TYPE(arg_type) = token.lang_type() {
+        else if token.lang_type() == CompileVocab::KEYWORD(SelfRT) {
+          if ndi > 0 {
+              arg_types.push(LeBlancType::SelfType);
+          }
+        } else if let CompileVocab::TYPE(arg_type) = token.lang_type() {
             if ndi > 0 {
                 arg_types.push(arg_type);
             }
         }
+
 
     }
     return func_matcher;

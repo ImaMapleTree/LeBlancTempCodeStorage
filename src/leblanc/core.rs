@@ -8,7 +8,6 @@ pub mod module;
 pub mod method_tag;
 pub mod internal;
 pub mod interpreter;
-pub mod partial_function;
 pub mod bytecode;
 pub mod leblanc_handle;
 pub mod exception;
