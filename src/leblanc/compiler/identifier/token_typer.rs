@@ -245,7 +245,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 for _i in 0..scope_value - nested_vec.len() {
                     nested_vec.append_item( Vec::new());
                 }
-                let mut type_vec = vec![vocab];
+                let type_vec = vec![vocab];
                 nested_vec.append_item(type_vec);
             }
         } else {
