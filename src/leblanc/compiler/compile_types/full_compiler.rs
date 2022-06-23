@@ -21,7 +21,7 @@ use crate::leblanc::rustblanc::hex::Hexadecimal;
 
 
 pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: CompilationMode) {
-    let globals: HashMap<String, u64> = HashMap::new();
+    let _globals: HashMap<String, u64> = HashMap::new();
 
     let mut partial_functions = create_partial_functions();
     stack.iter().filter(|t| t.lang_type() == CompileVocab::FUNCTION(FunctionType::Header)).for_each(|t| {
@@ -37,7 +37,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
     let mut last_instruction = Zero;
     let mut instruction = Zero;
     let mut last_line = 0;
-    let line_bytes = last_line.to_hex(4);
+    let _line_bytes = last_line.to_hex(4);
 
     let mut instruction_bytes = InstructionBytecode::new();
     stack.reverse();
@@ -132,7 +132,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
                 instruction = CallClassMethod
             } else if instruction == CallFunction {
                 let token_partial_function = PartialFunction::from_token_args(&token);
-                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(index, p)| *p == token_partial_function).next();
+                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(_index, p)| *p == token_partial_function).next();
                 if index_partial.is_none() {
                     println!("{:#?}", partial_functions);
                     println!("{:?}", PartialFunction::from_token_args(&token));
@@ -143,7 +143,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
                     arg_byte = (token_partial_function.args.len() as u16).to_hex(2);
                 }
             } else if instruction == LoadFunction {
-                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(index, p)| *p.name == token.as_string()).next();
+                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(_index, p)| *p.name == token.as_string()).next();
                 if index_partial.is_none() {
                     println!("{:#?}", partial_functions);
                     println!("{:?}", PartialFunction::from_token_args(&token));

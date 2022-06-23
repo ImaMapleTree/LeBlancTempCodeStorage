@@ -6,7 +6,7 @@ use crate::leblanc::core::interpreter::instructions::Instruction;
 static MAIN_MODE: bool = true;
 
 pub fn start() {
-    while true {
+    loop {
         let mut s = retrieve_input();
         if MAIN_MODE {
             s = wrap_in_main(s);

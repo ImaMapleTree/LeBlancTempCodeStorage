@@ -1,5 +1,5 @@
 use core::fmt::Debug;
-use std::sync::{Arc, atomic, Mutex};
+use std::sync::{Arc};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Debug)]
@@ -10,7 +10,7 @@ pub struct Strawberry<T: Clone + Debug> {
 }
 
 impl<T: Clone + Debug> Strawberry<T> {
-    pub fn new(mut data: T) -> Strawberry<T> {
+    pub fn new(data: T) -> Strawberry<T> {
         let mut data = Arc::new(data);
         let ptr = Arc::get_mut(&mut data).unwrap() as *mut T;
         return Strawberry {
@@ -81,7 +81,7 @@ impl<'a, T: Clone + Debug> StrawberryLoan<'_, T> {
         }
     }
     pub fn inquire(&mut self) -> Result<&mut T, T> {
-        match unsafe {(&mut *self.parent)}.loans.load(Ordering::SeqCst) {
+        match unsafe {&mut *self.parent}.loans.load(Ordering::SeqCst) {
             0 => self.mutability = StrawberryMutability::Mutable,
             1 => self.mutability = StrawberryMutability::Mutable,
             _ => self.mutability = StrawberryMutability::Immutable

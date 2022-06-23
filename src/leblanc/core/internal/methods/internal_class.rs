@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+
 use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
 
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -15,7 +15,7 @@ pub fn _internal_field_(_self: Strawberry<LeBlancObject>, arguments: &mut [Straw
     return _self.loan().inquire().either().members.get(string.as_str()).unwrap_or(&LeBlancObject::null()).clone().to_mutex();
 }
 
-pub fn _internal_expose_(_self: Strawberry<LeBlancObject>, arguments: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
+pub fn _internal_expose_(_self: Strawberry<LeBlancObject>, _arguments: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
     let class_meta = ClassMeta::default("ExposedObject".to_string(), 0);
     let mut expose_object = LeBlancObject::new(
         LeBlancObjectData::Class(class_meta.clone()),
@@ -47,6 +47,6 @@ pub fn _internal_expose_(_self: Strawberry<LeBlancObject>, arguments: &mut [Stra
     return expose_object.to_mutex()
 }
 
-pub fn _internal_to_string_(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
+pub fn _internal_to_string_(_self: Strawberry<LeBlancObject>, _args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
     _self.to_string().create_mutex()
 }

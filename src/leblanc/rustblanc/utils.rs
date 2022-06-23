@@ -1,12 +1,12 @@
-use core::fmt::{Debug, Formatter};
+
 use std::collections::HashMap;
 use std::num::ParseIntError;
 use std::fmt::Write;
-use std::hash::Hash;
-use prettytable::{Table, Row, Cell, row, Attr, format};
+
+use prettytable::{Table, Row, Cell, Attr, format};
 use prettytable::color::GREEN;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
-use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, ColorBright, colorize_str};
+
 
 pub fn decode_hex(s: &Hexadecimal) -> Result<Vec<u8>, ParseIntError> {
     let s = s.to_string();

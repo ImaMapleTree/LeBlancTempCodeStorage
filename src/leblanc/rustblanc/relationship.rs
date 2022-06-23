@@ -41,7 +41,7 @@ use std::{
     ops::Deref,
     sync::{Arc, RwLock, Weak},
 };
-use std::mem::take;
+
 use std::ops::DerefMut;
 use crate::TypedToken;
 

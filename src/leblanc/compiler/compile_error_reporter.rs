@@ -173,7 +173,7 @@ pub fn error_report(cr: &mut CharReader, tokens: &Vec<TypedToken>, errors: &Vec<
     let mut error_message = generate_file_path(cr.path(), line_number, symbol_number) + "\n\n"
         + &colorize(stripped_error_line, Color::Red)
         + &("\n".to_owned()
-        + create_dashes_to_symbol((symbol_number - (strip_amount as u32)), (symbol_number - 1 - (strip_amount as u32) + error_syntax.len() as u32),error_syntax).as_str())
+        + create_dashes_to_symbol(symbol_number - (strip_amount as u32), symbol_number - 1 - (strip_amount as u32) + error_syntax.len() as u32,error_syntax).as_str())
         + "\n" + &generate_error_name(error_name.as_str(), line_number, symbol_number);
 
     if error_message_extra != String::new() {
@@ -214,7 +214,7 @@ fn repair_incompatible_type_error(text: String, token: &TypedToken, fix_type: St
     let stripped = strip_start_of_line(text.clone());
     let re = Regex::new(&format!("{}{}{}", r"\b", token.as_string(), r"\b")).unwrap();
     let p = re.find(&stripped).unwrap().start();
-    return colorize((fix_type + " "), Color::Bright(ColorBright::BrightGreen)) + &colorize_str(&stripped[p..], Color::Yellow);
+    return colorize(fix_type + " ", Color::Bright(ColorBright::BrightGreen)) + &colorize_str(&stripped[p..], Color::Yellow);
 }
 
 fn repair_var_already_defined_error(text: String, old_name: String, new_name: String) -> String {
@@ -230,7 +230,7 @@ fn generate_error_name(text: &str, line_number: u32, symbol_number: u32) -> Stri
 
 fn generate_arrows(token_string: String) -> String {
     let mut arrows = String::new();
-    for i in 0..token_string.len() {
+    for _i in 0..token_string.len() {
         arrows += "^";
     }
     return arrows;

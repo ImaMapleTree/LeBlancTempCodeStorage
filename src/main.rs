@@ -14,11 +14,11 @@ extern crate core;
 extern crate alloc;
 
 use std::io;
-use core::panic::PanicInfo;
+
 use std::time::Instant;
 use clicolors_control::set_colors_enabled;
 use crate::leblanc::compiler::compile::compile;
-use crate::leblanc::compiler::compile_error_reporter::error_report;
+
 use crate::leblanc::compiler::compile_types::CompilationMode;
 use crate::leblanc::compiler::compile_types::full_reader::read_file;
 use crate::leblanc::compiler::identifier::typed_token::TypedToken;
@@ -46,7 +46,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 
 fn main() -> io::Result<()> {
-    let DEBUG = true;
+    let _DEBUG = true;
     //playground::playground();
 
     if INTERACTIVE {
@@ -76,9 +76,4 @@ fn main() -> io::Result<()> {
     println!("Total Elapsed: {}", elapsed.as_secs_f64());
 
     Ok(())
-}
-
-#[bench]
-pub fn test_main() -> std::io::Result<()> {
-    main()
 }

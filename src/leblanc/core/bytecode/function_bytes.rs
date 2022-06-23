@@ -69,13 +69,13 @@ impl FunctionBytecode {
 
 
     pub fn add_constant(&mut self, hex: Hexadecimal, type_number: u16) {
-        self.constant_value_length.consume_bytes((self.constant_value.consume_bytes(hex).expect("Constant value caused too many_bytes").to_hex(128))).expect("Constant caused too many bytes");
+        self.constant_value_length.consume_bytes(self.constant_value.consume_bytes(hex).expect("Constant value caused too many_bytes").to_hex(128)).expect("Constant caused too many bytes");
         self.constant_type.consume_bytes(type_number.to_hex(2)).unwrap();
     }
 
 
     pub fn add_variable(&mut self, name: String, relationship: u32) {
-        self.variable_name_length.consume_bytes((self.variable_name.consume_bytes(name.to_hex(0)).expect("Variable name caused too many bytes").to_hex(128))).expect("Variable caused too many bytes");
+        self.variable_name_length.consume_bytes(self.variable_name.consume_bytes(name.to_hex(0)).expect("Variable name caused too many bytes").to_hex(128)).expect("Variable caused too many bytes");
         self.variable_relationship.consume_bytes(relationship.to_hex(4)).unwrap();
     }
 

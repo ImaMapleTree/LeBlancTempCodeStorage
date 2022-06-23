@@ -1,7 +1,7 @@
 use core::fmt::{Display, Formatter};
 use std::cmp::Ordering;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+
 use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
 
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -56,7 +56,7 @@ impl ToLeblanc for LeblancList {
 
 impl Display for LeblancList {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[{}]", self.internal_vec.iter().map(|mut item| item.clone().call_name("to_string").loan().inquire().either().data.to_string()).collect::<Vec<String>>().join(", "))
+        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").loan().inquire().either().data.to_string()).collect::<Vec<String>>().join(", "))
     }
 }
 

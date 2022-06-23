@@ -1,5 +1,5 @@
 use std::fs::File;
-use crate::{BraceOpen, CompileVocab, create_stack, create_tokens, error_report, Fabric, Semicolon, TypedToken};
+use crate::{BraceOpen, CompileVocab, create_stack, create_tokens, Fabric, Semicolon, TypedToken};
 use crate::leblanc::compiler::char_reader::CharReader;
 use crate::leblanc::compiler::compile_types::CompilationMode;
 use crate::leblanc::compiler::compile_types::full_compiler::write_bytecode;

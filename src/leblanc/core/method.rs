@@ -1,10 +1,10 @@
-use core::borrow::BorrowMut;
+
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
-use std::ops::DerefMut;
-use std::sync::{Arc, Mutex};
+
+
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
@@ -34,7 +34,7 @@ impl Method {
     }
 
     pub fn null() -> Method {
-        let t = String::new();
+        let _t = String::new();
         return Method {
             context: MethodStore::no_args("null".to_string()),
             leblanc_handle: Strawberry::new(LeblancHandle::null()),
@@ -183,9 +183,9 @@ impl PartialOrd for Method {
     }
 }
 
-fn null_func(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {return LeBlancObject::unsafe_null()}
+fn null_func(_self: Strawberry<LeBlancObject>, _args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {return LeBlancObject::unsafe_null()}
 
-fn error_func(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {return LeBlancObject::unsafe_error()}
+fn error_func(_self: Strawberry<LeBlancObject>, _args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {return LeBlancObject::unsafe_error()}
 
 impl Display for Method {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

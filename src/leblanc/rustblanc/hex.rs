@@ -1,7 +1,7 @@
-use alloc::alloc;
+
 use core::fmt::Debug;
 use core::slice::Iter;
-use std::collections::binary_heap::IntoIter;
+
 use std::fmt::{Display, Formatter};
 use std::ops::{Add, AddAssign};
 use std::vec;
@@ -29,7 +29,7 @@ impl Hexadecimal {
     pub fn from_string(string: String) -> Hexadecimal {
         let mut hex_vec = vec![];
         for mut i in 0..string.len()/2 {
-            hex_vec.push((string[(i*2)..(i*2)+2].to_string()));
+            hex_vec.push(string[(i*2)..(i*2)+2].to_string());
             i = i + 1;
         }
         return Hexadecimal::new(hex_vec);
@@ -66,7 +66,7 @@ impl Hexadecimal {
 
     pub fn pop(&mut self, amount: usize) -> Hexadecimal {
         let mut new_hex = vec![];
-        for i in 0..amount {
+        for _i in 0..amount {
             new_hex.insert(0, self.bytes.pop().unwrap())
         }
 
@@ -86,14 +86,14 @@ impl Hexadecimal {
     }
 
     pub fn extend_to_length(&mut self, bytes: usize) {
-        for i in 0..bytes-self.bytes.len() {
+        for _i in 0..bytes-self.bytes.len() {
             self.bytes.insert(0, "00".to_string());
         }
     }
 
     pub fn to_new_length(&self, bytes: usize) -> Hexadecimal {
         let mut new_bytes = self.clone();
-        for i in 0..bytes-self.bytes.len() {
+        for _i in 0..bytes-self.bytes.len() {
             new_bytes.bytes.insert(0, "00".to_string());
         }
         return new_bytes;
@@ -105,7 +105,7 @@ impl Hexadecimal {
 
     pub fn scrape(&mut self, amount: usize) -> Hexadecimal {
         let mut new_hex = vec![];
-        for i in 0..amount {
+        for _i in 0..amount {
             new_hex.push(self.bytes.remove(0))
         }
         return Hexadecimal::new(new_hex);

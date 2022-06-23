@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::Hasher;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -14,7 +14,7 @@ use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
-use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
+use crate::leblanc::rustblanc::strawberry::{Strawberry};
 
 static mut NULL: Option<Strawberry<LeBlancObject>> = None;
 

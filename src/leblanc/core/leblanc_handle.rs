@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::time::Instant;
 use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
@@ -8,7 +8,7 @@ use crate::leblanc::core::interpreter::instruction_execution::execute_instructio
 use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, Stringify};
-use crate::leblanc::rustblanc::utils::{Timing, Timings};
+use crate::leblanc::rustblanc::utils::{Timings};
 
 
 
@@ -31,7 +31,7 @@ macro_rules! execute_handle {
     }
 }
 
-pub(crate) use execute_handle;
+
 
 
 #[derive(Debug)]
@@ -51,7 +51,7 @@ impl LeblancHandle {
     pub fn null() -> LeblancHandle {
         return LeblancHandle {
             name: "".to_string(),
-            constants: Arc::new((vec![])),
+            constants: Arc::new(vec![]),
             variable_context: Arc::new(HashMap::new()),
             variables: vec![],
             globals: Box::new(vec![]),

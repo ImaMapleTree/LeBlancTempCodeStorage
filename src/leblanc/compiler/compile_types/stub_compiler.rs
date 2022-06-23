@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use filepath::FilePath;
 use crate::{BOUNDARY, CompileVocab, Fabric, TypedToken};
-use crate::CompileVocab::{CLASS, CONSTANT, CONSTRUCTOR, EXTENSION, FUNCTION, KEYWORD, MODULE, OPERATOR, SPECIAL, TYPE, UNKNOWN, VARIABLE};
+use crate::CompileVocab::{CLASS, CONSTANT, CONSTRUCTOR, FUNCTION, KEYWORD, MODULE, OPERATOR, SPECIAL, TYPE, UNKNOWN, VARIABLE};
 use crate::leblanc::compiler::identifier::token::Token;
 use crate::leblanc::compiler::lang::leblanc_keywords::keyword_value;
 use crate::leblanc::compiler::lang::leblanc_lang::{boundary_value, function_type_value, special_value};
@@ -28,7 +28,7 @@ pub fn read_from_stub_dump(file: File) -> Fabric {
     let mut tokens = vec![];
 
     let mut lines = file_reader.lines();
-    let imports = lines.next().unwrap().unwrap();
+    let _imports = lines.next().unwrap().unwrap();
     //let imports = imports.split("|").map(|s| s.to_string()).collect::<Vec<String>>();
 
 

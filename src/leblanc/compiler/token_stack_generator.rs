@@ -33,7 +33,7 @@ pub fn create_stack<'a>(mut tokens: &mut Vec<Node<TypedToken>>, stack: &'a mut V
         }
         else {
             stack.push(consumed.value.clone());
-            let stack_length = stack.len();
+            let _stack_length = stack.len();
             if consumed.value.lang_type().matches("operator") {
                 if consumed.value.lang_type().priority() <= 5 {
                     create_stack(&mut tokens.drain(0..marker).into_iter().collect(), stack);

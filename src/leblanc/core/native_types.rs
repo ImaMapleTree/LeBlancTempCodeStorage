@@ -1,7 +1,7 @@
 use core::str::FromStr;
-use std::any::Any;
+
 use std::fmt::{Display, Formatter};
-use std::intrinsics::type_name;
+
 use crate::leblanc::core::native_types::derived::DerivedType;
 
 use crate::leblanc::rustblanc::hex::Hexadecimal;
@@ -169,7 +169,7 @@ impl LeBlancType {
             Float => f32::from_str(string.as_str()).unwrap().to_hex(128),
             Double => f64::from_str(string.as_str()).unwrap().to_hex(128),
             Boolean => bool::from_str(string.as_str()).unwrap().to_hex(128),
-            String => string[1..string.len()-1].to_string().to_hex(128),
+            _String => string[1..string.len()-1].to_string().to_hex(128),
             _ => string.to_hex(128)
         }
     }

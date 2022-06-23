@@ -1,4 +1,4 @@
-use crate::{LeBlancType, TypedToken};
+use crate::{TypedToken};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;

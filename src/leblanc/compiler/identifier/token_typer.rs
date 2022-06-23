@@ -4,8 +4,8 @@ use crate::leblanc::compiler::identifier::token::Token;
 use crate::leblanc::compiler::identifier::token_identifier::identify;
 use crate::leblanc::compiler::lang::leblanc_constants::{constant_type, is_constant};
 use crate::leblanc::compiler::lang::leblanc_keywords::{is_keyword, keyword_value, LBKeyword};
-use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{Extension, ExtensionImport, Func, Of};
-use crate::leblanc::compiler::lang::leblanc_lang::{boundary_value, is_special, special_value, CompileVocab, FunctionType, ExtensionType, Specials};
+use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{ExtensionImport, Func, Of};
+use crate::leblanc::compiler::lang::leblanc_lang::{boundary_value, is_special, special_value, CompileVocab, FunctionType, Specials};
 use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab::{CLASS, CONSTANT, EXTENSION, FUNCTION, KEYWORD, MODULE, TYPE, UNKNOWN, VARIABLE};
 use crate::leblanc::compiler::lang::leblanc_operators::{is_operator, operator_type};
 use crate::leblanc::compiler::fabric::Fabric;
@@ -242,7 +242,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 let type_vec: &mut Vec<CompileVocab> = nested_vec.get_mut(scope_value).unwrap();
                 type_vec.append_item( vocab);
             } else {
-                for i in 0..scope_value - nested_vec.len() {
+                for _i in 0..scope_value - nested_vec.len() {
                     nested_vec.append_item( Vec::new());
                 }
                 let mut type_vec = Vec::new();
@@ -251,12 +251,12 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
             }
         } else {
             let mut nested_vec: Vec<Vec<CompileVocab>> = Vec::new();
-            for i in 0..scope_value {
+            for _i in 0..scope_value {
                 nested_vec.push(Vec::new());
             }
             let mut type_vec = Vec::new();
             if let EXTENSION(extension_type) = vocab {
-                if let ExtensionTypeParam(type_param)  = extension_type {
+                if let ExtensionTypeParam(_type_param)  = extension_type {
                     // This code is really gross
                 } else {
                     type_vec.push(vocab);

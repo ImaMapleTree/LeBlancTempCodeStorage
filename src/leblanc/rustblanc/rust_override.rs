@@ -200,7 +200,7 @@ impl Hexable for isize {
 }
 
 impl Hexable for bool {
-    fn to_hex(&self, bytes: usize) -> Hexadecimal {
+    fn to_hex(&self, _bytes: usize) -> Hexadecimal {
         if *self {
             return Hexadecimal::new(vec!["01".to_string()])
         }
@@ -216,7 +216,7 @@ impl Hexable for bool {
 }
 
 impl Hexable for char {
-    fn to_hex(&self, bytes: usize) -> Hexadecimal {
+    fn to_hex(&self, _bytes: usize) -> Hexadecimal {
         let u16_bytes: &mut [u16] = &mut [];
         char::encode_utf16(*self, u16_bytes);
         encode_hex_u16(u16_bytes)
@@ -230,7 +230,7 @@ impl Hexable for char {
 }
 
 impl Hexable for String {
-    fn to_hex(&self, bytes: usize) -> Hexadecimal {
+    fn to_hex(&self, _bytes: usize) -> Hexadecimal {
         encode_hex(&self.as_bytes())
     }
 

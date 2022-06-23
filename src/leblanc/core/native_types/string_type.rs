@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
@@ -10,7 +10,7 @@ use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
-use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_methods, base_to_string_method, ToLeblanc};
+use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::LeBlancType::Flex;
 
@@ -27,7 +27,7 @@ pub fn leblanc_object_string(string: String) -> LeBlancObject {
     return LeBlancObject::new(
         LeBlancObjectData::String(string),
         LeBlancType::String,
-        Arc::new((hash_set)),
+        Arc::new(hash_set),
         HashMap::new(),
         VariableContext::empty(),
     )

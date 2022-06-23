@@ -1,25 +1,25 @@
-use std::arch::{asm, global_asm};
+
 use std::collections::BTreeSet;
 use std::io;
-use std::ops::DerefMut;
-use std::sync::{Arc, Mutex};
+
+
 use crate::leblanc::rustblanc::strawberry::Strawberry;
-use prettytable::format::TableFormat;
+
 use prettytable::{Cell, format, Row, Table};
 use crate::leblanc::core::interpreter::instructions::InstructionBase;
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
-use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Reflect, Stringify};
+use crate::leblanc::core::leblanc_object::{LeBlancObject, Reflect, Stringify};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
 use crate::leblanc::rustblanc::strawberry::Either;
-use crate::leblanc::rustblanc::utils::Timings;
+
 use crate::LeBlancType;
 
 static mut STDOUT: Option<io::Stdout> = None;
 
 fn _BUILTIN_DISASSEMBLE(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
-    let mut method = args[0].loan().inquire().either().data.retrieve_self_as_function().unwrap().clone();
+    let method = args[0].loan().inquire().either().data.retrieve_self_as_function().unwrap().clone();
     let dis_rust_func = if args.len() > 1 {
         *args[1].reflect().downcast_ref::<bool>().unwrap()
     } else {
@@ -32,7 +32,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry
             println!("Disassembling builtin");
         }
     } else {
-        let mut leblanc_handle = method.leblanc_handle;
+        let leblanc_handle = method.leblanc_handle;
         let instructions = leblanc_handle.loan().inquire().either().instructions.clone();
         let mut prev_line_number = 0;
         let mut line_number_format = grow_to_size("", 8);

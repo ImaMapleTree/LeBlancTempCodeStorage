@@ -6,7 +6,7 @@ use crate::leblanc::compiler::identifier::token::Token;
 use crate::leblanc::compiler::identifier::token_typer::create_typed_tokens;
 use crate::leblanc::compiler::lang::leblanc_constants::constant_type;
 use crate::leblanc::compiler::lang::leblanc_lang::is_special;
-use crate::leblanc::compiler::lang::leblanc_operators::{is_operator, LBOperator, operator_type};
+use crate::leblanc::compiler::lang::leblanc_operators::{is_operator};
 use crate::leblanc::compiler::fabric::Fabric;
 use crate::leblanc::compiler::symbols::{Symbol, SymbolType};
 use crate::leblanc::compiler::symbols::SymbolType::Whitespace;

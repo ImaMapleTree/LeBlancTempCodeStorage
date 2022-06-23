@@ -79,7 +79,7 @@ impl Hexable for InstructionBase {
 impl InstructionBase {
     pub fn to_value(&self) -> u32 {
         let variants: &[&'static str] = InstructionBase::VARIANTS;
-        (variants.iter().position(|s| s.to_string() == self.to_string()).unwrap() as u32)
+        variants.iter().position(|s| s.to_string() == self.to_string()).unwrap() as u32
     }
 
     pub fn from_compile_vocab(token: &TypedToken) -> InstructionBase {
