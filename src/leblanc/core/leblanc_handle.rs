@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::time::Instant;
 use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
 use crate::leblanc::core::bytecode::precompiled::Precompiled;
@@ -13,7 +14,7 @@ use crate::leblanc::rustblanc::utils::{Timing, Timings};
 
 
 static DEBUG: bool = false;
-static TIME_DEBUG: bool = true;
+static TIME_DEBUG: bool = false;
 static STACK_DEBUG: bool = false;
 
 static mut TIMINGS: Timings = Timings { map: None};
@@ -38,8 +39,8 @@ pub struct LeblancHandle {
     pub name: String,
     pub constants: Arc<Vec<Arc<LeBlancObject>>>,
     pub variable_context: Arc<HashMap<String, VariableContext>>,
-    pub variables: Vec<Arc<Mutex<LeBlancObject>>>,
-    pub globals: Box<Vec<Arc<Mutex<LeBlancObject>>>>,
+    pub variables: Vec<Strawberry<LeBlancObject>>,
+    pub globals: Box<Vec<Strawberry<LeBlancObject>>>,
     pub instructions: Arc<Vec<Instruction>>,
     pub precompiled: Vec<Precompiled>,
     pub current_instruct: u64,
@@ -82,7 +83,7 @@ impl LeblancHandle {
         }
     }
 
-    pub fn execute_no_args(&mut self) -> Arc<Mutex<LeBlancObject>> {
+    pub fn execute_no_args(&mut self) -> Strawberry<LeBlancObject> {
         unsafe { TIMINGS.setup() }
         self.current_instruct = 0;
         let mut stack = Vec::with_capacity(20);
@@ -106,17 +107,17 @@ impl LeblancHandle {
         if self.name == "main" && TIME_DEBUG {
             unsafe { TIMINGS.print_timing(); }
         }
-        return stack.pop().unwrap_or(Arc::new(Mutex::new(LeBlancObject::null())));
+        return stack.pop().unwrap_or(LeBlancObject::unsafe_null());
     }
 
 
-    pub fn execute(&mut self, inputs: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+    pub fn execute(&mut self, inputs: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
         unsafe { TIMINGS.setup() }
         //inputs.clone_into(&mut self.variables);
         self.variables = inputs.to_vec();
         //println!("VARIABLES: {:?}", self.variables);
         self.current_instruct = 0;
-        let mut stack = Vec::with_capacity(20);
+        let mut stack = Vec::with_capacity(5);
 
         while self.current_instruct < self.instructions.len() as u64 {
             let instruction = self.instructions[self.current_instruct as usize];
@@ -139,13 +140,13 @@ impl LeblancHandle {
         if self.name == "main" && TIME_DEBUG {
             unsafe { TIMINGS.print_timing(); }
         }
-        return stack.pop().unwrap_or(Arc::new(Mutex::new(LeBlancObject::null())));
+        return stack.pop().unwrap_or(LeBlancObject::unsafe_null());
 
     }
 
-    pub fn execute_range(&mut self, left_bound: u64, right_bound: u64) -> Arc<Mutex<LeBlancObject>> {
+    pub fn execute_range(&mut self, left_bound: u64, right_bound: u64) -> Strawberry<LeBlancObject> {
         self.current_instruct = left_bound;
-        let mut stack = Vec::with_capacity(20);
+        let mut stack = Vec::with_capacity(5);
         while self.current_instruct < right_bound {
             let instruction = self.instructions[self.current_instruct as usize];
             if DEBUG {println!("Range Instruction: {:?}", instruction);}
@@ -163,7 +164,7 @@ impl LeblancHandle {
             }
             self.current_instruct += 1;
         }
-        return stack.pop().unwrap_or(Arc::new(Mutex::new(LeBlancObject::null())));
+        return stack.pop().unwrap_or(LeBlancObject::unsafe_null());
 
     }
 }

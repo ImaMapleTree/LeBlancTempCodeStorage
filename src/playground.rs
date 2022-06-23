@@ -15,6 +15,7 @@ use crate::leblanc::core::native_types::string_type::leblanc_object_string;
 use std::fmt::Write;
 use std::num::ParseIntError;
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
 use crate::leblanc::core::bytecode::instruction_line_bytes::InstructionBytecode;
 use crate::leblanc::core::bytecode::ToBytecode;
@@ -27,41 +28,7 @@ use crate::leblanc::core::native_types::int64_type::leblanc_object_int64;
 use crate::leblanc::rustblanc::Hexable;
 
 fn test() -> LeBlancObject {
-    let mut bytecode = FunctionBytecode::new();
-    let mut instruction_line = InstructionBytecode::new();
-    instruction_line.set_line_number(0);
-    instruction_line.add_instruction(21.to_hex(2), 1.to_hex(2)); //binary add = 2
-    instruction_line.add_instruction(21.to_hex(2), 0.to_hex(2));
-    instruction_line.add_instruction(2.to_hex(2), 0.to_hex(2));
-    bytecode.add_instruction_line(instruction_line.generate());
 
-    let a = LeblancHandle::from_function_bytecode(bytecode);
-
-    let store = MethodStore::new("test".to_string(), LeBlancArgument::from_positional(&vec![LeBlancType::Flex, LeBlancType::Flex]));
-
-
-    let method = Method::of_leblanc_handle(store, a, BTreeSet::new());
-    let lb_obj = internal_method(method);
-    let mut lbo = Arc::new(Mutex::new(lb_obj));
-
-    let number1 = Arc::new(Mutex::new(leblanc_object_int64(100)));
-    let number2 = Arc::new(Mutex::new(leblanc_object_int64(3)));
-
-    lbo.call("test", &mut [number1.clone(), number2.clone()]);
-
-    println!("Number 1: {:?}", number1.lock().unwrap().data);
-    println!("Number 2: {:?}", number2.lock().unwrap().data);
-
-    println!("---------------\n");
-
-    let mut print = Arc::new(Mutex::new(_BUILTIN_PRINT_OBJECT_()));
-
-    let result = print.call("call", &mut [number1.clone()]);
-    println!("cloning print: {:?}", print.clone());
-    println!("{:#?}", result);
-    //print.call("call", &mut [result.clone()]);
-
-    // raise error;
     println!("\n---------------");
     return LeBlancObject::null();
 

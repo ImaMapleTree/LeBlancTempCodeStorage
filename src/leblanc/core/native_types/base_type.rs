@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_math::_internal_add_number_;
@@ -16,7 +17,7 @@ static mut BASE_METHODS: Option<Arc<HashSet<Method>>> = None;
 
 pub trait ToLeblanc {
     fn create(&self) -> LeBlancObject;
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>>;
+    fn create_mutex(&self) -> Strawberry<LeBlancObject>;
 }
 
 pub fn base_methods() -> Arc<HashSet<Method>> {

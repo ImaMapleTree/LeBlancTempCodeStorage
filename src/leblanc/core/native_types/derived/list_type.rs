@@ -2,6 +2,7 @@ use core::fmt::{Display, Formatter};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
 
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, LeBlancObjectData};
@@ -11,7 +12,7 @@ use crate::LeBlancType;
 
 #[derive(Clone, Debug)]
 pub struct LeblancList {
-    pub internal_vec: Vec<Arc<Mutex<LeBlancObject>>>
+    pub internal_vec: Vec<Strawberry<LeBlancObject>>
 }
 
 impl LeblancList {
@@ -50,12 +51,12 @@ impl ToLeblanc for LeblancList {
     fn create(&self) -> LeBlancObject {
         return leblanc_object_list(self.clone());
     }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { return Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Strawberry<LeBlancObject> { return Strawberry::new(self.create()) }
 }
 
 impl Display for LeblancList {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[{}]", self.internal_vec.iter().map(|mut item| item.clone().call_name("to_string").lock().unwrap().data.to_string()).collect::<Vec<String>>().join(", "))
+        write!(f, "[{}]", self.internal_vec.iter().map(|mut item| item.clone().call_name("to_string").loan().inquire().either().data.to_string()).collect::<Vec<String>>().join(", "))
     }
 }
 
@@ -63,7 +64,7 @@ impl PartialEq for LeblancList {
     fn eq(&self, other: &Self) -> bool {
         if self.internal_vec.len() != other.internal_vec.len() { return false }
         for i in 0..self.internal_vec.len() {
-            if self.internal_vec[i].lock().unwrap().data != other.internal_vec[i].lock().unwrap().data {
+            if self.internal_vec[i].bypass_loan().data != other.internal_vec[i].bypass_loan().data {
                 return false;
             }
         }

@@ -1,4 +1,4 @@
-use core::borrow::BorrowMut;
+/*use core::borrow::BorrowMut;
 use core::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 use std::panic::{RefUnwindSafe, UnwindSafe};
@@ -86,12 +86,12 @@ impl<T: Clone + Debug> Clone for Berry<T> {
 
 #[derive(Debug)]
 pub struct BerryLock<T: Clone + Debug> {
-    data: Arc<Mutex<T>>,
+    data: Strawberry<T>,
     parent_ptr: *mut Berry<T>,
 }
 
 impl<T: Clone + Debug> BerryLock<T> {
-    pub fn get(&mut self) -> Arc<Mutex<T>> {
+    pub fn get(&mut self) -> Strawberry<T>> {
         //println!("Getting lock");
         return self.data.clone();
     }
@@ -107,4 +107,4 @@ impl<T: Clone + Debug> Drop for BerryLock<T> {
             unsafe { (*self.parent_ptr).locked = false; }
         }
     }
-}
+}*/

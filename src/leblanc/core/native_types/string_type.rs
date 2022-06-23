@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_string::_internal_add_string;
@@ -36,7 +37,7 @@ impl ToLeblanc for String {
     fn create(&self) -> LeBlancObject {
         return leblanc_object_string(self.clone());
     }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { return Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Strawberry<LeBlancObject> { return Strawberry::new(self.create()) }
 }
 
 pub fn string_addition_method() -> Method {

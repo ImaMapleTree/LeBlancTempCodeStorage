@@ -2,6 +2,7 @@ use core::borrow::BorrowMut;
 use std::collections::HashMap;
 use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::time::Instant;
 use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
 use crate::leblanc::core::interpreter::instructions::InstructionBase::{Comparator_Else, Comparator_ElseIf, Comparator_If};
@@ -19,7 +20,7 @@ use crate::LeBlancType;
 use crate::leblanc::core::leblanc_handle::execute_handle;
 use crate::leblanc::rustblanc::strawberry::Either;
 
-pub fn execute_instruction(instruct: InstructionBase) -> fn(&mut LeblancHandle, &Instruction, &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
+pub fn execute_instruction(instruct: InstructionBase) -> fn(&mut LeblancHandle, &Instruction, &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
     return match instruct {
         InstructionBase::BinaryAdd => _INSTRUCT_BINARY_ADD_,
         InstructionBase::BinarySubtract => _INSTRUCT_BINARY_SUBTRACT_,
@@ -41,7 +42,7 @@ pub fn execute_instruction(instruct: InstructionBase) -> fn(&mut LeblancHandle, 
 }
 
 
-fn deprecated_safe_stack_pop(stack: &mut Vec<Arc<Mutex<LeBlancObject>>>, mut error: bool) -> Arc<Mutex<LeBlancObject>> {
+fn deprecated_safe_stack_pop(stack: &mut Vec<Strawberry<LeBlancObject>>, mut error: bool) -> Strawberry<LeBlancObject> {
     return match stack.pop() {
         None => {
             error = true;
@@ -51,7 +52,7 @@ fn deprecated_safe_stack_pop(stack: &mut Vec<Arc<Mutex<LeBlancObject>>>, mut err
     };
 }
 
-fn safe_stack_pop(stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<Arc<Mutex<LeBlancObject>>, Arc<Mutex<LeBlancObject>>> {
+fn safe_stack_pop(stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<Strawberry<LeBlancObject>, Strawberry<LeBlancObject>> {
     return match stack.pop() {
         None => {
             Err(LeBlancObject::unsafe_error())
@@ -60,11 +61,11 @@ fn safe_stack_pop(stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<Arc<Mute
     };
 }
 
-fn _INSTRUCT_BASE_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    Err(Arc::new(Mutex::new(LeBlancObject::error())))
+fn _INSTRUCT_BASE_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
+    Err(LeBlancObject::unsafe_error())
 }
 
-fn _INSTRUCT_INPLACE_ADD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
+fn _INSTRUCT_INPLACE_ADD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
     let error = false;
     let target = deprecated_safe_stack_pop(stack, error);
     if error { return Err(target); }
@@ -72,98 +73,90 @@ fn _INSTRUCT_INPLACE_ADD_(handle: &mut LeblancHandle, arg: &Instruction, stack: 
     if error { return Err(arg1); }
 
 
-    let result = target.lock().unwrap().methods.iter().cloned().filter(|m| m.has_tag(MethodTag::InPlaceAddition)).next();
+    let result = target.loan().inquire().either().methods.iter().cloned().filter(|m| m.has_tag(MethodTag::InPlaceAddition)).next();
         //.filter(|m| m.matches("_".to_string(), vec![tos2.lock().unwrap().to_leblanc_arg(0)]))
         //.next().unwrap_or(Method::error()).run(tos1.clone(), &mut [tos2.clone()]);
 
     result.unwrap().run(target.clone(), &mut [arg1.clone()]);
-    let result = Arc::new(Mutex::new(LeBlancObject::null()));
+    let result = LeBlancObject::unsafe_null();
     stack.push(result);
     Ok(())
 }
 
-fn _INSTRUCT_BINARY_ADD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+fn _INSTRUCT_BINARY_ADD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
+    let mut targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let mut target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    let mut targeter_unwrap = targeter.lock().unwrap();
-    if Mutex::try_lock(&target).is_err() {
-        target = Arc::new(Mutex::new(targeter_unwrap._clone()));
-    }
-    let mut target_unwarp = target.lock().unwrap();
-    if can_add_self(&targeter_unwrap.typing) && can_add_self(&target_unwarp.typing) {
-        stack.push((target_unwarp.data.as_i128() + targeter_unwrap.data.as_i128()).create_mutex());
+    let ntargeter = targeter.bypass_loan();
+    let ntarget = target.bypass_loan();
+
+
+    if can_add_self(&ntargeter.typing) && can_add_self(&ntarget.typing) {
+        stack.push((ntarget.data.as_i128() + ntargeter.data.as_i128()).create_mutex());
         return Ok(());
     }
 
-    let arguments = vec![targeter.lock().unwrap().to_leblanc_arg(0)];
-    let target_clone = Arc::clone(&target);
-    let matched_method = target_clone.lock().unwrap().methods.iter().filter(|m| {
+    let arguments = vec![ntargeter.to_leblanc_arg(0)];
+    let matched_method = ntarget.methods.iter().filter(|m| {
         m.matches("_".to_string(), &arguments)
     }).next().cloned();
     match matched_method {
         None => {
-            let arguments = vec![target.lock().unwrap().to_leblanc_arg(0)];
-            let targeter_clone = Arc::clone(&targeter);
-            let matched_method = targeter_clone.lock().unwrap().methods.iter().filter(|m| {
+            let arguments = vec![ntarget.to_leblanc_arg(0)];
+            let matched_method = ntargeter.methods.iter().filter(|m| {
                 m.matches("_".to_string(), &arguments)
             }).next().cloned();
             if matched_method.is_none() {
-                return Err(Arc::new(Mutex::new(LeBlancObject::error())));
+                return Err(LeBlancObject::unsafe_error());
             }
-            stack.push(matched_method.unwrap().run(targeter_clone, &mut [target_clone]));
+            stack.push(matched_method.unwrap().run(targeter, &mut [target]));
         }
         Some(mut method) => {
-            stack.push(method.run(target_clone, &mut [targeter.clone()]));
+            stack.push(method.run(target, &mut [targeter]));
         }
     }
 
     Ok(())
 }
 
-fn _INSTRUCT_BINARY_SUBTRACT_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let mut target =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
-    let targeter = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+fn _INSTRUCT_BINARY_SUBTRACT_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
+    let mut target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let mut targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    let mut targeter_unwrap = targeter.lock().unwrap();
-    if Mutex::try_lock(&target).is_err() {
-        target = targeter_unwrap._clone().to_mutex()
-    }
-    let mut target_unwarp = target.lock().unwrap();
+    let ntargeter = targeter.bypass_loan();
+    let ntarget = target.bypass_loan();
 
-    if can_add_self(&targeter_unwrap.typing) && can_add_self(&target_unwarp.typing) {
-        stack.push((target_unwarp.data.as_i128() - targeter_unwrap.data.as_i128()).create_mutex());
+
+    if can_add_self(&ntargeter.typing) && can_add_self(&ntarget.typing) {
+        stack.push((ntarget.data.as_i128() - ntargeter.data.as_i128()).create_mutex());
         return Ok(());
     }
 
-    let arguments = vec![targeter.lock().unwrap().to_leblanc_arg(0)];
-    let target_clone = Arc::clone(&target);
-    let matched_method = target_clone.lock().unwrap().methods.iter().filter(|m| {
+    let arguments = vec![ntargeter.to_leblanc_arg(0)];
+    let matched_method = ntarget.methods.iter().filter(|m| {
         m.matches("_".to_string(), &arguments)
     }).next().cloned();
     match matched_method {
         None => {
-            let arguments = vec![target.lock().unwrap().to_leblanc_arg(0)];
-            let targeter_clone = Arc::clone(&targeter);
-            let matched_method = targeter_clone.lock().unwrap().methods.iter().filter(|m| {
+            let arguments = vec![ntarget.to_leblanc_arg(0)];
+            let matched_method = ntargeter.methods.iter().filter(|m| {
                 m.matches("_".to_string(), &arguments)
             }).next().cloned();
             if matched_method.is_none() {
-                return Err(LeBlancObject::error().to_mutex());
+                return Err(LeBlancObject::unsafe_error());
             }
-            stack.push(matched_method.unwrap().run(targeter_clone, &mut [target_clone]));
+            stack.push(matched_method.unwrap().run(targeter, &mut [target]));
         }
         Some(mut method) => {
-            stack.push(method.run(target_clone, &mut [targeter.clone()]));
+            stack.push(method.run(target, &mut [targeter]));
         }
     }
 
     Ok(())
 }
-
 
 #[inline(always)]
-fn _INSTRUCT_LOAD_FUNCTION_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
+fn _INSTRUCT_LOAD_FUNCTION_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
     let result= unsafe { get_globals() }.get(arg.arg as usize);
     if result.is_none() { LeBlancObject::error().to_mutex(); }
     stack.push(result.unwrap().clone());
@@ -171,12 +164,12 @@ fn _INSTRUCT_LOAD_FUNCTION_(handle: &mut LeblancHandle, arg: &Instruction, stack
 }
 
 #[inline(always)]
-fn _INSTRUCT_LOAD_CONSTANT_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
+fn _INSTRUCT_LOAD_CONSTANT_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
     let result= handle.constants.get(arg.arg as usize);
     match result {
         None => return Err(LeBlancObject::error().to_mutex()),
         Some(constant) => {
-            stack.push(constant._clone().to_mutex());
+            stack.push(Strawberry::from_arc(constant.clone()));
             Ok(())
         }
     }
@@ -184,8 +177,8 @@ fn _INSTRUCT_LOAD_CONSTANT_(handle: &mut LeblancHandle, arg: &Instruction, stack
 }
 
 #[inline(always)]
-fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let result= handle.variables.get(arg.arg as usize).cloned();
+fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
+    let result= handle.variables.get(arg.arg as usize);
     match result {
         None => {
             let null = LeBlancObject::null().to_mutex();
@@ -207,7 +200,7 @@ fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
 }
 
 #[inline(always)]
-fn _INSTRUCT_STORE_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
+fn _INSTRUCT_STORE_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
     let result = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     if arg.arg as usize >= handle.variables.len() {
         handle.variables.push(result);
@@ -217,8 +210,8 @@ fn _INSTRUCT_STORE_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: 
     Ok(())
 }
 
-fn _CALL_FUNCTION_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let func = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+fn _CALL_FUNCTION_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
+    let mut func = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let mut arguments = match arg.arg {
         0 => { Vec::new() }
         1 => { vec![match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) }] }
@@ -232,46 +225,22 @@ fn _CALL_FUNCTION_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Ve
             vector
         }
     };
-    let mut mutex = func.lock().unwrap();
-    let mutex_method = mutex.data.retrieve_self_as_function().unwrap();
+    let mutex_method = func.bypass_loan().data.retrieve_self_as_function().unwrap();
     let handle = mutex_method.handle;
     let is_internal = mutex_method.is_internal_method();
-    let mut leblanc_handle = mutex_method.leblanc_handle.clone();
 
-
-    Mutex::unlock(mutex);
 
     stack.push( match is_internal {
-        true => (handle)(func.clone(), &mut arguments),
-        false => leblanc_handle.loan().inquire().either().execute(&mut arguments)
-    });
-
-    /*let result = match acquire.acquire() {
-        Ok(lock) => {
-            null_handle = lock.get().lock().unwrap().null;
-            if null_handle { LeBlancObject::unsafe_null() }
-            else { lock.get().lock().as_mut().unwrap().execute(&mut arguments) }
-        },
-        Err(mut lock) => {
-            null_handle = unsafe {&mut **lock.get().lock().unwrap()}.null;
-            if null_handle { LeBlancObject::unsafe_null() }
-            else { unsafe {&mut **lock.get().lock().unwrap()}.execute(&mut arguments) }
-        },
-    };
-    //let null_handle = leblanc_handle.lock().unwrap().null;
-    let result = match null_handle {
-        false => { result }
         true => {
-            (func.lock().unwrap().data.retrieve_self_as_function().unwrap().handle)(func.clone(), &mut arguments)
-        }
-    };*/
-
-    //stack.push(result);
+            (handle)(func, &mut arguments)
+        },
+        false => mutex_method.leblanc_handle.loan().inquire().either().execute(&mut arguments)
+    });
 
     Ok(())
 }
 
-fn _INSTRUCT_CALL_CLASS_METHOD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
+fn _INSTRUCT_CALL_CLASS_METHOD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
     let error = false;
     let method_name = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let mut arguments = match arg.arg {
@@ -290,30 +259,27 @@ fn _INSTRUCT_CALL_CLASS_METHOD_(handle: &mut LeblancHandle, arg: &Instruction, s
     };
     let mut object = deprecated_safe_stack_pop(stack, error);
     if error { return Err(object); }
-    stack.push(object.call(method_name.lock().unwrap().data.to_string().as_str(), &mut arguments));
+    stack.push(object.call(method_name.bypass_loan().data.to_string().as_str(), &mut arguments));
     Ok(())
 }
 
-fn _INSTRUCT_CREATE_RANGE_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
+fn _INSTRUCT_CREATE_RANGE_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
     let mut increment = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let mut operand = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let bound = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
     let mut internal_list = LeblancList::empty();
 
-    /*println!("Operand: {:?}", operand);
-    println!("Bound: {:?}", bound);
-    println!("Increment: {:?}", increment);*/
-    while operand.lock().unwrap().data < bound.lock().unwrap().data || (*&increment.leblanc_type() == LeBlancType::Boolean && *increment.reflect().downcast_ref::<bool>().unwrap()){
+    while operand.bypass_loan().data < bound.bypass_loan().data || (*&increment.leblanc_type() == LeBlancType::Boolean && *increment.reflect().downcast_ref::<bool>().unwrap()){
         //println!("{}", internal_list);
-        internal_list.internal_vec.push(operand.lock().unwrap()._clone().to_mutex());
+        unsafe { internal_list.internal_vec.push(operand.bypass_loan().clone().to_mutex()); }
         if increment.leblanc_type() == LeBlancType::Function {
-            operand = increment.lock().unwrap().data.retrieve_self_as_function().unwrap().run(increment.clone(), &mut [operand]).lock().unwrap()._clone().cast(bound.leblanc_type()).to_mutex();
+            operand = increment.loan().inquire().either().data.retrieve_self_as_function().unwrap().run(increment.clone(), &mut [operand]).bypass_loan().cast(bound.leblanc_type()).to_mutex();
         } else if operand.leblanc_type().is_native() {
-            operand = operand.call("_ADD_", &mut [increment.clone()]).lock().unwrap()._clone().cast(bound.leblanc_type()).to_mutex();
+            operand = operand.call("_ADD_", &mut [increment.clone()]).loan().inquire().either().cast(bound.leblanc_type()).to_mutex();
         } else {
-            let matched_method = increment.lock().unwrap().methods.iter().filter(|m| {
-                m.matches("_".to_string(), &vec![operand.lock().unwrap().to_leblanc_arg(0)])
+            let matched_method = increment.bypass_loan().methods.iter().filter(|m| {
+                m.matches("_".to_string(), &vec![operand.bypass_loan().to_leblanc_arg(0)])
             }).next().cloned();
             match matched_method {
                 None => {return Err(increment)}
@@ -328,7 +294,7 @@ fn _INSTRUCT_CREATE_RANGE_(handle: &mut LeblancHandle, arg: &Instruction, stack:
     Ok(())
 }
 
-fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
+fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
     let mut iter_variable = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let iterable = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
@@ -336,7 +302,7 @@ fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mu
 
     // make into an iterator eventually, right now we'll just grab the internal list
     for item in &iterable.reflect().downcast_ref::<LeblancList>().unwrap().internal_vec {
-        iter_variable.lock().unwrap().copy_data(&item.lock().unwrap());
+        iter_variable.bypass_loan().copy_data(&item.bypass_loan());
         let loop_result = handle.execute_range(loop_start+1, loop_start+1 + arg.arg as u64 );
     }
 
@@ -347,32 +313,32 @@ fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mu
     Ok(())
 }
 
-fn _INSTRUCT_EQUALITY_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let tos1 = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
-    let tos2 = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+fn _INSTRUCT_EQUALITY_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
+    let mut tos1 = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let mut tos2 = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    let tos1 = tos1.lock().unwrap().cast(tos2.leblanc_type()).to_mutex();
+    let mut tos1 = tos1.bypass_loan().cast(tos2.leblanc_type()).to_mutex();
 
-    /*println!("TOS1: {:?}", tos1.lock().unwrap().data);
-    println!("TOS2: {:?}", tos2.lock().unwrap().data);*/
+    /*println!("TOS1: {:?}", tos1.loan().inquire().either().data);
+    println!("TOS2: {:?}", tos2.loan().inquire().either().data);*/
 
     let result = match arg.arg {
-        0 => (tos1.lock().unwrap().data == tos2.lock().unwrap().data).create_mutex(),
-        1 => (tos1.lock().unwrap().data != tos2.lock().unwrap().data).create_mutex(),
-        2 => (tos1.lock().unwrap().data > tos2.lock().unwrap().data).create_mutex(),
-        3 => (tos1.lock().unwrap().data < tos2.lock().unwrap().data).create_mutex(),
-        4 => (tos1.lock().unwrap().data >= tos2.lock().unwrap().data).create_mutex(),
-        5 => (tos1.lock().unwrap().data <= tos2.lock().unwrap().data).create_mutex(),
+        0 => (tos1.bypass_loan().data == tos2.bypass_loan().data).create_mutex(),
+        1 => (tos1.bypass_loan().data != tos2.bypass_loan().data).create_mutex(),
+        2 => (tos1.bypass_loan().data > tos2.bypass_loan().data).create_mutex(),
+        3 => (tos1.bypass_loan().data < tos2.bypass_loan().data).create_mutex(),
+        4 => (tos1.bypass_loan().data >= tos2.bypass_loan().data).create_mutex(),
+        5 => (tos1.bypass_loan().data <= tos2.bypass_loan().data).create_mutex(),
         _ => { return Err(LeBlancObject::unsafe_error()); }
     };
 
-    //println!("result {}", result.lock().unwrap().data);
+    //println!("result {}", result.loan().inquire().either().data);
     stack.push(result);
 
     Ok(())
 }
 
-fn _INSTRUCT_COMPARATOR_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
+fn _INSTRUCT_COMPARATOR_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Strawberry<LeBlancObject>>) -> Result<(), Strawberry<LeBlancObject>> {
     let truth = if arg.instruct != Comparator_Else {
         match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) }
     } else {

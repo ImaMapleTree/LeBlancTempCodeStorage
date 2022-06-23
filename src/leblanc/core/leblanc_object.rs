@@ -14,16 +14,17 @@ use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
+use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
 
-static mut NULL: Option<Arc<Mutex<LeBlancObject>>> = None;
+static mut NULL: Option<Strawberry<LeBlancObject>> = None;
 
-static mut ERROR: Option<Arc<Mutex<LeBlancObject>>> = None;
+static mut ERROR: Option<Strawberry<LeBlancObject>> = None;
 
-static mut NO_ARGS: [Arc<Mutex<LeBlancObject>>; 0] = [];
+static mut NO_ARGS: [Strawberry<LeBlancObject>; 0] = [];
 
 pub trait Callable {
-    fn call(&mut self, method_name: &str, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>;
-    fn call_name(&mut self, method_name: &str) -> Arc<Mutex<LeBlancObject>>;
+    fn call(&mut self, method_name: &str, arguments: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject>;
+    fn call_name(&mut self, method_name: &str) -> Strawberry<LeBlancObject>;
 }
 
 pub trait Reflect {
@@ -57,11 +58,11 @@ impl LeBlancObject {
         }
     }
 
-    pub fn unsafe_null() -> Arc<Mutex<LeBlancObject>> {
+    pub fn unsafe_null() -> Strawberry<LeBlancObject> {
         return unsafe {
             match NULL.as_ref() {
                 None => {
-                    NULL = Some(Arc::new(Mutex::new(LeBlancObject::null())));
+                    NULL = Some(LeBlancObject::null().to_mutex());
                     NULL.as_ref().unwrap().clone()
                 }
                 Some(null) => {
@@ -81,11 +82,11 @@ impl LeBlancObject {
         }
     }
 
-    pub fn unsafe_error() -> Arc<Mutex<LeBlancObject>> {
+    pub fn unsafe_error() -> Strawberry<LeBlancObject> {
         return unsafe {
             match ERROR.as_ref() {
                 None => {
-                    ERROR = Some(Arc::new(Mutex::new(LeBlancObject::error())));
+                    ERROR = Some(LeBlancObject::error().to_mutex());
                     ERROR.as_ref().unwrap().clone()
                 }
                 Some(error) => {
@@ -155,8 +156,8 @@ impl LeBlancObject {
         }
     }
 
-    pub fn to_mutex(self) -> Arc<Mutex<LeBlancObject>> {
-        return Arc::new(Mutex::new(self));
+    pub fn to_mutex(self) -> Strawberry<LeBlancObject> {
+        return Strawberry::new(self);
     }
 }
 
@@ -204,16 +205,16 @@ impl Reflect for LeBlancObject {
     }
 }
 
-impl Reflect for Arc<Mutex<LeBlancObject>> {
+impl Reflect for Strawberry<LeBlancObject> {
     fn reflect(&self) -> Box<dyn Any + 'static> {
-        return self.lock().unwrap().reflect();
+        return self.bypass_loan().reflect();
     }
 }
 
-pub fn passed_args_to_types(args: &Vec<Arc<Mutex<LeBlancObject>>>) -> Vec<LeBlancArgument> {
+pub fn passed_args_to_types(args: &Vec<Strawberry<LeBlancObject>>) -> Vec<LeBlancArgument> {
     let mut arg_types = Vec::new();
     for i in 0..args.len() {
-        arg_types.append_item( args[i].lock().unwrap().to_leblanc_arg(i as u32));
+        arg_types.append_item( args[i].bypass_loan().to_leblanc_arg(i as u32));
     }
     return arg_types;
 
@@ -246,24 +247,25 @@ impl Display for LeBlancObjectData {
     }
 }
 
-impl Callable for Arc<Mutex<LeBlancObject>> {
-    fn call(&mut self, method_name: &str, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+impl Callable for Strawberry<LeBlancObject> {
+    fn call(&mut self, method_name: &str, arguments: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
         let argument_vec = arguments.to_vec();
         let args = passed_args_to_types(&argument_vec);
 
 
-        let self_clone = Arc::clone(self);
-        let method = self_clone.lock().unwrap().methods.iter().filter(|m| {
+        //let self_clone = Arc::clone(self);
+        let method = self.bypass_loan().methods.iter().filter(|m| {
             m.matches(method_name.to_string(), &args)
         }).next().cloned();
         if method.is_none() {
-            return Arc::new(Mutex::new(LeBlancObject::error()));
+            return LeBlancObject::unsafe_error();
         }
         return method.unwrap().run( self.clone(), arguments);
     }
 
-    fn call_name(&mut self, method_name: &str) -> Arc<Mutex<LeBlancObject>> {
-        let handle = self.lock().unwrap().methods.iter().find(|m| m.context.name == method_name).unwrap().handle;
+    fn call_name(&mut self, method_name: &str) -> Strawberry<LeBlancObject> {
+        //println!("Method name: {}, self: {:#?}", method_name, self);
+        let handle = self.bypass_loan().methods.iter().find(|m| m.context.name == method_name).unwrap().handle;
         unsafe { handle(self.clone(), &mut NO_ARGS) }
     }
 }
@@ -273,9 +275,9 @@ pub trait Stringify {
     fn to_string(&self) -> String;
 }
 
-impl Stringify for Arc<Mutex<LeBlancObject>> {
+impl Stringify for Strawberry<LeBlancObject> {
     fn to_string(&self) -> String {
-        self.lock().unwrap().data.to_string()
+        self.bypass_loan().data.to_string()
     }
 }
 
@@ -283,9 +285,9 @@ pub trait ArcType {
     fn leblanc_type(&self) -> LeBlancType;
 }
 
-impl ArcType for Arc<Mutex<LeBlancObject>> {
+impl ArcType for Strawberry<LeBlancObject> {
     fn leblanc_type(&self) -> LeBlancType {
-        return self.lock().unwrap().typing;
+        return self.bypass_loan().typing;
     }
 }
 

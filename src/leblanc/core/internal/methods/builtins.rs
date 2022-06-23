@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
 use crate::leblanc::rustblanc::utils::{decode_hex, encode_hex};
@@ -23,7 +24,7 @@ pub fn create_partial_functions() -> Vec<PartialFunction> {
     return vec![PartialFunction::from_method(_BUILTIN_PRINT_METHOD_()), PartialFunction::from_method(_BUILTIN_DISASSEMBLE_METHOD_())]
 }
 
-pub fn create_builtin_function_objects() -> Vec<Arc<Mutex<LeBlancObject>>> {
+pub fn create_builtin_function_objects() -> Vec<Strawberry<LeBlancObject>> {
     return vec![_BUILTIN_PRINT_OBJECT_().to_mutex(), _BUILTIN_DISASSEMBLE_OBJECT_().to_mutex()];
 }
 

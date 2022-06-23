@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 use std::io;
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Stringify};
 use crate::leblanc::core::method::Method;
@@ -13,7 +14,7 @@ static mut TIMING: Timings = Timings { map: None };
 
 static mut STDOUT: Option<io::Stdout> = None;
 
-fn _BUILTIN_PRINT_(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+fn _BUILTIN_PRINT_(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
     let result = args[0].call_name("to_string").to_string() + "\n";
     unsafe {
         if STDOUT.is_none() {

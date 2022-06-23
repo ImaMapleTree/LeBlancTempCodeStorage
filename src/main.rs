@@ -8,6 +8,7 @@
 #![feature(get_mut_unchecked)]
 #![feature(fn_traits)]
 #![feature(total_cmp)]
+#![feature(ptr_const_cast)]
 
 extern crate core;
 extern crate alloc;

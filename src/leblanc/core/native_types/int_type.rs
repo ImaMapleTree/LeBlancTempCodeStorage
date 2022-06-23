@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
@@ -36,5 +37,5 @@ pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
 
 impl ToLeblanc for i32 {
     fn create(&self) -> LeBlancObject { return leblanc_object_int(*self); }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { return Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Strawberry<LeBlancObject> { return Strawberry::new(self.create()) }
 }

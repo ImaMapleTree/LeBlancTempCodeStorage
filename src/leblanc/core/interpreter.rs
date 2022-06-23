@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use crate::leblanc::core::bytecode::LeblancBytecode;
 use crate::leblanc::core::internal::methods::builtins::create_builtin_function_objects;
 use crate::leblanc::core::interpreter::leblanc_runner::LeBlancRunner;
@@ -26,7 +27,7 @@ pub fn run(mut bytecode: LeblancBytecode) {
         let method_store = MethodStore::new(name.clone(), LeBlancArgument::from_positional(arguments));
         let method = Method::of_leblanc_handle(method_store, leblanc_handle, BTreeSet::new());
         if name != "__GLOBAL__" {
-            globals.push(Arc::new(Mutex::new(internal_method(method))));
+            globals.push(internal_method(method).to_mutex());
         }
     }
 

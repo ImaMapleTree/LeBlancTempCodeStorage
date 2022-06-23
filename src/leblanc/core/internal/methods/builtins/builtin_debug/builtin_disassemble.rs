@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 use std::io;
 use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use prettytable::format::TableFormat;
 use prettytable::{Cell, format, Row, Table};
 use crate::leblanc::core::interpreter::instructions::InstructionBase;
@@ -17,8 +18,8 @@ use crate::LeBlancType;
 
 static mut STDOUT: Option<io::Stdout> = None;
 
-fn _BUILTIN_DISASSEMBLE(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
-    let mut method = args[0].lock().unwrap().data.retrieve_self_as_function().unwrap().clone();
+fn _BUILTIN_DISASSEMBLE(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
+    let mut method = args[0].loan().inquire().either().data.retrieve_self_as_function().unwrap().clone();
     let dis_rust_func = if args.len() > 1 {
         *args[1].reflect().downcast_ref::<bool>().unwrap()
     } else {
