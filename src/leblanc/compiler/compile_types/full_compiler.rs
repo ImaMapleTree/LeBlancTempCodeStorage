@@ -131,16 +131,16 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
                 arg_byte = ((token.typing()[0].len() - (account_for_self as usize)) as u16).to_hex(2);
                 instruction = CallClassMethod
             } else if instruction == CallFunction {
-                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(index, p)| *p == PartialFunction::from_token_args(&token)).next();
+                let token_partial_function = PartialFunction::from_token_args(&token);
+                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(index, p)| *p == token_partial_function).next();
                 if index_partial.is_none() {
                     println!("{:#?}", partial_functions);
                     println!("{:?}", PartialFunction::from_token_args(&token));
                     panic!("This should be an actual error");
                 } else {
                     let index = index_partial.as_ref().unwrap().0;
-                    let partial_function = index_partial.unwrap().1;
                     instruction_bytes.add_instruction(LoadFunction.to_hex(2), index.to_hex(2));
-                    arg_byte = (partial_function.args.len() as u16).to_hex(2);
+                    arg_byte = (token_partial_function.args.len() as u16).to_hex(2);
                 }
             } else if instruction == LoadFunction {
                 let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(index, p)| *p.name == token.as_string()).next();

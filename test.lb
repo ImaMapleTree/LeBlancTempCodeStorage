@@ -1,7 +1,21 @@
 func main() {
-    for int i in 1 to 500000 {
-        for int j in 1 to 1000 {
-            print(500000-i);
-        }
+    disassemble(test);
+    disassemble(print);
+
+    for int i in 0 to 30 {
+        print(fibonacci(i));
     }
+
+}
+
+func fibonacci(int n) returns int {
+    if n <= 1 {
+        return n;
+    } else {
+        return (fibonacci(n - 1) + fibonacci(n - 2));
+    }
+}
+
+func test(int a, int b, int c) returns int {
+
 }

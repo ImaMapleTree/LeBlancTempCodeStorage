@@ -8,21 +8,23 @@ use strum::VariantNames;
 use crate::leblanc::core::internal::methods::builtins::builtin_print::{_BUILTIN_PRINT_METHOD_, _BUILTIN_PRINT_OBJECT_};
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
+use crate::leblanc::core::internal::methods::builtins::builtin_debug::builtin_disassemble::{_BUILTIN_DISASSEMBLE_METHOD_, _BUILTIN_DISASSEMBLE_OBJECT_};
 
 pub mod builtin_print;
+pub mod builtin_debug;
 
 #[derive(Debug, PartialEq, EnumVariantNames, strum_macros::Display, EnumIter)]
 pub enum BuiltinFunctions {
-    Print
+    Print,
+    Disassemble
 }
 
 pub fn create_partial_functions() -> Vec<PartialFunction> {
-    return vec![PartialFunction::from_method(_BUILTIN_PRINT_METHOD_())]
+    return vec![PartialFunction::from_method(_BUILTIN_PRINT_METHOD_()), PartialFunction::from_method(_BUILTIN_DISASSEMBLE_METHOD_())]
 }
 
 pub fn create_builtin_function_objects() -> Vec<Arc<Mutex<LeBlancObject>>> {
-    unsafe { builtin_print::setup_timings(); }
-    return vec![Arc::new(Mutex::new(_BUILTIN_PRINT_OBJECT_()))];
+    return vec![_BUILTIN_PRINT_OBJECT_().to_mutex(), _BUILTIN_DISASSEMBLE_OBJECT_().to_mutex()];
 }
 
 impl Hexable for BuiltinFunctions {

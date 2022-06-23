@@ -1,10 +1,12 @@
 use core::str::FromStr;
+use std::any::Any;
 use std::fmt::{Display, Formatter};
+use std::intrinsics::type_name;
 use crate::leblanc::core::native_types::derived::DerivedType;
-use crate::leblanc::core::native_types::LeBlancType::*;
 
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
+use crate::LeBlancType::{Arch, Block, Boolean, Char, Class, Derived, Double, Dynamic, Exception, Flex, Float, Function, Int, Int128, Int64, Module, Null, SelfType, Short};
 
 pub mod NULL;
 pub mod string_type;
@@ -23,7 +25,7 @@ pub mod char_type;
 pub mod attributes;
 pub mod derived;
 
-static VARIANTS: [&str; 17] = ["flex", "Self", "char", "short", "int", "int64", "in128", "arch", "float", "double", "boolean", "string", "block", "function", "module", "class", "dynamic"];
+static VARIANTS: [&str; 18] = ["flex", "Self", "char", "short", "int", "int64", "in128", "arch", "float", "double", "boolean", "string", "block", "function", "module", "class", "dynamic", "null"];
 
 #[derive(Eq, Clone, Copy, Debug, Ord, PartialOrd, Hash)]
 pub enum LeBlancType {
@@ -45,7 +47,8 @@ pub enum LeBlancType {
     Module,
     Dynamic,
     Exception, // internal implementation of "dynamic
-    Derived(DerivedType)
+    Derived(DerivedType),
+    Null
 }
 
 pub fn is_native_type(string: &str) -> bool { type_value(string) != Class(0) }
@@ -70,6 +73,7 @@ pub fn type_value(string: &str) -> LeBlancType {
         "dynamic" => Dynamic,
         "exception" => Exception,
         "Self" => SelfType,
+        "null" => Null,
         Other => {
             if Other.starts_with("class.") {
                 let class_value = Other[6..].parse::<u32>().unwrap();
@@ -104,9 +108,9 @@ impl LeBlancType {
         }
     }
 
-    pub fn as_str_real(&self) -> std::string::String {
+    pub fn as_str_real(&self) -> String {
         return match self {
-            Class(v) => "class.".to_owned() + &v.to_string(),
+            Class(v) => "class.".to_string() + &v.to_string(),
             _ => self.as_str().to_string()
         }
     }
@@ -142,6 +146,7 @@ impl LeBlancType {
                     DerivedType::List => "list"
                 }
             }
+            Null => "null"
         }
     }
 

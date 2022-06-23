@@ -13,6 +13,7 @@ extern crate core;
 extern crate alloc;
 
 use std::io;
+use core::panic::PanicInfo;
 use std::time::Instant;
 use clicolors_control::set_colors_enabled;
 use crate::leblanc::compiler::compile::compile;
@@ -36,6 +37,11 @@ pub mod leblanc;
 pub mod playground;
 
 static INTERACTIVE: bool = false;
+
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 
 fn main() -> io::Result<()> {

@@ -13,32 +13,14 @@ static mut TIMING: Timings = Timings { map: None };
 
 static mut STDOUT: Option<io::Stdout> = None;
 
-pub unsafe fn setup_timings() {
-    TIMING.setup();
-}
-
-pub unsafe fn print_timings() {
-    TIMING.print_timing();
-}
-
 fn _BUILTIN_PRINT_(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
-    //let now = Instant::now();
-    let result = args[0].call_name("to_string");
-    //let result = args[0].call("toString", &mut []);
-    //unsafe { TIMING.add_timing("toStringCall".to_string(), now.elapsed().as_secs_f64()); }
-    //let now = Instant::now();
-    let unlock = result.to_string() + "\n";
-    //unsafe { TIMING.add_timing("unlock".to_string(), now.elapsed().as_secs_f64()); }
-    //let now = Instant::now();
-    //println!("{}", unlock);
+    let result = args[0].call_name("to_string").to_string() + "\n";
     unsafe {
         if STDOUT.is_none() {
             STDOUT = Some(io::stdout());
         }
-        io::copy(&mut unlock.as_bytes(), &mut STDOUT.as_mut().unwrap()).unwrap();
+        io::copy(&mut result.as_bytes(), &mut STDOUT.as_mut().unwrap()).unwrap();
     }
-    //stdout().write_all(&unlock.into_bytes()).unwrap();
-    //unsafe { TIMING.add_timing("print".to_string(), now.elapsed().as_secs_f64()); }
     return LeBlancObject::unsafe_null()
 }
 

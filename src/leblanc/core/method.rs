@@ -3,58 +3,74 @@ use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
+use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
+use crate::leblanc::rustblanc::berry_mutex::Berry;
+use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
 
 pub struct Method {
     pub context: MethodStore,
-    pub leblanc_handle: LeblancHandle,
+    pub leblanc_handle: Strawberry<LeblancHandle>,
     pub handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>,
     pub tags: BTreeSet<MethodTag>,
+    pub method_type: MethodType,
 }
+
+
 
 impl Method {
     pub fn new(context: MethodStore, handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>, tags: BTreeSet<MethodTag>) -> Method {
         return Method {
             context,
-            leblanc_handle: LeblancHandle::null(),
+            leblanc_handle: Strawberry::new(LeblancHandle::null()),
             handle,
-            tags
+            tags,
+            method_type: MethodType::InternalMethod
         }
     }
 
     pub fn null() -> Method {
+        let t = String::new();
         return Method {
             context: MethodStore::no_args("null".to_string()),
-            leblanc_handle: LeblancHandle::null(),
+            leblanc_handle: Strawberry::new(LeblancHandle::null()),
             handle: null_func,
-            tags: BTreeSet::new()
+            tags: BTreeSet::new(),
+            method_type: MethodType::InternalMethod
         }
     }
 
     pub fn error() -> Method {
         return Method {
             context: MethodStore::no_args("null".to_string()),
-            leblanc_handle: LeblancHandle::null(),
+            leblanc_handle: Strawberry::new(LeblancHandle::null()),
             handle: error_func,
-            tags: BTreeSet::new()
+            tags: BTreeSet::new(),
+            method_type: MethodType::InternalMethod
         }
     }
+
+    pub fn is_internal_method(&self) -> bool { self.method_type == MethodType::InternalMethod }
 
     pub fn no_handle(context: MethodStore, tags: BTreeSet<MethodTag>) -> Method {
         return Method::new(context, null_func, tags);
     }
 
     pub fn of_leblanc_handle(context: MethodStore, leblanc_handle: LeblancHandle, tags: BTreeSet<MethodTag>) -> Method {
+        println!("Creating leblanc handle {:?} | {:?}", context, leblanc_handle);
+        let leblanc_handle = Strawberry::new(leblanc_handle);
+        println!("Grabbed handle");
         return Method {
             context,
             leblanc_handle,
             handle: null_func,
-            tags
+            tags,
+            method_type: MethodType::DefinedMethod
         }
     }
 
@@ -62,27 +78,33 @@ impl Method {
         return Method::new(context, handle, BTreeSet::new());
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn run(&mut self, _self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
-        return match self.leblanc_handle.null {
-            false => {
-                //self.leblanc_handle.variables = args.to_vec();
-                self.leblanc_handle.borrow_mut().execute(Arc::new(Mutex::new(args.to_vec())))
+        unsafe {
+            return match self.is_internal_method() {
+                false => self.leblanc_handle.loan().inquire_uncloned().either().execute(args),
+                true => (self.handle)(_self, args)
             }
-            true => (self.handle)(_self, args)
         }
     }
 
+    /*#[inline(always)]
     pub fn run_with_vec(&mut self, _self: Arc<Mutex<LeBlancObject>>, args: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Arc<Mutex<LeBlancObject>> {
-        return match self.leblanc_handle.null {
+        let mut leblanc_handle = match self.leblanc_handle.acquire() {
+            Ok(lock) => lock.get(),
+            Err(mut lock) => lock.get()
+        };
+        let null_handle = leblanc_handle.lock().unwrap().null;
+        return match null_handle {
             false => {
                 //self.leblanc_handle.variables = args.clone();
-                self.leblanc_handle.borrow_mut().execute(Arc::new(Mutex::new(args.to_vec())))
+                leblanc_handle.lock().unwrap().execute(args)
             }
             true => (self.handle)(_self, args)
         }
-    }
+    }*/
 
+    #[inline(always)]
     pub fn run_uncloned(&self, _self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
         (self.handle)(_self, args)
     }
@@ -102,7 +124,7 @@ impl Method {
     }
 
     pub fn update_global(&mut self, globals: Box<Vec<Arc<Mutex<LeBlancObject>>>>) {
-        self.leblanc_handle.borrow_mut().globals = globals
+        self.leblanc_handle.loan().inquire().either().globals = globals
     }
 
     pub fn store(&self) -> &MethodStore { &self.context }
@@ -138,6 +160,7 @@ impl Debug for Method {
         f.debug_struct("Method")
             .field("context", &self.context)
             .field("tags", &self.tags)
+            .field("handle", &self.leblanc_handle)
             .finish()
     }
 }
@@ -148,7 +171,8 @@ impl Clone for Method {
             context: self.context.clone(),
             handle: self.handle,
             leblanc_handle: self.leblanc_handle.clone(),
-            tags: self.tags.clone()
+            tags: self.tags.clone(),
+            method_type: self.method_type
         };
         //Method::new(self.context.clone(), self.handle, self.tags.clone())
     }
@@ -183,5 +207,12 @@ fn tags_to_string(tags: &BTreeSet<MethodTag>) -> String {
     for tag in tags {
         s += &(", ".to_owned() + &tag.to_string());
     }
+
     return s.replacen(", ", "", 1);
+}
+
+#[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub enum MethodType {
+    InternalMethod,
+    DefinedMethod
 }

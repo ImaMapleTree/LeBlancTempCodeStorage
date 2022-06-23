@@ -8,6 +8,7 @@ use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
+use crate::leblanc::rustblanc::strawberry::print_counts;
 
 pub mod instructions;
 pub mod interactive;
@@ -21,7 +22,6 @@ pub fn run(mut bytecode: LeblancBytecode) {
     for mut function in bytecode.body().functions() {
         let arguments = &function.arguments();
         let name = function.name();
-        //println!("bc: {} | {:#?}", function.name(), function);
         let leblanc_handle = LeblancHandle::from_function_bytecode(function);
         let method_store = MethodStore::new(name.clone(), LeBlancArgument::from_positional(arguments));
         let method = Method::of_leblanc_handle(method_store, leblanc_handle, BTreeSet::new());
@@ -33,6 +33,8 @@ pub fn run(mut bytecode: LeblancBytecode) {
     let mut runner = LeBlancRunner::new(globals);
 
     runner.run_main();
+
+    unsafe { print_counts(); }
 
 
 

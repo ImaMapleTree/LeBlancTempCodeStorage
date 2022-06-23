@@ -1,5 +1,6 @@
 use core::borrow::BorrowMut;
 use std::collections::HashMap;
+use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
@@ -15,6 +16,8 @@ use crate::leblanc::core::native_types::derived::list_type::{leblanc_object_list
 use crate::leblanc::core::native_types::int_type::leblanc_object_int;
 use crate::leblanc::rustblanc::utils::Timing;
 use crate::LeBlancType;
+use crate::leblanc::core::leblanc_handle::execute_handle;
+use crate::leblanc::rustblanc::strawberry::Either;
 
 pub fn execute_instruction(instruct: InstructionBase) -> fn(&mut LeblancHandle, &Instruction, &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
     return match instruct {
@@ -38,14 +41,22 @@ pub fn execute_instruction(instruct: InstructionBase) -> fn(&mut LeblancHandle, 
 }
 
 
-fn safe_stack_pop(stack: &mut Vec<Arc<Mutex<LeBlancObject>>>, mut error: bool) -> Arc<Mutex<LeBlancObject>> {
-    let stack_result = stack.pop();
-    return match stack_result {
+fn deprecated_safe_stack_pop(stack: &mut Vec<Arc<Mutex<LeBlancObject>>>, mut error: bool) -> Arc<Mutex<LeBlancObject>> {
+    return match stack.pop() {
         None => {
             error = true;
             LeBlancObject::unsafe_error()
         }
         Some(result) => result
+    };
+}
+
+fn safe_stack_pop(stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<Arc<Mutex<LeBlancObject>>, Arc<Mutex<LeBlancObject>>> {
+    return match stack.pop() {
+        None => {
+            Err(LeBlancObject::unsafe_error())
+        }
+        Some(result) => Ok(result)
     };
 }
 
@@ -55,9 +66,9 @@ fn _INSTRUCT_BASE_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Ve
 
 fn _INSTRUCT_INPLACE_ADD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
     let error = false;
-    let target = safe_stack_pop(stack, error);
+    let target = deprecated_safe_stack_pop(stack, error);
     if error { return Err(target); }
-    let arg1 =  safe_stack_pop(stack, error);
+    let arg1 =  deprecated_safe_stack_pop(stack, error);
     if error { return Err(arg1); }
 
 
@@ -71,13 +82,9 @@ fn _INSTRUCT_INPLACE_ADD_(handle: &mut LeblancHandle, arg: &Instruction, stack: 
     Ok(())
 }
 
-#[inline]
 fn _INSTRUCT_BINARY_ADD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let error = false;
-    let targeter =  safe_stack_pop(stack, error);
-    if error { return Err(targeter); }
-    let mut target = safe_stack_pop(stack, error);
-    if error { return Err(target); }
+    let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let mut target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
     let mut targeter_unwrap = targeter.lock().unwrap();
     if Mutex::try_lock(&target).is_err() {
@@ -104,11 +111,9 @@ fn _INSTRUCT_BINARY_ADD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
             if matched_method.is_none() {
                 return Err(Arc::new(Mutex::new(LeBlancObject::error())));
             }
-            let now = Instant::now();
             stack.push(matched_method.unwrap().run(targeter_clone, &mut [target_clone]));
         }
         Some(mut method) => {
-            let now = Instant::now();
             stack.push(method.run(target_clone, &mut [targeter.clone()]));
         }
     }
@@ -117,20 +122,14 @@ fn _INSTRUCT_BINARY_ADD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
 }
 
 fn _INSTRUCT_BINARY_SUBTRACT_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let error = false;
-    let mut target =  safe_stack_pop(stack, error);
-    if error { return Err(target); }
-    let targeter = safe_stack_pop(stack, error);
-    if error { return Err(targeter); }
+    let mut target =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let targeter = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
     let mut targeter_unwrap = targeter.lock().unwrap();
     if Mutex::try_lock(&target).is_err() {
-        target = Arc::new(Mutex::new(targeter_unwrap._clone()));
+        target = targeter_unwrap._clone().to_mutex()
     }
     let mut target_unwarp = target.lock().unwrap();
-
-    //println!("Target: {:?}", target_unwarp);
-    //println!("Targeter: {:?}", targeter_unwrap);
 
     if can_add_self(&targeter_unwrap.typing) && can_add_self(&target_unwarp.typing) {
         stack.push((target_unwarp.data.as_i128() - targeter_unwrap.data.as_i128()).create_mutex());
@@ -149,19 +148,13 @@ fn _INSTRUCT_BINARY_SUBTRACT_(handle: &mut LeblancHandle, arg: &Instruction, sta
             let matched_method = targeter_clone.lock().unwrap().methods.iter().filter(|m| {
                 m.matches("_".to_string(), &arguments)
             }).next().cloned();
-            ////unsafe { add_timing("BA - Matching".to_string(),now.elapsed().as_secs_f64()) }
             if matched_method.is_none() {
-                return Err(Arc::new(Mutex::new(LeBlancObject::error())));
+                return Err(LeBlancObject::error().to_mutex());
             }
-            let now = Instant::now();
             stack.push(matched_method.unwrap().run(targeter_clone, &mut [target_clone]));
-            ////unsafe { add_timing("BA - Executing".to_string(),now.elapsed().as_secs_f64()) }
         }
         Some(mut method) => {
-            ////unsafe { add_timing("BA - Matching".to_string(),now.elapsed().as_secs_f64()) }
-            let now = Instant::now();
             stack.push(method.run(target_clone, &mut [targeter.clone()]));
-            ////unsafe { add_timing("BA - Executing".to_string(),now.elapsed().as_secs_f64()) }
         }
     }
 
@@ -169,37 +162,37 @@ fn _INSTRUCT_BINARY_SUBTRACT_(handle: &mut LeblancHandle, arg: &Instruction, sta
 }
 
 
+#[inline(always)]
 fn _INSTRUCT_LOAD_FUNCTION_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
     let result= unsafe { get_globals() }.get(arg.arg as usize);
-    if result.is_none() { return Err(Arc::new(Mutex::new(LeBlancObject::error()))); }
+    if result.is_none() { LeBlancObject::error().to_mutex(); }
     stack.push(result.unwrap().clone());
     Ok(())
 }
 
-#[inline]
+#[inline(always)]
 fn _INSTRUCT_LOAD_CONSTANT_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
     let result= handle.constants.get(arg.arg as usize);
     match result {
-        None => return Err(Arc::new(Mutex::new(LeBlancObject::error()))),
+        None => return Err(LeBlancObject::error().to_mutex()),
         Some(constant) => {
-            let constant_clone = Arc::new(Mutex::new(constant._clone()));
-            stack.push(constant_clone);
+            stack.push(constant._clone().to_mutex());
             Ok(())
         }
     }
 
 }
 
+#[inline(always)]
 fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let result= handle.variables.lock().unwrap().get(arg.arg as usize).cloned();
-    //if result.is_none() { return Err(Arc::new(Mutex::new(LeBlancObject::error()))); }
+    let result= handle.variables.get(arg.arg as usize).cloned();
     match result {
         None => {
-            let null = Arc::new(Mutex::new(LeBlancObject::null()));
-            if arg.arg as usize >= handle.variables.lock().unwrap().len() {
-                handle.variables.lock().unwrap().push(null.clone());
+            let null = LeBlancObject::null().to_mutex();
+            if arg.arg as usize >= handle.variables.len() {
+                handle.variables.push(null.clone());
             } else {
-                handle.variables.lock().unwrap()[arg.arg as usize] = null.clone();
+                handle.variables[arg.arg as usize] = null.clone();
             }
             stack.push(null);
         },
@@ -208,84 +201,86 @@ fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
                 true => stack.push(res.clone()),
                 false => stack.push(res.clone())
             }
-
         }
     }
     Ok(())
 }
 
+#[inline(always)]
 fn _INSTRUCT_STORE_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let mut error = false;
-    let result = safe_stack_pop(stack, error);
-    if error { return Err(Arc::new(Mutex::new(LeBlancObject::error()))); }
-    if arg.arg as usize >= handle.variables.lock().unwrap().len() {
-        handle.variables.lock().unwrap().push(result);
+    let result = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    if arg.arg as usize >= handle.variables.len() {
+        handle.variables.push(result);
     } else {
-        handle.variables.lock().unwrap()[arg.arg as usize] = result;
+        handle.variables[arg.arg as usize] = result;
     }
     Ok(())
 }
 
 fn _CALL_FUNCTION_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let now = Instant::now();
-    let error = false;
-    let func = safe_stack_pop(stack, error);
-    if error { return Err(func); }
+    let func = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let mut arguments = match arg.arg {
         0 => { Vec::new() }
-        1 => { vec![safe_stack_pop(stack, error)] }
+        1 => { vec![match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) }] }
         _ => {
             let mut vector = Vec::new();
             for _ in 0..arg.arg as usize {
-                let tos = safe_stack_pop(stack, error);
-                if error { return Err(tos); }
+                let tos = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
                 vector.push(tos);
             }
             vector.reverse();
             vector
         }
     };
-
-    let mut is_leblanc_handle = true;
     let mut mutex = func.lock().unwrap();
     let mutex_method = mutex.data.retrieve_self_as_function().unwrap();
-    if mutex_method.leblanc_handle.null {
-        is_leblanc_handle = false;
-    }
+    let handle = mutex_method.handle;
+    let is_internal = mutex_method.is_internal_method();
+    let mut leblanc_handle = mutex_method.leblanc_handle.clone();
 
-    let result = match is_leblanc_handle {
-        true => {
-            let mut leblanc_handle = mutex_method.leblanc_handle.clone();
-            Mutex::unlock(mutex);
-            leblanc_handle.execute(Arc::new(Mutex::new(arguments.to_vec())))
-        }
-        false => {
-            let method = mutex_method.handle;
-            Mutex::unlock(mutex);
-            (method)(func.clone(), &mut arguments)
-        }
+
+    Mutex::unlock(mutex);
+
+    stack.push( match is_internal {
+        true => (handle)(func.clone(), &mut arguments),
+        false => leblanc_handle.loan().inquire().either().execute(&mut arguments)
+    });
+
+    /*let result = match acquire.acquire() {
+        Ok(lock) => {
+            null_handle = lock.get().lock().unwrap().null;
+            if null_handle { LeBlancObject::unsafe_null() }
+            else { lock.get().lock().as_mut().unwrap().execute(&mut arguments) }
+        },
+        Err(mut lock) => {
+            null_handle = unsafe {&mut **lock.get().lock().unwrap()}.null;
+            if null_handle { LeBlancObject::unsafe_null() }
+            else { unsafe {&mut **lock.get().lock().unwrap()}.execute(&mut arguments) }
+        },
     };
+    //let null_handle = leblanc_handle.lock().unwrap().null;
+    let result = match null_handle {
+        false => { result }
+        true => {
+            (func.lock().unwrap().data.retrieve_self_as_function().unwrap().handle)(func.clone(), &mut arguments)
+        }
+    };*/
 
-    //let mut method = func.lock().unwrap().data.retrieve_self_as_function().unwrap().clone();
-
-    //stack.push( method.run_with_vec(func, &mut arguments));
-
-    stack.push(result);
+    //stack.push(result);
 
     Ok(())
 }
 
 fn _INSTRUCT_CALL_CLASS_METHOD_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
     let error = false;
-    let method_name = safe_stack_pop(stack, error);
-    if error { return Err(method_name); }
+    let method_name = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let mut arguments = match arg.arg {
         0 => { Vec::new() }
-        1 => { vec![safe_stack_pop(stack, error)] }
+        1 => { vec![deprecated_safe_stack_pop(stack, error)] }
         _ => {
             let mut vector = Vec::new();
             for _ in 0..arg.arg as usize {
-                let tos = safe_stack_pop(stack, error);
+                let tos = deprecated_safe_stack_pop(stack, error);
                 if error { return Err(tos); }
                 vector.push(tos);
             }
@@ -293,21 +288,16 @@ fn _INSTRUCT_CALL_CLASS_METHOD_(handle: &mut LeblancHandle, arg: &Instruction, s
             vector
         }
     };
-    let mut object = safe_stack_pop(stack, error);
+    let mut object = deprecated_safe_stack_pop(stack, error);
     if error { return Err(object); }
     stack.push(object.call(method_name.lock().unwrap().data.to_string().as_str(), &mut arguments));
     Ok(())
 }
 
 fn _INSTRUCT_CREATE_RANGE_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let error = false;
-    let mut increment = safe_stack_pop(stack, error);
-    if error { return Err(increment) }
-    let mut operand = safe_stack_pop(stack, error);
-    if error { return Err(operand) }
-    let bound = safe_stack_pop(stack, error);
-    if error { return Err(bound) }
-
+    let mut increment = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let mut operand = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let bound = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
     let mut internal_list = LeblancList::empty();
 
@@ -316,11 +306,11 @@ fn _INSTRUCT_CREATE_RANGE_(handle: &mut LeblancHandle, arg: &Instruction, stack:
     println!("Increment: {:?}", increment);*/
     while operand.lock().unwrap().data < bound.lock().unwrap().data || (*&increment.leblanc_type() == LeBlancType::Boolean && *increment.reflect().downcast_ref::<bool>().unwrap()){
         //println!("{}", internal_list);
-        internal_list.internal_vec.push(Arc::new(Mutex::new(operand.lock().unwrap()._clone())));
+        internal_list.internal_vec.push(operand.lock().unwrap()._clone().to_mutex());
         if increment.leblanc_type() == LeBlancType::Function {
-            operand = Arc::new(Mutex::new(increment.lock().unwrap().data.retrieve_self_as_function().unwrap().run(increment.clone(), &mut [operand]).lock().unwrap()._clone().cast(bound.leblanc_type())));
+            operand = increment.lock().unwrap().data.retrieve_self_as_function().unwrap().run(increment.clone(), &mut [operand]).lock().unwrap()._clone().cast(bound.leblanc_type()).to_mutex();
         } else if operand.leblanc_type().is_native() {
-            operand = Arc::new(Mutex::new(operand.call("_ADD_", &mut [increment.clone()]).lock().unwrap()._clone().cast(bound.leblanc_type())));
+            operand = operand.call("_ADD_", &mut [increment.clone()]).lock().unwrap()._clone().cast(bound.leblanc_type()).to_mutex();
         } else {
             let matched_method = increment.lock().unwrap().methods.iter().filter(|m| {
                 m.matches("_".to_string(), &vec![operand.lock().unwrap().to_leblanc_arg(0)])
@@ -339,11 +329,8 @@ fn _INSTRUCT_CREATE_RANGE_(handle: &mut LeblancHandle, arg: &Instruction, stack:
 }
 
 fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let error = false;
-    let mut iter_variable = safe_stack_pop(stack, error);
-    if error { return Err(iter_variable) }
-    let iterable = safe_stack_pop(stack, error);
-    if error { return Err(iterable) }
+    let mut iter_variable = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let iterable = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
     let loop_start = handle.current_instruct;
 
@@ -351,8 +338,6 @@ fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mu
     for item in &iterable.reflect().downcast_ref::<LeblancList>().unwrap().internal_vec {
         iter_variable.lock().unwrap().copy_data(&item.lock().unwrap());
         let loop_result = handle.execute_range(loop_start+1, loop_start+1 + arg.arg as u64 );
-        //println!("Loop result: {:?}", loop_result);
-        //stack.push();
     }
 
     //println!("Done with loop");
@@ -360,17 +345,13 @@ fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mu
     handle.current_instruct += arg.arg as u64;
 
     Ok(())
-
 }
 
 fn _INSTRUCT_EQUALITY_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let error = false;
-    let tos1 = safe_stack_pop(stack, error);
-    if error { return Err(tos1) }
-    let tos2 = safe_stack_pop(stack, error);
-    if error { return Err(tos2) }
+    let tos1 = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let tos2 = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    let tos1 = Arc::new(Mutex::new(tos1.lock().unwrap()._clone().cast(tos2.leblanc_type())));
+    let tos1 = tos1.lock().unwrap().cast(tos2.leblanc_type()).to_mutex();
 
     /*println!("TOS1: {:?}", tos1.lock().unwrap().data);
     println!("TOS2: {:?}", tos2.lock().unwrap().data);*/
@@ -392,26 +373,21 @@ fn _INSTRUCT_EQUALITY_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mu
 }
 
 fn _INSTRUCT_COMPARATOR_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut Vec<Arc<Mutex<LeBlancObject>>>) -> Result<(), Arc<Mutex<LeBlancObject>>> {
-    let error = false;
     let truth = if arg.instruct != Comparator_Else {
-        safe_stack_pop(stack, error)
+        match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) }
     } else {
         LeBlancObject::unsafe_error()
     };
-    if error { return Err(truth); }
 
     let block_start = handle.current_instruct;
-    //println!("Block start: {}", block_start);
     if arg.instruct == Comparator_Else || *truth.reflect().downcast_ref::<bool>().unwrap() {
-        let jump_result =handle.execute_range(block_start + 1, block_start + 1 + arg.arg as u64);
-        //println!("Jump result: {:?}", jump_result);
+        let jump_result = handle.execute_range(block_start + 1, block_start + 1 + arg.arg as u64);
         stack.push(jump_result);
         if arg.instruct == Comparator_Else {
             handle.current_instruct -= 1;
         } else {
             let mut jump = 0;
-            while arg.instruct != Comparator_Else && handle.current_instruct + jump < handle.instructions.len() as u64 {
-                //println!("test: {} | {:?}", test, handle.instructions[(handle.current_instruct + test) as usize]);
+            while handle.current_instruct + jump < handle.instructions.len() as u64 {
                 let instruct: Instruction = handle.instructions[(handle.current_instruct + jump) as usize];
                 match instruct.instruct {
                     Comparator_If => jump += instruct.arg as u64,
@@ -429,7 +405,6 @@ fn _INSTRUCT_COMPARATOR_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
     } else {
         handle.current_instruct += arg.arg as u64;
     }
-    //println!("Jumping");
 
     Ok(())
 

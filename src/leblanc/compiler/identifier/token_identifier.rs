@@ -5,6 +5,7 @@ use crate::leblanc::compiler::compile_types::partial_token::PartialToken;
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{Func, Returns, SelfRT};
 use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, FunctionType};
 use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{Comma, ParenthesisClosed};
+use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub::InvalidSyntax;
@@ -69,7 +70,11 @@ pub fn identify_caller_function_args(typed_tokens: &mut Vec<TypedToken>, left_bo
                     let j_type = typed_tokens[j].lang_type().extract_native_type().clone();
                     typed_tokens[i].set_typing_args(&mut vec![j_type]);
                     can_add_type = false;
-                } else if typed_tokens[j].lang_type() == CompileVocab::BOUNDARY(Comma) {
+                } else if typed_tokens[j].lang_type() == CompileVocab::FUNCTION(FunctionType::Reference) {
+                    typed_tokens[i].set_typing_args(&mut vec![LeBlancType::Function]);
+                    can_add_type = false;
+                }
+                else if typed_tokens[j].lang_type() == CompileVocab::BOUNDARY(Comma) {
                     can_add_type = true;
                 }
                 else if typed_tokens[j].lang_type() == CompileVocab::BOUNDARY(ParenthesisClosed) || typed_tokens[j].lang_type() == CompileVocab::BOUNDARY(Semicolon) {
@@ -85,6 +90,7 @@ pub fn identify_caller_function_args(typed_tokens: &mut Vec<TypedToken>, left_bo
 
 pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, errors: &mut Vec<ErrorStub>) -> HashMap<PartialToken, Vec<LeBlancType>>{
     let mut func_matcher: HashMap<PartialToken, Vec<LeBlancType>> = HashMap::new();
+    create_partial_functions().iter().for_each(|p| {func_matcher.insert(PartialToken::new(p.name.clone(), FUNCTION(FunctionType::Header)), p.args.iter().map(|a| a.typing).collect::<Vec<LeBlancType>>());});
     let mut ndi = 0;
     let mut returns = false;
     let mut return_types = vec![];

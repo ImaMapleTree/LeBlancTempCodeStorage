@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
+
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_math::_internal_add_number_;
 use crate::leblanc::core::leblanc_argument::{LeBlancArgument, number_argset};
@@ -21,7 +22,7 @@ pub trait ToLeblanc {
 pub fn base_methods() -> Arc<HashSet<Method>> {
     unsafe {
         if BASE_METHODS.is_none() {
-            let mut hash_set = HashSet::new();
+            let mut hash_set = HashSet::with_capacity(6);
             hash_set.insert(Method::default(base_to_string_method(), _internal_to_string_));
             hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
             hash_set.insert(Method::default(base_equals_method(), _internal_to_string_));
@@ -37,8 +38,11 @@ pub fn base_methods() -> Arc<HashSet<Method>> {
 pub fn internal_method(method: Method) -> LeBlancObject {
     //let function_name = method.context.name;
     //method.context.name = "call".to_string();
+    println!("Internal method :)");
+    println!("Internal method: {:#?}", method);
     let mut methods = Arc::unwrap_or_clone( base_methods());
     methods.insert(method.clone());
+    println!("Internal method");
     return LeBlancObject {
         data: LeBlancObjectData::Function(method),
         typing: Function,

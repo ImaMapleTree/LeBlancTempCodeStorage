@@ -22,7 +22,8 @@ impl LeBlancRunner {
 
     pub fn run_main(&mut self) {
         unsafe { GLOBALS = self.globals.iter().cloned().collect(); }
-
+        println!("Rung main");
+        println!("Globals: {:?}", self.globals);
         let main_object = self.globals.iter_mut().filter(|g| g.lock().unwrap().typing == LeBlancType::Function)
             .filter(|g| g.reflect().downcast_ref::<Method>().unwrap().context.name == "main").next();
 

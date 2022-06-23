@@ -1,25 +1,26 @@
 use crate::{LeBlancType, TypedToken};
+use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 
-#[derive(PartialEq, Eq, Debug, Clone, Hash)]
+#[derive(Eq, Debug, Clone, Hash)]
 pub struct PartialFunction {
     pub name: String,
-    pub args: Vec<LeBlancType>
+    pub args: Vec<LeBlancArgument>
 }
 
 impl PartialFunction {
     pub fn from_token_args(token: &TypedToken) -> PartialFunction {
         return PartialFunction {
             name: token.as_string(),
-            args: token.typing()[0].clone()
+            args: LeBlancArgument::from_positional(&token.typing()[0].clone())
         }
     }
 
     pub fn from_token_returns(token: &TypedToken) -> PartialFunction {
         return PartialFunction {
             name: token.as_string(),
-            args: token.typing()[1].clone()
+            args: LeBlancArgument::from_positional(&token.typing()[1].clone())
         }
     }
 
@@ -30,7 +31,25 @@ impl PartialFunction {
     pub fn from_method_store(method_store: &MethodStore) -> PartialFunction {
         return PartialFunction {
             name: method_store.name.clone(),
-            args: method_store.arguments.iter().map(|arg| arg.typing).collect()
+            args: method_store.arguments.clone()
         }
+    }
+}
+
+impl PartialEq for PartialFunction {
+    fn eq(&self, other: &Self) -> bool {
+        if self.name != other.name { return false; }
+        let max = if self.args.len() > other.args.len() {
+            self.args.len()
+        } else { other.args.len() };
+        for i in 0..max {
+            let self_arg = *self.args.get(i).unwrap_or(&LeBlancArgument::null(i as u32));
+            let other_arg = *other.args.get(i).unwrap_or(&LeBlancArgument::null(i as u32));
+            println!("Arg {}: {:?} vs {:?}", i, self_arg, other_arg);
+            if self_arg != other_arg  {
+                return false;
+            }
+        }
+        return true;
     }
 }

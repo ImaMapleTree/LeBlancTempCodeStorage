@@ -4,6 +4,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::Hasher;
 use std::sync::{Arc, Mutex};
+
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::method::Method;
@@ -29,7 +30,7 @@ pub trait Reflect {
     fn reflect(&self) -> Box<dyn Any + 'static>;
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct LeBlancObject {
     pub data: LeBlancObjectData,
     pub(crate) typing: LeBlancType,
@@ -117,7 +118,7 @@ impl LeBlancObject {
         self.data = other.data.clone();
     }
 
-    pub fn cast(self, cast: LeBlancType) -> LeBlancObject {
+    pub fn cast(&mut self, cast: LeBlancType) -> LeBlancObject {
         let object_data = match cast {
             LeBlancType::Char => LeBlancObjectData::Char(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Short => LeBlancObjectData::Short(unsafe {*self.reflect().downcast_ref_unchecked()}),
@@ -135,7 +136,7 @@ impl LeBlancObject {
             object_data,
             cast,
             self.methods.clone(),
-            HashMap::new(),
+            HashMap::default(),
             VariableContext::empty()
         )
     }
@@ -152,6 +153,10 @@ impl LeBlancObject {
             members: self.members.clone(),
             context: self.context.clone()
         }
+    }
+
+    pub fn to_mutex(self) -> Arc<Mutex<LeBlancObject>> {
+        return Arc::new(Mutex::new(self));
     }
 }
 
@@ -310,5 +315,11 @@ impl LeBlancObjectData {
 impl PartialOrd for LeBlancObject {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         return self.data.partial_cmp(&other.data);
+    }
+}
+
+impl Clone for LeBlancObject {
+    fn clone(&self) -> Self {
+        self._clone()
     }
 }

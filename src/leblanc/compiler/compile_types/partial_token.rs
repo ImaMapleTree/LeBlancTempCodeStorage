@@ -8,6 +8,13 @@ pub struct PartialToken {
 }
 
 impl PartialToken {
+    pub fn new(string: String, lang_type: CompileVocab) -> PartialToken {
+        return PartialToken {
+            token: string,
+            lang_type
+        }
+    }
+
     pub fn from(token: &TypedToken) -> PartialToken {
         return PartialToken {
             token: token.as_string(),
