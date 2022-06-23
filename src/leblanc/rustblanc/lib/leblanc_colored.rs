@@ -188,7 +188,7 @@ impl Display for ColorString {
 }
 
 pub fn colorize(string: String, color: Color) -> String {
-    let mut color_string = string.clone();
+    let mut color_string = string;
     color_string = color_string.replace(Color::Reset.ansi(), &(Color::Reset.ansi().to_owned() + &color.ansi()));
     let color_string = color.ansi().to_string() + &color_string + Color::Reset.ansi();
     return color_string;

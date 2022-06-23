@@ -22,7 +22,7 @@ pub fn count_min_leading_whitespace(lines: &Vec<String>) -> u32 {
     for line in lines {
         let mut string_temp = line.as_str();
         let mut whitespace = 0;
-        while string_temp.starts_with("\t") || string_temp.starts_with(" ") {
+        while string_temp.starts_with('\t') || string_temp.starts_with(' ') {
             string_temp = &string_temp[1..];
             whitespace += 1;
         }
@@ -49,7 +49,7 @@ pub fn line_strip_and_join(lines: &Vec<String>) -> String {
 
 pub fn strip_start_of_line(mut string: String) -> String {
     let mut string_temp = string.as_str();
-    while string.len() != 0 && string.starts_with("\t") || string.starts_with(" ") {
+    while string.len() != 0 && string.starts_with('\t') || string.starts_with(' ') {
         string_temp = &string[1..];
         string = string_temp.to_string();
     }

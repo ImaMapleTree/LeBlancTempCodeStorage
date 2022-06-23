@@ -48,7 +48,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry
 
             let arg_string = match instruction.instruct {
                 InstructionBase::LoadLocal => format!("({})", leblanc_handle.loan().inquire().either().variable_context.values().filter(|context| context.relationship == instruction.arg as u32).next().unwrap().name),
-                InstructionBase::LoadConstant => format!("({})", leblanc_handle.loan().inquire().either().constants[instruction.arg as usize].data.to_string()),
+                InstructionBase::LoadConstant => format!("({})", leblanc_handle.loan().inquire().either().constants[instruction.arg as usize].data),
                 InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),
                 _ => "".to_string()
             };

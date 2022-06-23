@@ -77,7 +77,7 @@ fn _INSTRUCT_INPLACE_ADD_(_handle: &mut LeblancHandle, _arg: &Instruction, stack
         //.filter(|m| m.matches("_".to_string(), vec![tos2.lock().unwrap().to_leblanc_arg(0)]))
         //.next().unwrap_or(Method::error()).run(tos1.clone(), &mut [tos2.clone()]);
 
-    result.unwrap().run(target.clone(), &mut [arg1.clone()]);
+    result.unwrap().run(target, &mut [arg1]);
     let result = LeBlancObject::unsafe_null();
     stack.push(result);
     Ok(())

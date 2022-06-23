@@ -39,7 +39,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
     let lock_global_scope = false;
 
     let mut token = Token::empty();
-    let mut next_token = tokens.pop().unwrap_or(Token::empty());
+    let mut next_token = tokens.pop().unwrap_or_else(Token::empty);
 
     let follower_types = &["func".to_string(), "Extension".to_string(), "Class".to_string(), "ext".to_string(),
         "from".to_string(), "of".to_string(), "using".to_string()];
@@ -50,7 +50,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
 
     while tokens.len() > 0 || next_token != Token::empty() {
         token = next_token;
-        next_token = tokens.pop().unwrap_or(Token::empty());
+        next_token = tokens.pop().unwrap_or_else(Token::empty);
 
 
         let token_string = token.as_string();
@@ -245,8 +245,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 for _i in 0..scope_value - nested_vec.len() {
                     nested_vec.append_item( Vec::new());
                 }
-                let mut type_vec = Vec::new();
-                type_vec.push(vocab);
+                let mut type_vec = vec![vocab];
                 nested_vec.append_item(type_vec);
             }
         } else {
@@ -329,7 +328,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
 
     let mut import_tokens = vec![];
     imports.iter_mut().for_each(|import| {
-        if !import.source.contains(".") {
+        if !import.source.contains('.') {
             import.source = import.source.clone() + ".lb";
         }
         import_tokens.append(compile(import.source.clone(), CompilationMode::StubFile).tokens())

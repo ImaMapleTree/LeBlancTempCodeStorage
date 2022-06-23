@@ -29,7 +29,7 @@ pub fn read_from_stub_dump(file: File) -> Fabric {
 
     let mut lines = file_reader.lines();
     let _imports = lines.next().unwrap().unwrap();
-    //let imports = imports.split("|").map(|s| s.to_string()).collect::<Vec<String>>();
+    //let imports = imports.split('|').map(|s| s.to_string()).collect::<Vec<String>>();
 
 
     for line in lines {
@@ -40,16 +40,16 @@ pub fn read_from_stub_dump(file: File) -> Fabric {
 }
 
 pub fn parse_stub_token(line: String) -> TypedToken {
-    let line_number_sep = line.find("|").unwrap();
+    let line_number_sep = line.find('|').unwrap();
     let line_number = line[0..line_number_sep].to_string().parse::<u32>().unwrap();
     let line = line[line_number_sep+1..].to_string();
 
-    let symbol_length_sep = line.find("|").unwrap();
+    let symbol_length_sep = line.find('|').unwrap();
     let symbol_length = line[0..symbol_length_sep].to_string().parse::<u32>().unwrap();
     let line = line[symbol_length_sep+1..].to_string();
 
     let symbols = line[0..symbol_length as usize].to_string();
-    let symbol_number_sep = symbols.find("|").unwrap();
+    let symbol_number_sep = symbols.find('|').unwrap();
     let mut symbol_number = symbols[0..symbol_number_sep].to_string().parse::<u32>().unwrap() - 1;
     let symbols = symbols[symbol_number_sep+1..].to_string();
     let mut symbol_vec = vec![];
@@ -61,20 +61,20 @@ pub fn parse_stub_token(line: String) -> TypedToken {
 
     let line = line[symbol_length as usize..].to_string();
 
-    let vocab_sep = line.find("|").unwrap();
+    let vocab_sep = line.find('|').unwrap();
     let vocab = line[0..vocab_sep].to_string();
     let line = line[vocab_sep+1..].to_string();
     let vocab_type = match_leblanc_type(vocab);
 
 
-    let scope_sep = line.find("|").unwrap();
+    let scope_sep = line.find('|').unwrap();
     let scope = line[0..scope_sep].to_string().parse::<i32>().unwrap();
 
-    let global_sep = line.find("|").unwrap();
+    let global_sep = line.find('|').unwrap();
     let global_value = line[0..global_sep].to_string().parse::<i32>().unwrap();
     let global = global_value == 1;
 
-    let class_member_sep = line.find("|").unwrap();
+    let class_member_sep = line.find('|').unwrap();
     let class_member_value = line[0..class_member_sep].to_string().parse::<i32>().unwrap();
     let class_member = class_member_value == 1;
 
@@ -83,7 +83,7 @@ pub fn parse_stub_token(line: String) -> TypedToken {
     let mut line = line[scope_sep+1..].to_string();
     let mut typings = vec![];
     while line[0..2].to_string() != "&&" {
-        let vocab_sep = line.find("|").unwrap();
+        let vocab_sep = line.find('|').unwrap();
         let vocab = line[0..vocab_sep].to_string();
         line = line[vocab_sep+1..].to_string();
         let vocab_type = type_value(&vocab);
@@ -99,7 +99,7 @@ pub fn parse_stub_token(line: String) -> TypedToken {
 }
 
 fn match_leblanc_type(vocab_string: String) -> CompileVocab {
-    let vocab_string_sep = vocab_string.find(".");
+    let vocab_string_sep = vocab_string.find('.');
     let vocab_string_sep = vocab_string_sep.unwrap();
     let first_vocab = vocab_string[0..vocab_string_sep].to_string();
     let second_vocab = vocab_string[vocab_string_sep+1..].to_string();

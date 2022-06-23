@@ -42,7 +42,7 @@ impl<T: Clone + Debug> Strawberry<T> {
     }
 
     pub fn bypass_loan(&self) -> &mut T {
-        unsafe { return &mut *self.ptr }
+        unsafe { return &mut (*self.ptr) }
     }
 
 }

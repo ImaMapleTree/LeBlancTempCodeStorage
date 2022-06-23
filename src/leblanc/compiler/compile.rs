@@ -108,7 +108,7 @@ pub fn create_execution_stack(fabric: &mut Fabric) -> Vec<TypedToken> {
         }
         if stack_print {
             for token in &mini_stack {
-                if token.lang_type().matches("boundary") { println!("{:?}", token); } else {
+                if token.lang_type().matches("boundary") { /*println!("{:?}", token);*/ } else {
                    println!("{:?}", token);
                 }
             }

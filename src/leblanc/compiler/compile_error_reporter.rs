@@ -206,19 +206,19 @@ fn repair_syntax_error(text: String, token: TypedToken, insert_char: char) -> St
 }
 
 fn repair_missing_global_error(text: String) -> String {
-    let stripped = strip_start_of_line(text.clone());
+    let stripped = strip_start_of_line(text);
     return colorize(String::from("global "), Color::Bright(ColorBright::BrightGreen)) + &colorize(stripped, Color::Yellow);
 }
 
 fn repair_incompatible_type_error(text: String, token: &TypedToken, fix_type: String) -> String {
-    let stripped = strip_start_of_line(text.clone());
+    let stripped = strip_start_of_line(text);
     let re = Regex::new(&format!("{}{}{}", r"\b", token.as_string(), r"\b")).unwrap();
     let p = re.find(&stripped).unwrap().start();
     return colorize(fix_type + " ", Color::Bright(ColorBright::BrightGreen)) + &colorize_str(&stripped[p..], Color::Yellow);
 }
 
 fn repair_var_already_defined_error(text: String, old_name: String, new_name: String) -> String {
-    let stripped = strip_start_of_line(text.clone());
+    let stripped = strip_start_of_line(text);
     let re = Regex::new(&format!("{}{}{}", r"\b", old_name.as_str(), r"\b")).unwrap();
     let stripped = re.replace(&stripped, &colorize(new_name, Bright(BrightGreen)));
     return colorize(stripped.to_string(), Color::Yellow);

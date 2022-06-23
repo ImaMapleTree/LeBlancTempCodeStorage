@@ -36,7 +36,7 @@ impl LeblancBaseException {
                 eprintln!("{} {}", colorize_str("[Critical]", Color::Red), self.message);
                 process::exit(self.error_code);
             }
-            false => eprintln!("{} {}", "[Warning]", self.message)
+            false => eprintln!("[Warning] {}", self.message)
         }
         Ok(String::from(""))
     }
@@ -60,7 +60,7 @@ struct EmptyError {
 
 impl Display for EmptyError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(f, "")
     }
 }
 

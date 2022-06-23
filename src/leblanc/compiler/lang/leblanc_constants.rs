@@ -5,8 +5,8 @@ pub fn is_constant(string: &str) -> bool { return constant_type(string) != LeBla
 pub fn constant_type(string: &str) -> LeBlancType {
     if string == "true" { return LeBlancType::Boolean; }
     if string == "false" { return LeBlancType::Boolean; }
-    if string.starts_with("\"") && string.ends_with("\"") { return LeBlancType::String; }
-    if string.starts_with("'") && string.ends_with("'") { return LeBlancType::Char; }
+    if string.starts_with('"') && string.ends_with('"') { return LeBlancType::String; }
+    if string.starts_with('"') && string.ends_with('"') { return LeBlancType::Char; }
     let mut number_string = string;
     let mut last_char = '\0';
     if string.len() > 1 && !string.chars().last().unwrap().is_numeric() {
@@ -21,8 +21,8 @@ pub fn constant_type(string: &str) -> LeBlancType {
             _ => {}
         }
 
-        if string.contains(".") {
-            if string.len() - string.find(".").unwrap() > 7 {
+        if string.contains('.') {
+            if string.len() - string.find('.').unwrap() > 7 {
                 return LeBlancType::Double;
             } else {
                 return LeBlancType::Float;

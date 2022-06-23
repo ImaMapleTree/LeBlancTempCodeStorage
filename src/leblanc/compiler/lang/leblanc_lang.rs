@@ -69,7 +69,7 @@ pub enum ExtensionType {
 
 impl Display for ExtensionType {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{:?}", self)
     }
 }
 

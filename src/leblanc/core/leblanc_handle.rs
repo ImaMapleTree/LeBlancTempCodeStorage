@@ -10,28 +10,11 @@ use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, Stringify};
 use crate::leblanc::rustblanc::utils::{Timings};
 
-
-
-
 static DEBUG: bool = false;
 static TIME_DEBUG: bool = false;
 static STACK_DEBUG: bool = false;
 
 static mut TIMINGS: Timings = Timings { map: None};
-
-macro_rules! execute_handle {
-    ($w:expr, $($x:expr),*) => {
-        {
-            $w.variables.clear();
-            $(
-                $w.variables.push($x);
-            )*
-            $w.execute_no_args()
-        }
-    }
-}
-
-
 
 
 #[derive(Debug)]
@@ -107,7 +90,7 @@ impl LeblancHandle {
         if self.name == "main" && TIME_DEBUG {
             unsafe { TIMINGS.print_timing(); }
         }
-        return stack.pop().unwrap_or(LeBlancObject::unsafe_null());
+        return stack.pop().unwrap_or_else(LeBlancObject::unsafe_null);
     }
 
 
@@ -140,7 +123,7 @@ impl LeblancHandle {
         if self.name == "main" && TIME_DEBUG {
             unsafe { TIMINGS.print_timing(); }
         }
-        return stack.pop().unwrap_or(LeBlancObject::unsafe_null());
+        return stack.pop().unwrap_or_else(LeBlancObject::unsafe_null);
 
     }
 
@@ -164,7 +147,7 @@ impl LeblancHandle {
             }
             self.current_instruct += 1;
         }
-        return stack.pop().unwrap_or(LeBlancObject::unsafe_null());
+        return stack.pop().unwrap_or_else(LeBlancObject::unsafe_null);
 
     }
 }

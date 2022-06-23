@@ -11,6 +11,7 @@ use crate::leblanc::core::interpreter::instructions::InstructionBase::*;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 
 
+#[allow(non_snake_case)]
 #[derive(Debug, PartialEq, EnumVariantNames, strum_macros::Display, EnumIter, Copy, Clone)]
 pub enum InstructionBase {
     Zero,
@@ -65,7 +66,7 @@ pub enum InstructionBase {
 impl Hexable for InstructionBase {
     fn to_hex(&self, bytes: usize) -> Hexadecimal {
         let variants: &[&'static str] = InstructionBase::VARIANTS;
-        encode_hex(&(variants.iter().position(|s| s.to_string() == self.to_string()).unwrap() as u32).to_be_bytes()[4-bytes..4])
+        encode_hex(&(variants.iter().position(|s| *s.to_string() == self.to_string()).unwrap() as u32).to_be_bytes()[4-bytes..4])
     }
 
     fn from_hex(hex: &Hexadecimal) -> Self {
@@ -79,7 +80,7 @@ impl Hexable for InstructionBase {
 impl InstructionBase {
     pub fn to_value(&self) -> u32 {
         let variants: &[&'static str] = InstructionBase::VARIANTS;
-        variants.iter().position(|s| s.to_string() == self.to_string()).unwrap() as u32
+        variants.iter().position(|s| *s.to_string() == self.to_string()).unwrap() as u32
     }
 
     pub fn from_compile_vocab(token: &TypedToken) -> InstructionBase {

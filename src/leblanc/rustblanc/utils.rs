@@ -56,7 +56,7 @@ impl Timings {
         let zero_timing = Timing{count: 0, locked_calls: 0, time: 0.0, locks: 0};
         let mut timing = *self.map.as_ref().unwrap().get(&name).unwrap_or(&zero_timing);
         timing.locks += 1;
-        self.map.as_mut().unwrap().insert(name.to_string(), timing);
+        self.map.as_mut().unwrap().insert(name, timing);
     }
 
     pub fn add_timing(&mut self, name: String, duration: f64) {
@@ -71,7 +71,7 @@ impl Timings {
         } else {
             timing.locked_calls += 1;
         }
-        self.map.as_mut().unwrap().insert(name.to_string(), timing);
+        self.map.as_mut().unwrap().insert(name, timing);
     }
 
     pub fn print_timing(&self) {

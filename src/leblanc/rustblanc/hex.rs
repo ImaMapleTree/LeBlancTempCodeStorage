@@ -136,7 +136,7 @@ impl Debug for Hexadecimal {
             }
 
         }
-        write!(f, "Hex({})", s.replacen(" ", "", 1))
+        write!(f, "Hex({})", s.replacen(' ', "", 1))
     }
 }
 
@@ -152,6 +152,7 @@ impl IntoIterator for Hexadecimal {
 impl Add for Hexadecimal {
     type Output = Self;
 
+    #[allow(clippy::redundant_clone)]
     fn add(mut self, rhs: Self) -> Self::Output {
         self.bytes.append(&mut rhs.bytes.clone());
         self

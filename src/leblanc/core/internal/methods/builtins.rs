@@ -31,7 +31,7 @@ pub fn create_builtin_function_objects() -> Vec<Strawberry<LeBlancObject>> {
 impl Hexable for BuiltinFunctions {
     fn to_hex(&self, bytes: usize) -> Hexadecimal {
         let variants: &[&'static str] = BuiltinFunctions::VARIANTS;
-        encode_hex(&(variants.iter().position(|s| s.to_string() == self.to_string()).unwrap() as u32).to_be_bytes()[4-bytes..4])
+        encode_hex(&(variants.iter().position(|s| *s.to_string() == self.to_string()).unwrap() as u32).to_be_bytes()[4-bytes..4])
     }
 
     fn from_hex(hex: &Hexadecimal) -> Self {
