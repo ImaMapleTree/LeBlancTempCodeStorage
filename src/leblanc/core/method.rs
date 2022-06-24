@@ -11,11 +11,14 @@ use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
 use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
+use alloc::rc::Rc;
+use core::borrow::BorrowMut;
+use std::cell::{BorrowMutError, RefCell, RefMut};
 
 pub struct Method {
     pub context: MethodStore,
-    pub leblanc_handle: Strawberry<LeblancHandle>,
-    pub handle: fn(Strawberry<LeBlancObject>, &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject>,
+    pub leblanc_handle: Rc<RefCell<LeblancHandle>>,
+    pub handle: fn(Rc<RefCell<LeBlancObject>>, &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>,
     pub tags: BTreeSet<MethodTag>,
     pub method_type: MethodType,
 }
@@ -23,10 +26,10 @@ pub struct Method {
 
 
 impl Method {
-    pub fn new(context: MethodStore, handle: fn(Strawberry<LeBlancObject>, &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject>, tags: BTreeSet<MethodTag>) -> Method {
+    pub fn new(context: MethodStore, handle: fn(Rc<RefCell<LeBlancObject>>, &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>, tags: BTreeSet<MethodTag>) -> Method {
         return Method {
             context,
-            leblanc_handle: Strawberry::new(LeblancHandle::null()),
+            leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
             handle,
             tags,
             method_type: MethodType::InternalMethod
@@ -37,7 +40,7 @@ impl Method {
         let _t = String::new();
         return Method {
             context: MethodStore::no_args("null".to_string()),
-            leblanc_handle: Strawberry::new(LeblancHandle::null()),
+            leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
             handle: null_func,
             tags: BTreeSet::new(),
             method_type: MethodType::InternalMethod
@@ -47,7 +50,7 @@ impl Method {
     pub fn error() -> Method {
         return Method {
             context: MethodStore::no_args("null".to_string()),
-            leblanc_handle: Strawberry::new(LeblancHandle::null()),
+            leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
             handle: error_func,
             tags: BTreeSet::new(),
             method_type: MethodType::InternalMethod
@@ -61,9 +64,7 @@ impl Method {
     }
 
     pub fn of_leblanc_handle(context: MethodStore, leblanc_handle: LeblancHandle, tags: BTreeSet<MethodTag>) -> Method {
-        println!("Creating leblanc handle {:?} | {:?}", context, leblanc_handle);
-        let leblanc_handle = Strawberry::new(leblanc_handle);
-        println!("Grabbed handle");
+        let leblanc_handle = Rc::new(RefCell::new(leblanc_handle));
         return Method {
             context,
             leblanc_handle,
@@ -73,22 +74,25 @@ impl Method {
         }
     }
 
-    pub fn default(context: MethodStore, handle: fn(Strawberry<LeBlancObject>, &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject>) -> Method {
+    pub fn default(context: MethodStore, handle: fn(Rc<RefCell<LeBlancObject>>, &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>) -> Method {
         return Method::new(context, handle, BTreeSet::new());
     }
 
     #[inline(always)]
-    pub fn run(&mut self, _self: Strawberry<LeBlancObject>, args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
+    pub fn run(&mut self, _self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
         unsafe {
             return match self.is_internal_method() {
-                false => self.leblanc_handle.bypass_loan().execute(args),
+                false => { match self.leblanc_handle.try_borrow_mut() {
+                    Ok(mut refer) => refer.execute(args),
+                    Err(err) => unsafe {&mut (*self.leblanc_handle.as_ptr())}.clone().execute(args)
+                }}
                 true => (self.handle)(_self, args)
             }
         }
     }
 
     /*#[inline(always)]
-    pub fn run_with_vec(&mut self, _self: Strawberry<LeBlancObject>, args: &mut Vec<Strawberry<LeBlancObject>>) -> Strawberry<LeBlancObject> {
+    pub fn run_with_vec(&mut self, _self: Rc<RefCell<LeBlancObject>>, args: &mut Vec<Strawberry<LeBlancObject>>) -> Rc<RefCell<LeBlancObject>> {
         let mut leblanc_handle = match self.leblanc_handle.acquire() {
             Ok(lock) => lock.get(),
             Err(mut lock) => lock.get()
@@ -104,7 +108,7 @@ impl Method {
     }*/
 
     #[inline(always)]
-    pub fn run_uncloned(&self, _self: Strawberry<LeBlancObject>, args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
+    pub fn run_uncloned(&self, _self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
         (self.handle)(_self, args)
     }
 
@@ -120,10 +124,6 @@ impl Method {
         }
         return false;
 
-    }
-
-    pub fn update_global(&mut self, globals: Box<Vec<Strawberry<LeBlancObject>>>) {
-        self.leblanc_handle.loan().inquire().either().globals = globals
     }
 
     pub fn store(&self) -> &MethodStore { &self.context }
@@ -183,9 +183,9 @@ impl PartialOrd for Method {
     }
 }
 
-fn null_func(_self: Strawberry<LeBlancObject>, _args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {return LeBlancObject::unsafe_null()}
+fn null_func(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {return LeBlancObject::unsafe_null()}
 
-fn error_func(_self: Strawberry<LeBlancObject>, _args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {return LeBlancObject::unsafe_error()}
+fn error_func(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {return LeBlancObject::unsafe_error()}
 
 impl Display for Method {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

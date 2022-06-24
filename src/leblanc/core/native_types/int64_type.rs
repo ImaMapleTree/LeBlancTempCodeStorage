@@ -1,6 +1,8 @@
 use std::collections::{BTreeSet, HashMap};
 use std::sync::{Arc};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
+use alloc::rc::Rc;
+use std::cell::RefCell;
 
 use crate::leblanc::core::internal::methods::internal_math::_internal_inplace_add_;
 use crate::leblanc::core::leblanc_argument::number_argset;
@@ -30,7 +32,7 @@ impl ToLeblanc for i64 {
     fn create(&self) -> LeBlancObject {
         return leblanc_object_int64(*self);
     }
-    fn create_mutex(&self) -> Strawberry<LeBlancObject> { return Strawberry::new(self.create()) }
+    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { return Rc::new(RefCell::new(self.create())) }
 }
 
 fn inplace_addition() -> Method {

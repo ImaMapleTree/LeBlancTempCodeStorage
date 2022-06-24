@@ -1,4 +1,6 @@
+use alloc::rc::Rc;
 use std::any::Any;
+use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
@@ -11,20 +13,22 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::module::Module;
 use crate::leblanc::core::native_types::block_type::NativeBlock;
 use crate::leblanc::core::native_types::class_type::ClassMeta;
+use crate::leblanc::core::native_types::derived::generator_type::LeblancGenerator;
+use crate::leblanc::core::native_types::derived::iterator_type::{LeblancIterable, LeblancIterator};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::strawberry::{Strawberry};
 
-static mut NULL: Option<Strawberry<LeBlancObject>> = None;
+static mut NULL: Option<Rc<RefCell<LeBlancObject>>> = None;
 
-static mut ERROR: Option<Strawberry<LeBlancObject>> = None;
+static mut ERROR: Option<Rc<RefCell<LeBlancObject>>> = None;
 
-static mut NO_ARGS: [Strawberry<LeBlancObject>; 0] = [];
+static mut NO_ARGS: [Rc<RefCell<LeBlancObject>>; 0] = [];
 
 pub trait Callable {
-    fn call(&mut self, method_name: &str, arguments: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject>;
-    fn call_name(&mut self, method_name: &str) -> Strawberry<LeBlancObject>;
+    fn call(&mut self, method_name: &str, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>;
+    fn call_name(&mut self, method_name: &str) -> Rc<RefCell<LeBlancObject>>;
 }
 
 pub trait Reflect {
@@ -58,7 +62,7 @@ impl LeBlancObject {
         }
     }
 
-    pub fn unsafe_null() -> Strawberry<LeBlancObject> {
+    pub fn unsafe_null() -> Rc<RefCell<LeBlancObject>> {
         return unsafe {
             match NULL.as_ref() {
                 None => {
@@ -82,7 +86,7 @@ impl LeBlancObject {
         }
     }
 
-    pub fn unsafe_error() -> Strawberry<LeBlancObject> {
+    pub fn unsafe_error() -> Rc<RefCell<LeBlancObject>> {
         return unsafe {
             match ERROR.as_ref() {
                 None => {
@@ -119,7 +123,14 @@ impl LeBlancObject {
         self.data = other.data.clone();
     }
 
-    pub fn cast(&mut self, cast: LeBlancType) -> LeBlancObject {
+    pub fn move_data(&mut self, other: Self) {
+        self.members = other.members;
+        self.methods = other.methods;
+        self.typing = other.typing;
+        self.data = other.data;
+    }
+
+    pub fn cast(&self, cast: LeBlancType) -> LeBlancObject {
         let object_data = match cast {
             LeBlancType::Char => LeBlancObjectData::Char(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Short => LeBlancObjectData::Short(unsafe {*self.reflect().downcast_ref_unchecked()}),
@@ -156,8 +167,8 @@ impl LeBlancObject {
         }
     }
 
-    pub fn to_mutex(self) -> Strawberry<LeBlancObject> {
-        return Strawberry::new(self);
+    pub fn to_mutex(self) -> Rc<RefCell<LeBlancObject>> {
+        return Rc::new(RefCell::new(self));
     }
 }
 
@@ -180,6 +191,7 @@ pub enum LeBlancObjectData {
     Class(ClassMeta), // User defined class with ID
     Dynamic(&'static LeBlancObjectData),
     List(LeblancList),
+    Iterator(LeblancIterator),
     Error,
     Null,
 }
@@ -199,22 +211,23 @@ impl Reflect for LeBlancObject {
             LeBlancObjectData::String(item) => Box::new(item),
             LeBlancObjectData::Function(item) => Box::new(item),
             LeBlancObjectData::List(item) => Box::new(item),
+            LeBlancObjectData::Iterator(item) => Box::new(item),
             _ => Box::new(0),
         };
         return boxed;
     }
 }
 
-impl Reflect for Strawberry<LeBlancObject> {
+impl Reflect for Rc<RefCell<LeBlancObject>> {
     fn reflect(&self) -> Box<dyn Any + 'static> {
-        return self.bypass_loan().reflect();
+        return self.borrow().reflect();
     }
 }
 
-pub fn passed_args_to_types(args: &Vec<Strawberry<LeBlancObject>>) -> Vec<LeBlancArgument> {
+pub fn passed_args_to_types(args: &Vec<Rc<RefCell<LeBlancObject>>>) -> Vec<LeBlancArgument> {
     let mut arg_types = Vec::new();
     for i in 0..args.len() {
-        arg_types.append_item( args[i].bypass_loan().to_leblanc_arg(i as u32));
+        arg_types.append_item( args[i].borrow().to_leblanc_arg(i as u32));
     }
     return arg_types;
 
@@ -240,6 +253,7 @@ impl Display for LeBlancObjectData {
             LeBlancObjectData::Class(data) => data.to_string(),
             LeBlancObjectData::Dynamic(data) => data.to_string(),
             LeBlancObjectData::List(data) => data.to_string(),
+            LeBlancObjectData::Iterator(data) => data.to_string(),
             LeBlancObjectData::Error => "error".to_string(),
             LeBlancObjectData::Null => "null".to_string()
         };
@@ -247,14 +261,14 @@ impl Display for LeBlancObjectData {
     }
 }
 
-impl Callable for Strawberry<LeBlancObject> {
-    fn call(&mut self, method_name: &str, arguments: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
+impl Callable for Rc<RefCell<LeBlancObject>> {
+    fn call(&mut self, method_name: &str, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
         let argument_vec = arguments.to_vec();
         let args = passed_args_to_types(&argument_vec);
 
 
         //let self_clone = Arc::clone(self);
-        let method = self.bypass_loan().methods.iter().filter(|m| {
+        let method = self.borrow().methods.iter().filter(|m| {
             m.matches(method_name.to_string(), &args)
         }).next().cloned();
         if method.is_none() {
@@ -263,9 +277,9 @@ impl Callable for Strawberry<LeBlancObject> {
         return method.unwrap().run( self.clone(), arguments);
     }
 
-    fn call_name(&mut self, method_name: &str) -> Strawberry<LeBlancObject> {
+    fn call_name(&mut self, method_name: &str) -> Rc<RefCell<LeBlancObject>> {
         //println!("Method name: {}, self: {:#?}", method_name, self);
-        let handle = self.bypass_loan().methods.iter().find(|m| m.context.name == method_name).unwrap().handle;
+        let handle = self.borrow().methods.iter().find(|m| m.context.name == method_name).unwrap().handle;
         unsafe { handle(self.clone(), &mut NO_ARGS) }
     }
 }
@@ -275,9 +289,9 @@ pub trait Stringify {
     fn to_string(&self) -> String;
 }
 
-impl Stringify for Strawberry<LeBlancObject> {
+impl Stringify for Rc<RefCell<LeBlancObject>> {
     fn to_string(&self) -> String {
-        self.bypass_loan().data.to_string()
+        self.clone().borrow().data.to_string()
     }
 }
 
@@ -285,20 +299,20 @@ pub trait ArcType {
     fn leblanc_type(&self) -> LeBlancType;
 }
 
-impl ArcType for Strawberry<LeBlancObject> {
-    fn leblanc_type(&self) -> LeBlancType {
-        return self.bypass_loan().typing;
-    }
-}
-
 impl LeBlancObjectData {
-    pub fn retrieve_self_as_function(&mut self) -> Option<&mut Method> {
+    pub fn get_mut_inner_method(&mut self) -> Option<&mut Method> {
         return match self {
             LeBlancObjectData::Function(function) => Some(function),
             _ => None
         }
     }
-    pub fn as_i128(&mut self) -> i128 {
+    pub fn get_inner_method(&self) -> Option<&Method> {
+        return match self {
+            LeBlancObjectData::Function(function) => Some(function),
+            _ => None
+        }
+    }
+    pub fn as_i128(&self) -> i128 {
         return match self {
             LeBlancObjectData::Char(item) => (*item).to_digit(10).unwrap() as i128,
             LeBlancObjectData::Short(item) => *item as i128,

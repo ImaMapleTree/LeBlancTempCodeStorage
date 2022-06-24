@@ -1,3 +1,5 @@
+use alloc::rc::Rc;
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
@@ -37,7 +39,7 @@ impl ToLeblanc for String {
     fn create(&self) -> LeBlancObject {
         return leblanc_object_string(self.clone());
     }
-    fn create_mutex(&self) -> Strawberry<LeBlancObject> { return Strawberry::new(self.create()) }
+    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { return Rc::new(RefCell::new(self.create())) }
 }
 
 pub fn string_addition_method() -> Method {

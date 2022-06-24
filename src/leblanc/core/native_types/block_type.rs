@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 use crate::leblanc::rustblanc::strawberry::Strawberry;
+use alloc::rc::Rc;
+use std::cell::RefCell;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
@@ -30,7 +32,7 @@ impl ToLeblanc for NativeBlock {
     fn create(&self) -> LeBlancObject {
         return leblanc_object_block(*self);
     }
-    fn create_mutex(&self) -> Strawberry<LeBlancObject> { return Strawberry::new(self.create()) }
+    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { return Rc::new(RefCell::new(self.create())) }
 }
 
 impl Display for NativeBlock {

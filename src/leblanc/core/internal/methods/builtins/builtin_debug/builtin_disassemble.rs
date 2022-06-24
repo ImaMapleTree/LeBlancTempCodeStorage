@@ -4,6 +4,8 @@ use std::io;
 
 
 use crate::leblanc::rustblanc::strawberry::Strawberry;
+use alloc::rc::Rc;
+use std::cell::RefCell;
 
 use prettytable::{Cell, format, Row, Table};
 use crate::leblanc::core::interpreter::instructions::InstructionBase;
@@ -18,8 +20,8 @@ use crate::LeBlancType;
 
 static mut STDOUT: Option<io::Stdout> = None;
 
-fn _BUILTIN_DISASSEMBLE(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
-    let method = args[0].loan().inquire().either().data.retrieve_self_as_function().unwrap().clone();
+fn _BUILTIN_DISASSEMBLE(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
+    let method = args[0].borrow().data.get_inner_method().unwrap().clone();
     let dis_rust_func = if args.len() > 1 {
         *args[1].reflect().downcast_ref::<bool>().unwrap()
     } else {
@@ -33,7 +35,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry
         }
     } else {
         let leblanc_handle = method.leblanc_handle;
-        let instructions = leblanc_handle.loan().inquire().either().instructions.clone();
+        let instructions = leblanc_handle.borrow().instructions.clone();
         let mut prev_line_number = 0;
         let mut line_number_format = grow_to_size("", 8);
         let mut instruct_count = 0;
@@ -47,8 +49,8 @@ fn _BUILTIN_DISASSEMBLE(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry
             } else {line_number_format = grow_to_size("", 8)}
 
             let arg_string = match instruction.instruct {
-                InstructionBase::LoadLocal => format!("({})", leblanc_handle.loan().inquire().either().variable_context.values().filter(|context| context.relationship == instruction.arg as u32).next().unwrap().name),
-                InstructionBase::LoadConstant => format!("({})", leblanc_handle.loan().inquire().either().constants[instruction.arg as usize].data),
+                InstructionBase::LoadLocal => format!("({})", leblanc_handle.borrow().variable_context.values().filter(|context| context.relationship == instruction.arg as u32).next().unwrap().name),
+                InstructionBase::LoadConstant => format!("({})", leblanc_handle.borrow().constants[instruction.arg as usize].borrow().data),
                 InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),
                 _ => "".to_string()
             };

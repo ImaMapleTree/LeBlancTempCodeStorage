@@ -2,6 +2,8 @@ use std::collections::BTreeSet;
 use std::io;
 
 use crate::leblanc::rustblanc::strawberry::Strawberry;
+use alloc::rc::Rc;
+use std::cell::RefCell;
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Stringify};
 use crate::leblanc::core::method::Method;
@@ -14,7 +16,7 @@ static mut TIMING: Timings = Timings { map: None };
 
 static mut STDOUT: Option<io::Stdout> = None;
 
-fn _BUILTIN_PRINT_(_self: Strawberry<LeBlancObject>, args: &mut [Strawberry<LeBlancObject>]) -> Strawberry<LeBlancObject> {
+fn _BUILTIN_PRINT_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
     let result = args[0].call_name("to_string").to_string() + "\n";
     unsafe {
         if STDOUT.is_none() {

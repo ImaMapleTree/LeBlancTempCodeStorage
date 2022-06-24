@@ -1,14 +1,12 @@
 func main() {
-    for int i in 0 to 30 {
-        print(fibonacci(i));
-    }
+    print(test());
+    (0 to 100).iterate().filter(i: {
+        if i < 30 -> i > 40
+        else -> i % 2 == 0
+    }).first();
 
 }
 
-func fibonacci(int n) returns int {
-    if n <= 1 {
-        return n;
-    } else {
-        return (fibonacci(n - 1) + fibonacci(n - 2));
-    }
+func test() returns int {
+    return 3;
 }

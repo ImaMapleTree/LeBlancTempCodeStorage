@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
+use alloc::rc::Rc;
+use std::cell::RefCell;
 
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_math::_internal_add_number_;
@@ -17,7 +19,7 @@ static mut BASE_METHODS: Option<Arc<HashSet<Method>>> = None;
 
 pub trait ToLeblanc {
     fn create(&self) -> LeBlancObject;
-    fn create_mutex(&self) -> Strawberry<LeBlancObject>;
+    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>>;
 }
 
 pub fn base_methods() -> Arc<HashSet<Method>> {
@@ -37,13 +39,8 @@ pub fn base_methods() -> Arc<HashSet<Method>> {
 }
 
 pub fn internal_method(method: Method) -> LeBlancObject {
-    //let function_name = method.context.name;
-    //method.context.name = "call".to_string();
-    println!("Internal method :)");
-    println!("Internal method: {:#?}", method);
     let mut methods = Arc::unwrap_or_clone( base_methods());
     methods.insert(method.clone());
-    println!("Internal method");
     return LeBlancObject {
         data: LeBlancObjectData::Function(method),
         typing: Function,
