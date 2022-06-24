@@ -13,12 +13,16 @@
 #![allow(non_camel_case_types)]
 
 #![allow(clippy::all)]
+
+// Pedantic
+#![deny(clippy::borrow_as_ptr)]
+
 #![deny(clippy::box_collection, clippy::boxed_local, clippy::cmp_owned, clippy::expect_fun_call, clippy::extend_with_drain,
 clippy::format_in_format_args, clippy::format_push_string, clippy::iter_nth, clippy::iter_overeager_cloned, clippy::large_const_arrays,
 clippy::large_enum_variant, clippy::manual_memcpy, clippy::manual_str_repeat, clippy::map_entry, clippy::missing_spin_loop,
 clippy::needless_collect, clippy::or_fun_call, clippy::redundant_allocation, clippy::redundant_clone, clippy::single_char_pattern,
-clippy::slow_vector_initialization, clippy::to_string_in_format_args, clippy::unnecessary_to_owned, clippy::useless_vec, clippy::vec_init_then_push)]
-#![warn(clippy::derive_hash_xor_eq, clippy::mut_from_ref)]
+clippy::slow_vector_initialization, clippy::to_string_in_format_args, clippy::unnecessary_to_owned, clippy::useless_vec, clippy::vec_init_then_push
+)]
 
 
 extern crate core;

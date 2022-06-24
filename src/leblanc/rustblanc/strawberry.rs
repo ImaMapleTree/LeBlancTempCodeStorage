@@ -1,18 +1,20 @@
+use alloc::rc::Rc;
 use core::fmt::Debug;
+use std::ptr::null_mut;
 use std::sync::{Arc};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Debug)]
 pub struct Strawberry<T: Clone + Debug> {
     ptr: *mut T,
-    data: Arc<T>,
+    data: Rc<T>,
     loans: Arc<AtomicUsize>,
 }
 
 impl<T: Clone + Debug> Strawberry<T> {
     pub fn new(data: T) -> Strawberry<T> {
-        let mut data = Arc::new(data);
-        let ptr = Arc::get_mut(&mut data).unwrap() as *mut T;
+        let mut data = Rc::new(data);
+        let ptr = Rc::get_mut(&mut data).unwrap() as *mut T;
         return Strawberry {
             ptr,
             data,
@@ -21,19 +23,22 @@ impl<T: Clone + Debug> Strawberry<T> {
     }
 
     pub fn from_arc(mut arc: Arc<T>) -> Strawberry<T> {
-        let ptr = Arc::make_mut(&mut arc) as *mut T;
+        let obj = Arc::unwrap_or_clone(arc);
+        return Strawberry::new(obj);
+
+        /*let ptr = Rc::make_mut(&mut arc) as *mut T;
         return Strawberry {
             ptr,
             data: arc,
             loans: Arc::new(AtomicUsize::new(0))
-        }
+        }*/
     }
 
     pub fn loan(&self) -> StrawberryLoan<T> {
         //println!("Loan");
         unsafe {
-            let loan_amount = self.loans.fetch_add(1, Ordering::SeqCst);
-            return if loan_amount > 0 {
+            let loan_amount = self.loans.fetch_add(1, Ordering::Relaxed);
+            return if loan_amount > 1 {
                 StrawberryLoan::immutable(&mut*self.ptr, self)
             } else {
                 StrawberryLoan::mutable(&mut*self.ptr, self)
@@ -49,7 +54,7 @@ impl<T: Clone + Debug> Strawberry<T> {
 
 impl<T: Clone + Debug> Clone for Strawberry<T> {
     fn clone(&self) -> Self {
-        //unsafe {COUNT4 += 1;}
+        unsafe {COUNT4 += 1;}
         return Strawberry {
             ptr: self.ptr,
             data: self.data.clone(),
@@ -81,19 +86,19 @@ impl<'a, T: Clone + Debug> StrawberryLoan<'_, T> {
         }
     }
     pub fn inquire(&mut self) -> Result<&mut T, T> {
-        match unsafe {&mut *self.parent}.loans.load(Ordering::SeqCst) {
+        match unsafe {&mut *self.parent}.loans.load(Ordering::Relaxed) {
             0 => self.mutability = StrawberryMutability::Mutable,
             1 => self.mutability = StrawberryMutability::Mutable,
             _ => self.mutability = StrawberryMutability::Immutable
         }
-        //unsafe {COUNT3 += 1;}
+        unsafe {COUNT3 += 1;}
         match self.mutability {
             StrawberryMutability::Immutable | StrawberryMutability::ForcedImmutable => {
-                //unsafe {COUNT += 1;}
+                unsafe {COUNT += 1;}
                 Err(self.reference.clone())
             }
             StrawberryMutability::Mutable => {
-                //unsafe {COUNT2 += 1;}
+                unsafe {COUNT2 += 1;}
                 Ok(self.reference)
             }
         }
@@ -120,7 +125,7 @@ enum StrawberryMutability {
 
 impl<'a, T: Clone + Debug> Drop for StrawberryLoan<'_, T> {
     fn drop(&mut self) {
-        unsafe { (&mut *self.parent).loans.fetch_sub(1, Ordering::SeqCst); }
+        unsafe { (&mut *self.parent).loans.fetch_sub(1, Ordering::Relaxed); }
     }
 }
 
