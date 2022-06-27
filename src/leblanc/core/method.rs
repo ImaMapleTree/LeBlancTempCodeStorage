@@ -10,10 +10,10 @@ use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
-use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
+
 use alloc::rc::Rc;
-use core::borrow::BorrowMut;
-use std::cell::{BorrowMutError, RefCell, RefMut};
+
+use std::cell::{RefCell};
 
 pub struct Method {
     pub context: MethodStore,
@@ -27,7 +27,7 @@ pub struct Method {
 
 impl Method {
     pub fn new(context: MethodStore, handle: fn(Rc<RefCell<LeBlancObject>>, &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>, tags: BTreeSet<MethodTag>) -> Method {
-        return Method {
+        Method {
             context,
             leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
             handle,
@@ -38,7 +38,7 @@ impl Method {
 
     pub fn null() -> Method {
         let _t = String::new();
-        return Method {
+        Method {
             context: MethodStore::no_args("null".to_string()),
             leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
             handle: null_func,
@@ -48,7 +48,7 @@ impl Method {
     }
 
     pub fn error() -> Method {
-        return Method {
+        Method {
             context: MethodStore::no_args("null".to_string()),
             leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
             handle: error_func,
@@ -60,12 +60,12 @@ impl Method {
     pub fn is_internal_method(&self) -> bool { self.method_type == MethodType::InternalMethod }
 
     pub fn no_handle(context: MethodStore, tags: BTreeSet<MethodTag>) -> Method {
-        return Method::new(context, null_func, tags);
+        Method::new(context, null_func, tags)
     }
 
     pub fn of_leblanc_handle(context: MethodStore, leblanc_handle: LeblancHandle, tags: BTreeSet<MethodTag>) -> Method {
         let leblanc_handle = Rc::new(RefCell::new(leblanc_handle));
-        return Method {
+        Method {
             context,
             leblanc_handle,
             handle: null_func,
@@ -75,7 +75,7 @@ impl Method {
     }
 
     pub fn default(context: MethodStore, handle: fn(Rc<RefCell<LeBlancObject>>, &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>) -> Method {
-        return Method::new(context, handle, BTreeSet::new());
+        Method::new(context, handle, BTreeSet::new())
     }
 
     #[inline(always)]
@@ -84,7 +84,7 @@ impl Method {
             return match self.is_internal_method() {
                 false => { match self.leblanc_handle.try_borrow_mut() {
                     Ok(mut refer) => refer.execute(args),
-                    Err(err) => unsafe {&mut (*self.leblanc_handle.as_ptr())}.clone().execute(args)
+                    Err(_err) => unsafe {&mut (*self.leblanc_handle.as_ptr())}.clone().execute(args)
                 }}
                 true => (self.handle)(_self, args)
             }
@@ -122,13 +122,13 @@ impl Method {
             }
             return true;
         }
-        return false;
+        false
 
     }
 
     pub fn store(&self) -> &MethodStore { &self.context }
 
-    pub fn has_tag(&self, tag: MethodTag) -> bool { return self.tags.contains(&tag); }
+    pub fn has_tag(&self, tag: MethodTag) -> bool { self.tags.contains(&tag) }
 
     pub fn has_tags(&self, tags: Vec<MethodTag>) -> bool {
         return tags.iter().all(|tag| self.tags.contains(tag));
@@ -143,7 +143,7 @@ impl PartialEq for Method {
         if self.context != other.context || self.tags != other.tags {
             return false;
         }
-        return true;
+        true
     }
 }
 
@@ -166,13 +166,13 @@ impl Debug for Method {
 
 impl Clone for Method {
     fn clone(&self) -> Self {
-        return Method {
+        Method {
             context: self.context.clone(),
             handle: self.handle,
             leblanc_handle: self.leblanc_handle.clone(),
             tags: self.tags.clone(),
             method_type: self.method_type
-        };
+        }
         //Method::new(self.context.clone(), self.handle, self.tags.clone())
     }
 }
@@ -183,9 +183,9 @@ impl PartialOrd for Method {
     }
 }
 
-fn null_func(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {return LeBlancObject::unsafe_null()}
+fn null_func(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {LeBlancObject::unsafe_null()}
 
-fn error_func(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {return LeBlancObject::unsafe_error()}
+fn error_func(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {LeBlancObject::unsafe_error()}
 
 impl Display for Method {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -198,7 +198,7 @@ fn args_to_string(args: &Vec<LeBlancArgument>) -> String {
     for arg in args {
         s += &(", ".to_owned() + &arg.to_string());
     }
-    return s.replacen(", ", "", 1);
+    s.replacen(", ", "", 1)
 }
 
 fn tags_to_string(tags: &BTreeSet<MethodTag>) -> String {
@@ -207,7 +207,7 @@ fn tags_to_string(tags: &BTreeSet<MethodTag>) -> String {
         s += &(", ".to_owned() + &tag.to_string());
     }
 
-    return s.replacen(", ", "", 1);
+    s.replacen(", ", "", 1)
 }
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]

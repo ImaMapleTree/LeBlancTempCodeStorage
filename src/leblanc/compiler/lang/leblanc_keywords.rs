@@ -25,7 +25,7 @@ pub enum LBKeyword {
 pub fn is_keyword(value: &str) -> bool { keyword_value(value) != LBKeyword::Null }
 
 pub fn keyword_value(value: &str) -> LBKeyword {
-    return match value {
+    match value {
         "using" => LBKeyword::Using,
         "return" => LBKeyword::Return,
         "returns" => LBKeyword::Returns,

@@ -39,14 +39,14 @@ impl CharReader {
             lines.push(line.clone());
             let mut chars = line.chars().collect::<Vec<_>>();
             chars.push('\n');
-            return chars;
+            chars
         });
 
         let characters: Vec<char> = char_iterator.collect();
-        let next_char: char = **characters.get(0).get_or_insert(&'\0');
+        let next_char: char = **characters.first().get_or_insert(&'\0');
 
 
-        return CharReader {
+        CharReader {
             file_path,
             lines,
             characters,
@@ -65,8 +65,8 @@ impl CharReader {
         let lines: Vec<String> = line.lines().map(|line| line.to_string()).collect::<Vec<String>>();
         let file_path = "leblanc.exe".to_string();
         let characters: Vec<char> = line.chars().collect();
-        let next_char: char = **characters.get(0).get_or_insert(&'\0');
-        return CharReader {
+        let next_char: char = **characters.first().get_or_insert(&'\0');
+        CharReader {
             file_path,
             lines,
             characters,
@@ -86,7 +86,7 @@ impl CharReader {
             self.last_char = self.current_char;
             self.current_char = self.next_char;
             self.next_char = **self.characters.get((self.total_scanned_chars+((i+1) as u64)) as usize).get_or_insert(&'\0');
-            self.total_scanned_chars += 1 as u64;
+            self.total_scanned_chars += 1_u64;
 
             if self.next_char == '\0' {
                 self.end_of_file = true;
@@ -102,7 +102,7 @@ impl CharReader {
 
         }
 
-        return self.current_char;
+        self.current_char
     }
 
     pub fn char_next(&self) -> &char {&self.next_char}
@@ -116,11 +116,11 @@ impl CharReader {
     pub fn path(&self) -> &String { &self.file_path }
 
     pub fn chars(&self) -> &Vec<char> {
-        return &self.characters;
+        &self.characters
     }
 
     pub fn eof(&self) -> bool {
-        return self.end_of_file;
+        self.end_of_file
     }
 
 }

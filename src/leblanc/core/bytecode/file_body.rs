@@ -19,7 +19,7 @@ pub struct FileBodyBytecode {
 
 impl FileBodyBytecode {
     pub fn new() -> FileBodyBytecode {
-        return FileBodyBytecode {
+        FileBodyBytecode {
             total_function_size: ByteRestriction::once(Limited(8)),
             function_size: ByteRestriction::repeated(Limited(8)),
             function: ByteRestriction::repeated(Undefined),
@@ -62,16 +62,16 @@ impl FileBodyBytecode {
             body.extension.consume_bytes(extension).unwrap();
         }
 
-        return body;
+        body
 
     }
 
     pub fn functions(&mut self) -> Vec<FunctionBytecode> {
-        return self.function.iter_mut().unwrap().map(|f| FunctionBytecode::from(f)).collect::<Vec<FunctionBytecode>>();
+        return self.function.iter_mut().unwrap().map(FunctionBytecode::from).collect::<Vec<FunctionBytecode>>();
     }
 
     pub fn extensions(&mut self) -> Vec<ExtensionBytecode> {
-        return self.extension.iter_mut().unwrap().map(|e| ExtensionBytecode::from(e)).collect::<Vec<ExtensionBytecode>>();
+        return self.extension.iter_mut().unwrap().map(ExtensionBytecode::from).collect::<Vec<ExtensionBytecode>>();
     }
 
 
@@ -92,6 +92,6 @@ impl ToBytecode for FileBodyBytecode {
         final_bytes.consume(extensions);
 
         //self.total_body_size.consume_bytes(functions).unwrap(); // This looks weird but we do it so that we no longer clone the functions obj saving on some storage space
-        return final_bytes;
+        final_bytes
     }
 }

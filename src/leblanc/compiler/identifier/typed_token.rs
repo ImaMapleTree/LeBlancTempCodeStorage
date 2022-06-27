@@ -20,7 +20,7 @@ pub struct TypedToken{
 
 impl TypedToken {
     pub fn new(token: Token, vocab: CompileVocab, scope: i32, global: bool, class_member: bool) -> TypedToken {
-        return TypedToken {
+        TypedToken {
             base: token,
             lang_type: vocab,
             scope,
@@ -31,7 +31,7 @@ impl TypedToken {
     }
 
     pub fn empty() -> TypedToken {
-        return TypedToken {
+        TypedToken {
             base: Token::empty(),
             lang_type: CompileVocab::UNKNOWN(LeBlancType::Class(0)),
             scope: -1,
@@ -93,7 +93,7 @@ impl TypedToken {
 
 
 
-        return stub_string.to_owned() + "|" + &symbol_string.len().to_string() + "|"  + &symbol_string + &comp_type_string + "|" + &scope_string + "|" + &global_string + "|" + &class_member + "|" + &typings + "&&";
+        stub_string.to_owned() + "|" + &symbol_string.len().to_string() + "|"  + &symbol_string + &comp_type_string + "|" + &scope_string + "|" + &global_string + "|" + &class_member + "|" + &typings + "&&"
     }
 }
 
@@ -105,9 +105,9 @@ impl Display for TypedToken {
 
 impl Clone for TypedToken {
     fn clone(&self) -> Self {
-        return TypedToken {
+        TypedToken {
             base: self.base.copy(),
-            lang_type: self.lang_type.clone(),
+            lang_type: self.lang_type,
             scope: self.scope,
             a_typing: self.a_typing.clone(),
             global: self.global,

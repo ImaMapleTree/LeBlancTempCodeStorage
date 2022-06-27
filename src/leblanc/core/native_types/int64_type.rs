@@ -1,6 +1,6 @@
 use std::collections::{BTreeSet};
 use std::sync::{Arc};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use fxhash::FxHashMap;
@@ -19,7 +19,7 @@ pub fn leblanc_object_int64(integer: i64) -> LeBlancObject {
     let mut base_methods = Arc::unwrap_or_clone(base_methods());
     base_methods.insert(inplace_addition());
 
-    return LeBlancObject::new(
+    LeBlancObject::new(
         LeBlancObjectData::Int64(integer),
         LeBlancType::Int64,
         Arc::new(base_methods),
@@ -31,16 +31,16 @@ pub fn leblanc_object_int64(integer: i64) -> LeBlancObject {
 
 impl ToLeblanc for i64 {
     fn create(&self) -> LeBlancObject {
-        return leblanc_object_int64(*self);
+        leblanc_object_int64(*self)
     }
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { return Rc::new(RefCell::new(self.create())) }
+    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
 }
 
 fn inplace_addition() -> Method {
     let method_store = MethodStore::new("inplace_addition".to_string(), number_argset());
     let mut method_tag = BTreeSet::new();
     method_tag.insert(MethodTag::InPlaceAddition);
-    return Method::new(
+    Method::new(
         method_store,
         _internal_inplace_add_,
         method_tag

@@ -1,6 +1,6 @@
 use crate::leblanc::core::native_types::LeBlancType;
 
-pub fn is_constant(string: &str) -> bool { return constant_type(string) != LeBlancType::Class(0) }
+pub fn is_constant(string: &str) -> bool { constant_type(string) != LeBlancType::Class(0) }
 
 pub fn constant_type(string: &str) -> LeBlancType {
     if string.starts_with('.') { return LeBlancType::Class(0);}
@@ -34,5 +34,5 @@ pub fn constant_type(string: &str) -> LeBlancType {
         }
         return LeBlancType::Int
     }
-    return LeBlancType::Class(0);
+    LeBlancType::Class(0)
 }

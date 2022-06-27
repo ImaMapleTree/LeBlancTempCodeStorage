@@ -27,7 +27,7 @@ pub struct PackedNumber {
 
 impl PackedNumber {
     pub fn new<T: Hexable>(number: T) -> PackedNumber {
-        return PackedNumber {
+        PackedNumber {
             number: number.to_hex(128),
         }
     }

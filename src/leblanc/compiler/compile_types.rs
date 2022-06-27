@@ -31,7 +31,7 @@ pub struct Import {
 
 impl Import {
     pub fn new(name: String, sub_imports: Vec<String>, extension: bool) -> Import {
-        return Import {
+        Import {
             name,
             sub_imports,
             extension

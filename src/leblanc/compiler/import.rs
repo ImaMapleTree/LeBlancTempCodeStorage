@@ -7,7 +7,7 @@ pub struct Import {
 
 impl Import {
     pub fn new(name: &String, source: &String, import_type: ImportType) -> Import {
-        return Import {
+        Import {
             name: name.clone(),
             source: source.clone(),
             import_type

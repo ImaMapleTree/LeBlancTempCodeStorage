@@ -1,6 +1,6 @@
 use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
 use std::sync::{Arc};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 use alloc::rc::Rc;
 use std::cell::RefCell;
 
@@ -41,7 +41,7 @@ pub fn base_methods() -> Arc<FxHashSet<Method>> {
 pub fn internal_method(method: Method) -> LeBlancObject {
     let mut methods = Arc::unwrap_or_clone( base_methods());
     methods.insert(method.clone());
-    return LeBlancObject {
+    LeBlancObject {
         data: LeBlancObjectData::Function(method),
         typing: Function,
         methods: Arc::new(methods),
@@ -51,31 +51,31 @@ pub fn internal_method(method: Method) -> LeBlancObject {
 }
 
 pub fn base_to_string_method() -> MethodStore {
-    return MethodStore::no_args("to_string".to_string());
+    MethodStore::no_args("to_string".to_string())
 }
 
 pub fn base_expose_method() -> MethodStore {
-    return MethodStore::no_args("expose".to_string());
+    MethodStore::no_args("expose".to_string())
 }
 
 pub fn base_equals_method() -> MethodStore {
-    return MethodStore {
+    MethodStore {
         name: "equals".to_string(),
         arguments: vec![LeBlancArgument::default(Flex, 0)],
     }
 }
 
 pub fn base_clone_method() -> MethodStore {
-    return MethodStore::no_args("clone".to_string());
+    MethodStore::no_args("clone".to_string())
 }
 
-pub fn base_field_method() -> MethodStore { return MethodStore::new("field".to_string(),
+pub fn base_field_method() -> MethodStore { MethodStore::new("field".to_string(),
                                                                 vec![LeBlancArgument::default(LeBlancType::String, 0)])}
 
 
 pub fn base_addition_method() -> Method {
     let method_store = MethodStore::new("_ADD_".to_string(), number_argset());
-    return Method::new(
+    Method::new(
         method_store,
         _internal_add_number_,
         MethodTag::Addition.singleton()

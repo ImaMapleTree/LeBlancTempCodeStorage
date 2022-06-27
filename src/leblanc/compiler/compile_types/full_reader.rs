@@ -13,9 +13,9 @@ pub fn read_file(path: String) -> LeblancBytecode {
     let file_reader = BufReader::new(file);
     let hex = encode_hex(&file_reader.bytes().map(|l| l.unwrap()).collect::<Vec<u8>>());
 
-    let bc = LeblancBytecode::from(hex);
+    
 
-    return bc;
+    LeblancBytecode::from(hex)
 }
 
 pub fn read_bytecode(hex: Hexadecimal) -> LeblancBytecode {

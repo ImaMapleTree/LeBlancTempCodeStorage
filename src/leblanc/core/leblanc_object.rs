@@ -3,9 +3,8 @@ use std::any::Any;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter};
-use std::hash::Hasher;
-use std::intrinsics::unchecked_add;
-use std::mem::take;
+
+
 use std::sync::{Arc};
 use fxhash::{FxHashMap, FxHashSet};
 
@@ -13,15 +12,17 @@ use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::module::Module;
+use crate::leblanc::core::native_types::base_type::ToLeblanc;
 use crate::leblanc::core::native_types::block_type::NativeBlock;
 use crate::leblanc::core::native_types::class_type::ClassMeta;
-use crate::leblanc::core::native_types::derived::generator_type::LeblancGenerator;
+
 use crate::leblanc::core::native_types::derived::iterator_type::{LeblancIterable, LeblancIterator};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
-use crate::leblanc::core::native_types::int_type::leblanc_object_int;
+use crate::leblanc::core::native_types::error_type::{leblanc_object_error, LeblancError};
+
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
-use crate::leblanc::rustblanc::strawberry::{Strawberry};
+
 
 static mut NULL: Option<Rc<RefCell<LeBlancObject>>> = None;
 
@@ -38,6 +39,12 @@ pub trait Reflect {
     fn reflect(&self) -> Box<dyn Any + 'static>;
 }
 
+pub trait RustDataCast<T> {
+    fn clone_data(&self) -> Option<T>;
+    fn ref_data(&self) -> Option<&T>;
+    fn mut_data(&mut self) -> Option<&mut T>;
+}
+
 #[derive(Debug, PartialEq)]
 pub struct LeBlancObject {
     pub data: LeBlancObjectData,
@@ -49,14 +56,14 @@ pub struct LeBlancObject {
 
 impl LeBlancObject {
     pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<FxHashSet<Method>>, members: FxHashMap<String, LeBlancObject>, context: VariableContext) -> LeBlancObject {
-        return LeBlancObject {data, typing, methods, members, context};
+        LeBlancObject {data, typing, methods, members, context}
     }
 
 
-    pub fn is_error(&self) -> bool { return self.typing == LeBlancType::Exception }
+    pub fn is_error(&self) -> bool { self.typing == LeBlancType::Exception }
 
     pub fn null() -> LeBlancObject {
-        return LeBlancObject {
+        LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Class(0),
             methods: Arc::new(FxHashSet::default()),
@@ -80,7 +87,7 @@ impl LeBlancObject {
     }
 
     pub fn error() -> LeBlancObject {
-        return LeBlancObject {
+        LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Exception,
             methods: Arc::new(FxHashSet::default()),
@@ -103,7 +110,11 @@ impl LeBlancObject {
         }
     }
 
-    pub fn type_of(&self) -> LeBlancType { return self.typing.clone(); }
+    pub fn error2() -> LeBlancObject {
+        leblanc_object_error(LeblancError::default())
+    }
+
+    pub fn type_of(&self) -> LeBlancType { self.typing }
 
 
     pub fn name_of(&self) -> String {
@@ -134,7 +145,7 @@ impl LeBlancObject {
     }
 
     pub fn copy_rc(&mut self, other: &mut Rc<RefCell<LeBlancObject>>) {
-        let mut other = other.borrow_mut();
+        let other = other.borrow_mut();
         self.members = other.members.clone();
         self.methods.clone_from(&other.methods);
         self.data = other.data.clone();
@@ -142,6 +153,7 @@ impl LeBlancObject {
     }
 
     pub fn cast(&self, cast: LeBlancType) -> LeBlancObject {
+        println!("Cast called");
         let object_data = match cast {
             LeBlancType::Char => LeBlancObjectData::Char(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Short => LeBlancObjectData::Short(unsafe {*self.reflect().downcast_ref_unchecked()}),
@@ -155,7 +167,7 @@ impl LeBlancObject {
             LeBlancType::String => LeBlancObjectData::String((unsafe {self.reflect().downcast_ref_unchecked::<String>()}).clone()),
             _ => LeBlancObjectData::Null
         };
-        return LeBlancObject::new(
+        LeBlancObject::new(
             object_data,
             cast,
             self.methods.clone(),
@@ -165,11 +177,11 @@ impl LeBlancObject {
     }
 
     pub fn to_leblanc_arg(&self, position: u32) -> LeBlancArgument {
-        return LeBlancArgument::default(self.typing.clone(), position);
+        LeBlancArgument::default(self.typing, position)
     }
 
     pub fn _clone(&self) -> LeBlancObject {
-        return LeBlancObject {
+        LeBlancObject {
             data: self.data.clone(),
             typing: self.typing,
             methods: self.methods.clone(),
@@ -179,7 +191,7 @@ impl LeBlancObject {
     }
 
     pub fn to_mutex(self) -> Rc<RefCell<LeBlancObject>> {
-        return Rc::new(RefCell::new(self));
+        Rc::new(RefCell::new(self))
     }
 }
 
@@ -203,29 +215,29 @@ pub enum LeBlancObjectData {
     Dynamic(&'static LeBlancObjectData),
     List(LeblancList),
     Iterator(LeblancIterator),
-    Error,
+    Error(LeblancError),
     Null,
 }
 
 impl Reflect for LeBlancObject {
     fn reflect(&self) -> Box<dyn Any + 'static> {
-        let boxed: Box<dyn Any + 'static> = match self.data.clone() {
-            LeBlancObjectData::Char(item) => Box::new(item),
-            LeBlancObjectData::Short(item) => Box::new(item),
-            LeBlancObjectData::Int(item) => Box::new(item),
-            LeBlancObjectData::Int64(item) => Box::new(item),
-            LeBlancObjectData::Int128(item) => Box::new(item),
-            LeBlancObjectData::Arch(item) => Box::new(item),
-            LeBlancObjectData::Float(item) => Box::new(item),
-            LeBlancObjectData::Double(item) => Box::new(item),
-            LeBlancObjectData::Boolean(item) => Box::new(item),
-            LeBlancObjectData::String(item) => Box::new(item),
-            LeBlancObjectData::Function(item) => Box::new(item),
-            LeBlancObjectData::List(item) => Box::new(item),
-            LeBlancObjectData::Iterator(item) => Box::new(item),
+        let boxed: Box<dyn Any + 'static> = match &self.data {
+            LeBlancObjectData::Char(item) => Box::new(*item),
+            LeBlancObjectData::Short(item) => Box::new(*item),
+            LeBlancObjectData::Int(item) => Box::new(*item),
+            LeBlancObjectData::Int64(item) => Box::new(*item),
+            LeBlancObjectData::Int128(item) => Box::new(*item),
+            LeBlancObjectData::Arch(item) => Box::new(*item),
+            LeBlancObjectData::Float(item) => Box::new(*item),
+            LeBlancObjectData::Double(item) => Box::new(*item),
+            LeBlancObjectData::Boolean(item) => Box::new(*item),
+            LeBlancObjectData::String(item) => Box::new(item.clone()),
+            LeBlancObjectData::Function(item) => Box::new(item.clone()),
+            LeBlancObjectData::List(item) => Box::new(item.clone()),
+            LeBlancObjectData::Iterator(item) => Box::new(item.clone()),
             _ => Box::new(0),
         };
-        return boxed;
+        boxed
     }
 }
 
@@ -240,7 +252,7 @@ pub fn passed_args_to_types(args: &Vec<Rc<RefCell<LeBlancObject>>>) -> Vec<LeBla
     for i in 0..args.len() {
         arg_types.append_item( args[i].borrow().to_leblanc_arg(i as u32));
     }
-    return arg_types;
+    arg_types
 
 }
 
@@ -265,7 +277,7 @@ impl Display for LeBlancObjectData {
             LeBlancObjectData::Dynamic(data) => data.to_string(),
             LeBlancObjectData::List(data) => data.to_string(),
             LeBlancObjectData::Iterator(data) => data.to_string(),
-            LeBlancObjectData::Error => "error".to_string(),
+            LeBlancObjectData::Error(data) => data.to_string(),
             LeBlancObjectData::Null => "null".to_string()
         };
         write!(f, "{}", s)
@@ -285,11 +297,14 @@ impl Callable for Rc<RefCell<LeBlancObject>> {
         if method.is_none() {
             return LeBlancObject::unsafe_error();
         }
-        return method.unwrap().run( self.clone(), arguments);
+        method.unwrap().run( self.clone(), arguments)
     }
 
     fn call_name(&mut self, method_name: &str) -> Rc<RefCell<LeBlancObject>> {
-        let handle = self.borrow().methods.iter().find(|m| m.context.name == method_name).unwrap().handle;
+        let handle = match self.borrow().methods.iter().find(|m| m.context.name == method_name) {
+            None => return LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.borrow().typing),vec![]).create_mutex(),
+            Some(some) => some.handle
+        };
         unsafe { handle(self.clone(), &mut NO_ARGS) }
     }
 }
@@ -311,19 +326,19 @@ pub trait ArcType {
 
 impl LeBlancObjectData {
     pub fn get_mut_inner_method(&mut self) -> Option<&mut Method> {
-        return match self {
+        match self {
             LeBlancObjectData::Function(function) => Some(function),
             _ => None
         }
     }
     pub fn get_inner_method(&self) -> Option<&Method> {
-        return match self {
+        match self {
             LeBlancObjectData::Function(function) => Some(function),
             _ => None
         }
     }
     pub fn as_i128(&self) -> i128 {
-        return match self {
+        match self {
             LeBlancObjectData::Char(item) => (*item).to_digit(10).unwrap() as i128,
             LeBlancObjectData::Short(item) => *item as i128,
             LeBlancObjectData::Int(item) => *item as i128,
@@ -336,7 +351,8 @@ impl LeBlancObjectData {
             _ => 0
         }
     }
-    pub fn simple_operation(&self, other: &Self, operation: LBODOperation) -> LeBlancObjectData {
+
+    pub fn simple_operation(&self, other: &Self, _operation: LBODOperation) -> LeBlancObjectData {
         match self {
             LeBlancObjectData::Int(data) => { LeBlancObjectData::Int(*data + other.as_i128() as i32)}
             _ => LeBlancObjectData::Null,
@@ -356,7 +372,7 @@ impl LeBlancObjectData {
 
 impl PartialOrd for LeBlancObject {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        return self.data.partial_cmp(&other.data);
+        self.data.partial_cmp(&other.data)
     }
 }
 

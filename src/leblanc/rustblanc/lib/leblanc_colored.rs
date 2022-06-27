@@ -41,7 +41,7 @@ pub enum ColorBright {
 
 impl ColorBright {
     pub fn ansi(&self) -> &'static str {
-        return match self {
+        match self {
             ColorBright::BrightBlack => "\x1b[90m",
             ColorBright::BrightRed => "\x1b[91m",
             ColorBright::BrightGreen => "\x1b[92m",
@@ -76,7 +76,7 @@ impl Color {
 impl ColorString {
     pub fn new(string: &str) -> ColorString {
         let is_enabled = terminal_color_support();
-        return ColorString {
+        ColorString {
             string: string.to_string(),
             color: Color::None,
             highlight: Color::None,
@@ -104,7 +104,7 @@ impl ColorString {
             self.bold = true;
             self.string = "\x1b[1m".to_string() + &self.string;
         }
-        return self;
+        self
     }
 
     pub fn underline(mut self) -> ColorString {
@@ -124,7 +124,7 @@ impl ColorString {
             self.underline = true;
             self.string = "\x1b[4m".to_string() + &self.string;
         }
-        return self;
+        self
     }
 
     pub fn reverse(mut self) -> ColorString {
@@ -144,7 +144,7 @@ impl ColorString {
             self.reverse = true;
             self.string = "\x1b[7m".to_string() + &self.string;
         }
-        return self;
+        self
     }
 
     pub fn colorize(mut self, color: Color) -> ColorString {
@@ -159,24 +159,24 @@ impl ColorString {
             }
             self.string = color.ansi().to_string() + &self.string;
         }
-        return self;
+        self
     }
 
-    pub fn black(self) -> ColorString { return self.colorize(Color::Black); }
-    pub fn red(self) -> ColorString { return self.colorize(Color::Red); }
-    pub fn green(self) -> ColorString { return self.colorize(Color::Green); }
-    pub fn yellow(self) -> ColorString { return self.colorize(Color::Yellow); }
-    pub fn blue(self) -> ColorString { return self.colorize(Color::Blue); }
-    pub fn magenta(self) -> ColorString { return self.colorize(Color::Magenta); }
-    pub fn cyan(self) -> ColorString { return self.colorize(Color::Cyan); }
-    pub fn white(self) -> ColorString { return self.colorize(Color::White); }
+    pub fn black(self) -> ColorString { self.colorize(Color::Black) }
+    pub fn red(self) -> ColorString { self.colorize(Color::Red) }
+    pub fn green(self) -> ColorString { self.colorize(Color::Green) }
+    pub fn yellow(self) -> ColorString { self.colorize(Color::Yellow) }
+    pub fn blue(self) -> ColorString { self.colorize(Color::Blue) }
+    pub fn magenta(self) -> ColorString { self.colorize(Color::Magenta) }
+    pub fn cyan(self) -> ColorString { self.colorize(Color::Cyan) }
+    pub fn white(self) -> ColorString { self.colorize(Color::White) }
 
     fn check_formatted(&self) -> bool {
-        return self.bold == true || self.underline == true || self.underline == true || self.color != Color::None || self.highlight != Color::None;
+        self.bold || self.underline || self.underline || self.color != Color::None || self.highlight != Color::None
     }
 
     pub fn string(&self) -> String {
-        return self.string.clone();
+        self.string.clone()
     }
 
 }
@@ -189,9 +189,9 @@ impl Display for ColorString {
 
 pub fn colorize(string: String, color: Color) -> String {
     let mut color_string = string;
-    color_string = color_string.replace(Color::Reset.ansi(), &(Color::Reset.ansi().to_owned() + &color.ansi()));
+    color_string = color_string.replace(Color::Reset.ansi(), &(Color::Reset.ansi().to_owned() + color.ansi()));
     let color_string = color.ansi().to_string() + &color_string + Color::Reset.ansi();
-    return color_string;
+    color_string
 }
 
 pub fn colorize_str(string: &str, color: Color) -> String {
@@ -200,5 +200,5 @@ pub fn colorize_str(string: &str, color: Color) -> String {
 }
 
 pub fn terminal_color_support() -> bool {
-    return colors_enabled() || supports_colors();
+    colors_enabled() || supports_colors()
 }

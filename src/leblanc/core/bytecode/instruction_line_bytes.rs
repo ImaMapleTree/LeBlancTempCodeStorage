@@ -14,7 +14,7 @@ pub struct InstructionBytecode {
 
 impl InstructionBytecode {
     pub fn new() -> InstructionBytecode {
-        return InstructionBytecode {
+        InstructionBytecode {
             line_number: ByteRestriction::once(Limited(4)),
             instructions: ByteRestriction::repeated(Limited(2)),
             instruction_arguments: ByteRestriction::repeated(Limited(2))
@@ -43,7 +43,7 @@ impl InstructionBytecode {
 
         bytecode.line_number.consume_bytes(line_number).unwrap();
 
-        return bytecode;
+        bytecode
     }
 
     pub fn to_instructions(mut self) -> Vec<Instruction> {
@@ -54,13 +54,13 @@ impl InstructionBytecode {
         while !instructions.is_empty() {
             mapped.push(Instruction::new(InstructionBase::from_hex(&instructions.remove(0)), instruction_args.remove(0).to_hexable::<u16>(), line_number));
         }
-        return mapped;
+        mapped
     }
 
     pub fn remove(&mut self) -> (Hexadecimal, Hexadecimal) {
         let instruction = self.instructions.pop().unwrap();
         let arg = self.instruction_arguments.pop().unwrap();
-        return (instruction, arg);
+        (instruction, arg)
     }
 }
 
@@ -68,6 +68,6 @@ impl ToBytecode for InstructionBytecode {
     fn generate(&mut self) -> Hexadecimal {
         let instruction_bytes = self.instructions.join(&self.instruction_arguments);
 
-        return self.line_number.bytes() + instruction_bytes;
+        self.line_number.bytes() + instruction_bytes
     }
 }

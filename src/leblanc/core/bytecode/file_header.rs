@@ -25,6 +25,8 @@ use crate::leblanc::rustblanc::lib::datetime::date_as_hex;
 
 #[derive(Debug)]
 pub struct FileHeaderBytecode {
+    file_name_length: ByteRestriction,
+    file_name: ByteRestriction,
     date_modified: ByteRestriction,
     total_header_size: ByteRestriction,
     import_size: ByteRestriction,
@@ -37,7 +39,9 @@ pub struct FileHeaderBytecode {
 
 impl FileHeaderBytecode {
     pub fn new() -> FileHeaderBytecode {
-        return FileHeaderBytecode {
+        FileHeaderBytecode {
+            file_name_length: ByteRestriction::once(Limited(4)),
+            file_name: ByteRestriction::once(Undefined),
             date_modified: ByteRestriction::once(Limited(8)),
             total_header_size: ByteRestriction::once(Limited(4)),
             import_size: ByteRestriction::once(Limited(4)),
@@ -51,6 +55,9 @@ impl FileHeaderBytecode {
 
     pub fn from(hex: &mut Hexadecimal) -> FileHeaderBytecode {
         let mut header = FileHeaderBytecode::new();
+        let file_name_length = hex.scrape(header.file_name_length.unpack().unwrap() as usize);
+        let file_name_length_u32 = file_name_length.to_hexable::<u32>();
+        let file_name = hex.scrape(file_name_length_u32 as usize);
         let date_modified = hex.scrape(header.date_modified.unpack().unwrap() as usize);
         let total_header_size = hex.scrape(header.total_header_size.unpack().unwrap() as usize);
         let import_size = hex.scrape(header.import_size.unpack().unwrap() as usize);
@@ -77,14 +84,20 @@ impl FileHeaderBytecode {
             header.global_name.consume_bytes(global_name).unwrap();
         }
 
+        header.file_name_length.consume_bytes(file_name_length).unwrap();
+        header.file_name.consume_bytes(file_name).unwrap();
         header.date_modified.consume_bytes(date_modified).unwrap();
         header.total_header_size.consume_bytes(total_header_size).unwrap();
         header.import_size.consume_bytes(import_size).unwrap();
         header.global_size.consume_bytes(global_size).unwrap();
 
-        return header;
+        header
 
 
+    }
+
+    pub fn set_file_name(&mut self, name: &String) {
+        self.file_name_length.consume_bytes((self.file_name.consume_bytes(name.to_hex(128)).unwrap() as u32).to_hex(4)).expect("File name too long");
     }
 
     pub fn add_import_name(&mut self, name: &String) {
@@ -93,6 +106,10 @@ impl FileHeaderBytecode {
 
     pub fn add_global_name(&mut self, name: &String) {
         self.global_name_length.consume_bytes((self.global_name.consume_bytes(name.to_hex(1024)).unwrap() as u32).to_hex(4)).expect("Global name caused too many bytes");
+    }
+
+    pub fn get_file_name(&self) -> String {
+        self.file_name.bytes().to_hexable::<String>()
     }
 }
 
@@ -104,7 +121,7 @@ impl ToBytecode for FileHeaderBytecode {
         self.global_size.consume_bytes((global_bytes.len() as u32).to_hex(4)).expect("Total global length causes too many bytes");
         self.total_header_size.consume_bytes(((import_bytes.len() + global_bytes.len()) as u64).to_hex(4)).unwrap();
         self.date_modified.consume_bytes(date_as_hex()).expect("Date time caused too many bytes");
-        return self.date_modified.bytes() + self.total_header_size.bytes() + self.import_size.bytes() + import_bytes + self.global_size.bytes() + global_bytes;
+        self.file_name_length.bytes() + self.file_name.bytes() + self.date_modified.bytes() + self.total_header_size.bytes() + self.import_size.bytes() + import_bytes + self.global_size.bytes() + global_bytes
 
     }
 }

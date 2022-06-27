@@ -22,6 +22,7 @@ pub mod float_type;
 pub mod short_type;
 pub mod class_type;
 pub mod char_type;
+pub mod error_type;
 pub mod attributes;
 pub mod derived;
 
@@ -54,7 +55,7 @@ pub enum LeBlancType {
 pub fn is_native_type(string: &str) -> bool { type_value(string) != Class(0) }
 
 pub fn type_value(string: &str) -> LeBlancType {
-    return match string {
+    match string {
         "flex" => Flex,
         "char" => Char,
         "short" => Short,
@@ -87,21 +88,11 @@ pub fn type_value(string: &str) -> LeBlancType {
 
 impl LeBlancType {
     pub fn is_numeric(&self) -> bool {
-        return match self {
-            Short => true,
-            Int => true,
-            Int64 => true,
-            Int128 => true,
-            Arch => true,
-            Float => true,
-            Double => true,
-            Boolean => true,
-            _ => false
-        }
+        matches!(self, Short | Int | Int64 | Int128 | Arch | Float | Double | Boolean)
     }
 
     pub fn is_native(&self) -> bool {
-        return match self {
+        match self {
             Class(value) => *value == 0,
             Derived(_) => false,
             _ => true
@@ -116,7 +107,7 @@ impl LeBlancType {
     }
 
     pub fn as_str(&self) ->&str {
-        return match self {
+        match self {
             Flex => "flex",
             SelfType => "Self",
             Char => "char",

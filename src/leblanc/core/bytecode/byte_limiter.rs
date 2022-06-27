@@ -17,7 +17,7 @@ pub struct ByteRestriction {
 
 impl ByteRestriction {
     pub fn new(limit: ByteLimit, repeated: bool) -> ByteRestriction {
-        return ByteRestriction {
+        ByteRestriction {
             limit,
             repeated,
             bytes: Hexadecimal::empty(),
@@ -25,10 +25,10 @@ impl ByteRestriction {
         }
     }
     pub fn once(limit: ByteLimit) -> ByteRestriction {
-        return ByteRestriction::new(limit, false);
+        ByteRestriction::new(limit, false)
     }
     pub fn repeated(limit: ByteLimit) -> ByteRestriction {
-        return ByteRestriction::new(limit, true);
+        ByteRestriction::new(limit, true)
     }
 
     pub fn add_bytes(&mut self, mut bytes: Hexadecimal) -> Result<usize, ()> {
@@ -89,7 +89,7 @@ impl ByteRestriction {
             hex.append(&mut self.segments[i].clone());
             hex.append(&mut data.segments[i].clone());
         }
-        return hex;
+        hex
     }
 
     pub fn join_uncloned(&mut self, data: &mut ByteRestriction) -> Hexadecimal {
@@ -98,7 +98,7 @@ impl ByteRestriction {
             hex.append(&mut self.segments[i]);
             hex.append(&mut data.segments[i]);
         }
-        return hex;
+        hex
     }
 
     pub fn join_thrice(&self, second: &ByteRestriction, third: &ByteRestriction) -> Hexadecimal {
@@ -108,7 +108,7 @@ impl ByteRestriction {
             hex.append(&mut second.segments[i].clone());
             hex.append(&mut third.segments[i].clone());
         }
-        return hex;
+        hex
     }
 
     pub fn bytes(&self) -> Hexadecimal {
@@ -117,14 +117,14 @@ impl ByteRestriction {
             self.segments.iter().for_each(|seg| hex += seg.clone());
             return hex;
         }
-        return self.bytes.clone();
+        self.bytes.clone()
     }
 
     pub fn unpack(&self) -> Option<u64> {
         if let ByteLimit::Limited(amount ) = self.limit {
             return Some(amount);
         }
-        return None;
+        None
     }
 
     pub fn iter(&self) -> Option<Iter<'_, Hexadecimal>> {

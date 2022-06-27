@@ -14,7 +14,7 @@ pub struct LeBlancArgument {
 
 impl LeBlancArgument {
     pub fn default(typing: LeBlancType, position: u32) -> LeBlancArgument {
-        return LeBlancArgument {
+        LeBlancArgument {
             typing,
             position,
             required: true,
@@ -24,7 +24,7 @@ impl LeBlancArgument {
     }
 
     pub fn optional(typing: LeBlancType, position: u32, required: bool) -> LeBlancArgument {
-        return LeBlancArgument {
+        LeBlancArgument {
             typing,
             position,
             required,
@@ -38,11 +38,11 @@ impl LeBlancArgument {
         for lbtype in args {
             return_args.append_item( LeBlancArgument::default(*lbtype, return_args.len() as u32));
         }
-        return return_args;
+        return_args
     }
 
     pub fn null(position: u32) -> LeBlancArgument {
-        return LeBlancArgument {
+        LeBlancArgument {
             typing: LeBlancType::Null,
             position,
             required: false,
@@ -60,7 +60,7 @@ pub fn number_argset() -> Vec<LeBlancArgument> {
     args.append_item(LeBlancArgument::default(LeBlancType::Int64, 0));
     args.append_item(LeBlancArgument::default(LeBlancType::Int128, 0));
     args.append_item(LeBlancArgument::default(LeBlancType::Arch, 0));
-    return args;
+    args
 }
 
 impl Display for LeBlancArgument {

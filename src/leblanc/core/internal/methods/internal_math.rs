@@ -1,5 +1,5 @@
 
-use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
+
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, Reflect};
@@ -8,7 +8,7 @@ use crate::leblanc::core::native_types::base_type::ToLeblanc;
 pub fn _internal_add_number_(_self: Rc<RefCell<LeBlancObject>>, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
     let n1: i128 = _self.borrow().data.as_i128();
     let n2: i128  = arguments[0].borrow().data.as_i128();
-    return (n1 + n2).create_mutex();
+    (n1 + n2).create_mutex()
 }
 
 pub fn _internal_add_double_(_self: Rc<RefCell<LeBlancObject>>, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
@@ -17,7 +17,7 @@ pub fn _internal_add_double_(_self: Rc<RefCell<LeBlancObject>>, arguments: &mut 
 
     let result = n1 + n2;
 
-    return result.create_mutex();
+    result.create_mutex()
 }
 
 pub fn _internal_add_float_(_self: Rc<RefCell<LeBlancObject>>, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
@@ -26,7 +26,7 @@ pub fn _internal_add_float_(_self: Rc<RefCell<LeBlancObject>>, arguments: &mut [
 
     let result = n1 + n2;
 
-    return result.create_mutex();
+    result.create_mutex()
 }
 
 pub fn _internal_inplace_add_(_self: Rc<RefCell<LeBlancObject>>, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
@@ -35,5 +35,5 @@ pub fn _internal_inplace_add_(_self: Rc<RefCell<LeBlancObject>>, arguments: &mut
     println!("n1: {} | n2: {}", n1, n2);
 
     _self.borrow_mut().data = LeBlancObjectData::Int64(n1 + n2);
-    return arguments[0].clone();
+    arguments[0].clone()
 }

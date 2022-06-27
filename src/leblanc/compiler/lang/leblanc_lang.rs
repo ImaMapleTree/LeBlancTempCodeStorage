@@ -41,12 +41,12 @@ pub enum FunctionType {
 }
 
 pub fn function_type_value(string: &str) -> FunctionType {
-    return match string {
+    match string {
         "header" => FunctionType::Header,
         "call" => FunctionType::Call,
         "reference" => FunctionType::Reference,
         _=> FunctionType::DNE
-    };
+    }
 }
 
 impl Display for FunctionType {
@@ -87,7 +87,7 @@ pub enum BoundaryType {
 }
 
 pub fn boundary_value(ch: &char) -> BoundaryType {
-    return match ch {
+    match ch {
         '[' => BracketOpen,
         ']' => BracketClosed,
         '{' => BraceOpen,
@@ -113,12 +113,12 @@ impl CompileVocab {
     }
 
     pub fn matches(&self, pat: &str) -> bool {
-        return match self {
+        match self {
             CompileVocab::CONSTANT(_) => pat.to_lowercase() == "constant",
             CompileVocab::VARIABLE(_) => pat.to_lowercase() == "variable",
             CompileVocab::FUNCTION(_) => pat.to_lowercase() == "function",
             CompileVocab::OPERATOR(_) => pat.to_lowercase() == "operator",
-            CompileVocab::SPECIAL(_, ..) => pat.to_lowercase() == "special",
+            CompileVocab::SPECIAL(..) => pat.to_lowercase() == "special",
             CompileVocab::KEYWORD(_) => pat.to_lowercase() == "keyword",
             CompileVocab::MODULE(_) => pat.to_lowercase() == "module",
             CompileVocab::BOUNDARY(_) => pat.to_lowercase() == "boundary",
@@ -131,10 +131,10 @@ impl CompileVocab {
     }
 
     pub fn stores_native_type(&self) -> bool {
-        return match self {
+        match self {
             CompileVocab::FUNCTION(_) => false,
             CompileVocab::OPERATOR(_) => false,
-            CompileVocab::SPECIAL(_, ..) => false,
+            CompileVocab::SPECIAL(..) => false,
             CompileVocab::KEYWORD(_) => false,
             CompileVocab::MODULE(_) => false,
             CompileVocab::BOUNDARY(_) => false,
@@ -143,7 +143,7 @@ impl CompileVocab {
     }
 
     pub fn priority(&self) -> u16 {
-        return match self {
+        match self {
             CompileVocab::KEYWORD(_) => 1,
             CompileVocab::OPERATOR(op) => {
                 match *op {
@@ -210,7 +210,7 @@ pub enum Specials {
 pub fn is_special(string: &str) -> bool { special_value(string) != Specials::DNE }
 
 pub fn special_value(string: &str) -> Specials {
-    return match string {
+    match string {
         "//" => InlineComment,
         "/*" => BlockCommentOpener,
         "*/" => BlockCommentCloser,

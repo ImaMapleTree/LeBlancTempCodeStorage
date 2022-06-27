@@ -10,10 +10,10 @@ pub struct Token {
 
 impl Token {
     pub fn empty() -> Token {
-        return Token {
+        Token {
             symbols: Vec::new(),
             line_number: 0
-        };
+        }
     }
 
     pub fn from(symbol: Symbol) -> Token {
@@ -21,14 +21,14 @@ impl Token {
         let line_number = symbol.line_number();
         symbols.push(symbol);
 
-        return Token {
+        Token {
             symbols,
             line_number
         }
     }
 
     pub fn new(symbols: Vec<Symbol>, line_number: u32) -> Token {
-        return Token {
+        Token {
             symbols,
             line_number
         }
@@ -50,11 +50,11 @@ impl Token {
             return 0;
         }
 
-        return size;
+        size
     }
 
     pub fn copy(&self) -> Token {
-        return Token {
+        Token {
             symbols: self.symbols.clone(),
             line_number: self.line_number
         }
@@ -76,7 +76,7 @@ impl Token {
         if length == 0 {
             return Symbol::empty();
         }
-        return self.symbol(0) 
+        self.symbol(0) 
     }
 
     pub fn last_symbol_or_empty(&self) -> Symbol {
@@ -84,7 +84,7 @@ impl Token {
         if length == 0 {
             return Symbol::empty();
         }
-        return self.symbol(length-1)
+        self.symbol(length-1)
     }
 
     pub fn as_string(&self) -> String {
@@ -92,7 +92,7 @@ impl Token {
         for symbol in &self.symbols {
             string += String::from(*symbol.char()).as_str();
         }
-        return string;
+        string
     }
 
     pub fn symbols(&self) -> &Vec<Symbol> { &self.symbols }
@@ -103,7 +103,7 @@ impl Eq for Token {}
 
 impl PartialEq for Token {
     fn eq(&self, other: &Self) -> bool {
-        return self.symbols == other.symbols;
+        self.symbols == other.symbols
     }
 }
 

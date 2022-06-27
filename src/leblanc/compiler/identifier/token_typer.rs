@@ -48,7 +48,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
     let mut analysis = RuleAnalyzer::new();
 
 
-    while tokens.len() > 0 || next_token != Token::empty() {
+    while !tokens.is_empty() || next_token != Token::empty() {
         token = next_token;
         next_token = tokens.pop().unwrap_or_else(Token::empty);
 
@@ -57,8 +57,8 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
         let first_symbol = token.first_symbol_or_empty();
 
         match first_symbol.char() {
-            '(' => analysis.add_parenthesis(first_symbol, typed_tokens[typed_tokens.len()-1].lang_type().clone()),
-            ')' => analysis.add_parenthesis(first_symbol, typed_tokens[typed_tokens.len()-1].lang_type().clone()),
+            '(' => analysis.add_parenthesis(first_symbol, typed_tokens[typed_tokens.len()-1].lang_type()),
+            ')' => analysis.add_parenthesis(first_symbol, typed_tokens[typed_tokens.len()-1].lang_type()),
             _ => {},
         }
 
@@ -69,7 +69,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 let type_scopes = type_scopes.unwrap();
                 if *next_token.first_symbol_or_empty().char() == '(' {
                     if let TYPE(temp_type) = type_scopes[scope_value][0] {
-                        CompileVocab::CONSTRUCTOR(temp_type.clone())
+                        CompileVocab::CONSTRUCTOR(temp_type)
                     } else {
                         FUNCTION(FunctionType::Call)
                     }
@@ -110,7 +110,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                     _ => {}
                 }
                 CompileVocab::BOUNDARY(boundary_value(first_symbol.char()))
-            } else if typed_tokens.len() > 0 && typed_tokens[typed_tokens.len() - 1].lang_type() == KEYWORD(ExtensionImport){
+            } else if !typed_tokens.is_empty() && typed_tokens[typed_tokens.len() - 1].lang_type() == KEYWORD(ExtensionImport){
                 let import = Import::new(&token_string, &token_string, ImportType::Extension);
                 let index = match imports.iter().cloned().position(|i| i == import) {
                     Some(position) => position,
@@ -120,7 +120,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                     }
                 };
                 EXTENSION(ExtensionTypeImport(index as u32))
-            } else if typed_tokens.len() > 0 && string_is_in_array(&typed_tokens[typed_tokens.len() - 1].as_string(), follower_types) {
+            } else if !typed_tokens.is_empty() && string_is_in_array(&typed_tokens[typed_tokens.len() - 1].as_string(), follower_types) {
                 let last_token_type = typed_tokens[typed_tokens.len() - 1].lang_type();
                 if let KEYWORD(value) = last_token_type {
                     match value {
@@ -181,43 +181,33 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                     UNKNOWN_VOCAB
                 }
 
+            } else if token_string == "class" {
+                TYPE(Class(0))
+            } else if is_native_type(token_string.as_str()) {
+                let vocab_type = TYPE(type_value(token_string.as_str()));
+                vocab_type
+            } else if let TYPE(inner_type) = typed_tokens.get((typed_tokens.len() as i32 - 1) as usize).unwrap_or(&TypedToken::empty()).lang_type() {
+                VARIABLE(inner_type)
             } else {
-                if token_string == "class" {
-                    TYPE(Class(0))
-                } else if is_native_type(token_string.as_str()) {
-                    let vocab_type = TYPE(type_value(token_string.as_str()));
-                    vocab_type
-                } else {
-                    if let TYPE(inner_type) = typed_tokens.get((typed_tokens.len() as i32 - 1) as usize).unwrap_or(&TypedToken::empty()).lang_type() {
-                        VARIABLE(inner_type)
+                let optional_scope = type_map.get(token_string.as_str());
+                if optional_scope.is_some() &&
+                        !optional_scope.unwrap().get(scope_value).unwrap_or(&vec![]).is_empty() {
+                    let scopes = optional_scope.unwrap();
+                    let block_value = scopes.get(scope_value).unwrap();
+                    block_value[0]
+                } else if next_token.first_symbol_or_empty().is_boundary() {
+                    if *next_token.first_symbol_or_empty().char() == '(' {
+                        FUNCTION(FunctionType::Call)
                     } else {
-                        let optional_scope = type_map.get(token_string.as_str());
-                        if optional_scope.is_some() &&
-                                !optional_scope.unwrap().get(scope_value).unwrap_or(&vec![]).is_empty() {
-                            let scopes = optional_scope.unwrap();
-                            let block_value = scopes.get(scope_value).unwrap();
-                            block_value[0]
-                        } else {
-                            if next_token.first_symbol_or_empty().is_boundary() {
-                                if *next_token.first_symbol_or_empty().char() == '(' {
-                                    FUNCTION(FunctionType::Call)
-                                } else {
-                                    UNKNOWN(Class(0))
-                                }
-                            } else {
-                                if is_constant(next_token.as_string().as_str()) {
-                                    UNKNOWN_VOCAB
-                                } else {
-                                    if next_token.as_string() == "=" || next_token.as_string() == "->" {
-                                        UNKNOWN(Class(0))
-                                    } else {
-                                        new_class_counter += 1;
-                                        TYPE(Class(0))
-                                    }
-                                }
-                            }
-                        }
+                        UNKNOWN(Class(0))
                     }
+                } else if is_constant(next_token.as_string().as_str()) {
+                    UNKNOWN_VOCAB
+                } else if next_token.as_string() == "=" || next_token.as_string() == "->" {
+                    UNKNOWN(Class(0))
+                } else {
+                    new_class_counter += 1;
+                    TYPE(Class(0))
                 }
             };
 
@@ -263,53 +253,47 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                     type_map.insert(token_string, nested_vec);
                 }
 
-            } else {
-                if !vocab.matches("special") {
-                    type_vec.push(vocab);
-                    nested_vec.append_item(type_vec);
-                    type_map.insert(token_string, nested_vec);
-                }
+            } else if !vocab.matches("special") {
+                type_vec.push(vocab);
+                nested_vec.append_item(type_vec);
+                type_map.insert(token_string, nested_vec);
             }
 
         }
 
-        let class_member = typed_tokens.len() > 0 && typed_tokens[typed_tokens.len() - 1].lang_type() == CompileVocab::SPECIAL(Specials::Dot, 120);
+        let class_member = !typed_tokens.is_empty() && typed_tokens[typed_tokens.len() - 1].lang_type() == CompileVocab::SPECIAL(Specials::Dot, 120);
 
-        if vocab.matches("type") {
-            if exists_in_scope(&type_map, next_token.as_string(), scope_value as i32) && !next_token.first_symbol_or_empty().is_boundary() {
-                errors.push(ErrorStub::VariableAlreadyDefined(TypedToken::new(next_token.copy(), vocab.clone(), scope_value as i32, global_scope != NotGlobal, class_member)))
-            }
+        if vocab.matches("type") && exists_in_scope(&type_map, next_token.as_string(), scope_value as i32) && !next_token.first_symbol_or_empty().is_boundary() {
+            errors.push(ErrorStub::VariableAlreadyDefined(TypedToken::new(next_token.copy(), vocab, scope_value as i32, global_scope != NotGlobal, class_member)))
         }
 
         let typed_token = TypedToken::new(token, vocab, scope_value as i32, global_scope != NotGlobal, class_member);
 
         scope_value = temp_scope_value;
 
-        if scope_value == 0 || brace_counter == 0 {
-            if !(global_scope != NotGlobal || lock_global_scope) && typed_tokens.len() > 0 {
-                match vocab {
-                    KEYWORD(_) => {}
-                    MODULE(_) => {}
-                    CompileVocab::BOUNDARY(_) => {}
-                    EXTENSION(_) => {}
-                    CLASS(_) => {
-                        if typed_tokens[typed_tokens.len() - 1].lang_type() != CompileVocab::KEYWORD(LBKeyword::Class) {
-                            errors.append_item(ErrorStub::InvalidGlobalVariableDeclaration(typed_token.clone()))
-                        }
+        if (scope_value == 0 || brace_counter == 0) && !(global_scope != NotGlobal || lock_global_scope) && !typed_tokens.is_empty() {
+            match vocab {
+                KEYWORD(_) => {}
+                MODULE(_) => {}
+                CompileVocab::BOUNDARY(_) => {}
+                EXTENSION(_) => {}
+                CLASS(_) => {
+                    if typed_tokens[typed_tokens.len() - 1].lang_type() != CompileVocab::KEYWORD(LBKeyword::Class) {
+                        errors.append_item(ErrorStub::InvalidGlobalVariableDeclaration(typed_token.clone()))
                     }
-                    TYPE(_) => {
-                        if typed_tokens[typed_tokens.len() - 1].lang_type() != CompileVocab::KEYWORD(Of) {
-                            errors.append_item( ErrorStub::InvalidGlobalVariableDeclaration(typed_token.clone()))
-                        }
-                    }
-                    FUNCTION(_) => {
-                        println!("LAST TYPE!!: {:?}", typed_tokens[typed_tokens.len() - 1].lang_type());
-                        if typed_tokens[typed_tokens.len() - 1].lang_type() != CompileVocab::KEYWORD(Func) {
-                            errors.append_item(ErrorStub::InvalidGlobalVariableDeclaration(typed_token.clone()))
-                        }
-                    }
-                    _ => errors.append_item(ErrorStub::InvalidGlobalVariableDeclaration(typed_token.clone()))
                 }
+                TYPE(_) => {
+                    if typed_tokens[typed_tokens.len() - 1].lang_type() != CompileVocab::KEYWORD(Of) {
+                        errors.append_item( ErrorStub::InvalidGlobalVariableDeclaration(typed_token.clone()))
+                    }
+                }
+                FUNCTION(_) => {
+                    println!("LAST TYPE!!: {:?}", typed_tokens[typed_tokens.len() - 1].lang_type());
+                    if typed_tokens[typed_tokens.len() - 1].lang_type() != CompileVocab::KEYWORD(Func) {
+                        errors.append_item(ErrorStub::InvalidGlobalVariableDeclaration(typed_token.clone()))
+                    }
+                }
+                _ => errors.append_item(ErrorStub::InvalidGlobalVariableDeclaration(typed_token.clone()))
             }
         }
 
@@ -339,7 +323,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
 
     analysis.evaluate(&mut errors, &mut node_tokens);
 
-    return Fabric::no_path(node_tokens, imports, vec![], errors);
+    Fabric::no_path(node_tokens, imports, vec![], errors)
 }
 
 fn exists_in_scope(type_map: &HashMap<String, Vec<Vec<CompileVocab>>>, value: String, scope_value: i32) -> bool {
@@ -353,7 +337,7 @@ fn exists_in_scope(type_map: &HashMap<String, Vec<Vec<CompileVocab>>>, value: St
         return false;
     }
     let scope_container = scope_container.unwrap();
-    return !scope_container.is_empty();
+    !scope_container.is_empty()
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -367,7 +351,7 @@ enum GlobalScopeMarker {
 }
 
 fn allow_global_scope_end(scope: GlobalScopeMarker, ch: char) -> bool {
-    return match scope {
+    match scope {
         FuncDeclaration => ch == '{',
         ClassDeclaration => ch == '}',
         ExtensionDeclaration => ch == '{',

@@ -1,5 +1,5 @@
 
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
@@ -16,18 +16,18 @@ use crate::leblanc::core::internal::methods::builtins::builtin_debug::builtin_di
 pub mod builtin_print;
 pub mod builtin_debug;
 
-#[derive(Debug, PartialEq, EnumVariantNames, strum_macros::Display, EnumIter)]
+#[derive(Debug, PartialEq, Eq, EnumVariantNames, strum_macros::Display, EnumIter)]
 pub enum BuiltinFunctions {
     Print,
     Disassemble
 }
 
 pub fn create_partial_functions() -> Vec<PartialFunction> {
-    return vec![PartialFunction::from_method(_BUILTIN_PRINT_METHOD_()), PartialFunction::from_method(_BUILTIN_DISASSEMBLE_METHOD_())]
+    vec![PartialFunction::from_method(_BUILTIN_PRINT_METHOD_()), PartialFunction::from_method(_BUILTIN_DISASSEMBLE_METHOD_())]
 }
 
 pub fn create_builtin_function_objects() -> Vec<Rc<RefCell<LeBlancObject>>> {
-    return vec![_BUILTIN_PRINT_OBJECT_().to_mutex(), _BUILTIN_DISASSEMBLE_OBJECT_().to_mutex()];
+    vec![_BUILTIN_PRINT_OBJECT_().to_mutex(), _BUILTIN_DISASSEMBLE_OBJECT_().to_mutex()]
 }
 
 impl Hexable for BuiltinFunctions {
@@ -37,9 +37,9 @@ impl Hexable for BuiltinFunctions {
     }
 
     fn from_hex(hex: &Hexadecimal) -> Self {
-        let mut bytes = decode_hex(&hex).unwrap();
+        let mut bytes = decode_hex(hex).unwrap();
         while bytes.len() < 4 { bytes.insert(0, 0) };
         let instruct_number = u32::from_be_bytes(<[u8; 4]>::try_from(bytes).unwrap());
-        return BuiltinFunctions::iter().enumerate().filter(|&(i, _)| i == instruct_number as usize).next().unwrap().1;
+        BuiltinFunctions::iter().enumerate().find(|&(i, _)| i == instruct_number as usize).unwrap().1
     }
 }

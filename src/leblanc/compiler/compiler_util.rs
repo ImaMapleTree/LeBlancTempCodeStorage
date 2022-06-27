@@ -10,7 +10,7 @@ pub struct CharMarker {
 
 impl CharMarker {
     pub fn new(ch: char, symbol_number: u32, line_number: u32) -> CharMarker {
-        return CharMarker {
+        CharMarker {
             ch, symbol_number, line_number
         }
     }
@@ -34,7 +34,7 @@ pub fn count_min_leading_whitespace(lines: &Vec<String>) -> u32 {
         }
 
     }
-    return min_whitespace;
+    min_whitespace
 }
 
 pub fn line_strip_and_join(lines: &Vec<String>) -> String {
@@ -44,20 +44,20 @@ pub fn line_strip_and_join(lines: &Vec<String>) -> String {
         joined += &("\n".to_owned() + &line[strip_count..]);
     }
     joined = joined[1..].parse().unwrap();
-    return joined;
+    joined
 }
 
 pub fn strip_start_of_line(mut string: String) -> String {
     let mut string_temp = string.as_str();
-    while string.len() != 0 && string.starts_with('\t') || string.starts_with(' ') {
+    while !string.is_empty() && string.starts_with('\t') || string.starts_with(' ') {
         string_temp = &string[1..];
         string = string_temp.to_string();
     }
-    return string
+    string
 }
 
 pub fn string_is_in_array(string: &String, array: &[String]) -> bool {
-    return array.contains(string);
+    array.contains(string)
 }
 
 pub fn flatmap_node_tokens(tokens: &mut Vec<Node<TypedToken>>) -> Vec<TypedToken> {
@@ -69,5 +69,5 @@ pub fn flatmap_node_tokens(tokens: &mut Vec<Node<TypedToken>>) -> Vec<TypedToken
         }
 
     }
-    return flatmap;
+    flatmap
 }

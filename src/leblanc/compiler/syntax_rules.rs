@@ -34,7 +34,7 @@ struct ExtraTypeSymbol{
 
 impl ExtraTypeSymbol {
     pub fn new(symbol: Symbol, vocab: CompileVocab) -> ExtraTypeSymbol {
-        return ExtraTypeSymbol {
+        ExtraTypeSymbol {
             symbol, vocab
         }
     }
@@ -42,19 +42,19 @@ impl ExtraTypeSymbol {
 
 impl RuleAnalyzer {
     pub fn new() -> RuleAnalyzer {
-        return RuleAnalyzer {
+        RuleAnalyzer {
             open_parenthesis: Vec::new(),
             closed_parenthesis: Vec::new()
         }
     }
     pub fn add_parenthesis(&mut self, symbol: Symbol, vocab: CompileVocab) {
-        let ets = ExtraTypeSymbol::new(symbol, vocab.clone());
+        let ets = ExtraTypeSymbol::new(symbol, vocab);
         match symbol.char() {
             '(' => {
                 self.open_parenthesis.push(ets)
             },
             ')' => {
-                if self.open_parenthesis.len() == 0 {
+                if self.open_parenthesis.is_empty() {
                     self.closed_parenthesis.push(ets)
                 }
                 self.open_parenthesis.pop(); },
@@ -69,7 +69,7 @@ impl RuleAnalyzer {
     }
 
     pub fn evaluate_rule2(&self, errors: &mut Vec<ErrorStub>, tokens: &mut Vec<TypedToken>) {
-        tokens.iter().filter(|t| t.lang_type().clone() == CompileVocab::UNKNOWN(Class(0)))
+        tokens.iter().filter(|t| t.lang_type() == CompileVocab::UNKNOWN(Class(0)))
             .for_each(|t| { errors.append_item( ErrorStub::UndeclaredVariable(t.clone())) });
     }
 

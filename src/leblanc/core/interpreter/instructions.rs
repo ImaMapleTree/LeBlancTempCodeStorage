@@ -12,7 +12,7 @@ use crate::leblanc::rustblanc::hex::Hexadecimal;
 
 
 #[allow(non_snake_case)]
-#[derive(Debug, PartialEq, EnumVariantNames, strum_macros::Display, EnumIter, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, EnumVariantNames, strum_macros::Display, EnumIter, Copy, Clone, PartialOrd, Hash)]
 pub enum InstructionBase {
     Zero,
     NotImplemented,
@@ -73,7 +73,7 @@ impl Hexable for InstructionBase {
         let mut bytes = decode_hex(hex).unwrap();
         while bytes.len() < 4 { bytes.insert(0, 0) };
         let instruct_number = u32::from_be_bytes(<[u8; 4]>::try_from(bytes).unwrap());
-        return InstructionBase::iter().enumerate().filter(|&(i, _)| i == instruct_number as usize).next().unwrap().1;
+        InstructionBase::iter().enumerate().find(|&(i, _)| i == instruct_number as usize).unwrap().1
     }
 }
 
@@ -84,7 +84,7 @@ impl InstructionBase {
     }
 
     pub fn from_compile_vocab(token: &TypedToken) -> InstructionBase {
-        return match token.lang_type() {
+        match token.lang_type() {
             CompileVocab::CONSTANT(_) => LoadConstant,
             CompileVocab::VARIABLE(_) => {
                 if token.global() { LoadGlobal }
@@ -156,7 +156,7 @@ impl InstructionBase {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Instruction {
     pub instruct: InstructionBase,
     pub arg: u16,
@@ -165,7 +165,7 @@ pub struct Instruction {
 
 impl Instruction {
     pub fn new(instruct: InstructionBase, arg: u16, line_number: u32) -> Instruction {
-        return Instruction {
+        Instruction {
             instruct,
             arg,
             line_number
@@ -173,7 +173,7 @@ impl Instruction {
     }
 
     pub fn empty() -> Instruction {
-        return Instruction {
+        Instruction {
             instruct: InstructionBase::Zero,
             arg: 0,
             line_number: 0
@@ -181,6 +181,6 @@ impl Instruction {
     }
 
     pub fn base(&self) -> InstructionBase {
-        return self.instruct;
+        self.instruct
     }
 }

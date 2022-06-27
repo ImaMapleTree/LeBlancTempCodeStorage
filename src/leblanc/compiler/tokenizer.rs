@@ -138,7 +138,7 @@ pub fn create_tokens(char_reader: &mut CharReader, mode: CompilationMode) -> Fab
     println!("Typing");
     let mut fabric = create_typed_tokens(tokens, partial_errors, mode);
     fabric.path = char_reader.path().clone();
-    return fabric;
+    fabric
 
 }
 
@@ -189,9 +189,7 @@ fn check_end_quote(ch: char, quote_marker: char) -> bool {
 
 fn add_token(tokens: &mut Vec<Token>, token: Token) {
     println!("Adding token: {}", token.as_string());
-    if !(token.as_string().starts_with("//") || token.as_string().starts_with("/*")) {
-        if token.borrow().len() > 0 {
-            tokens.push(token);
-        }
+    if !(token.as_string().starts_with("//") || token.as_string().starts_with("/*")) && token.borrow().len() > 0 {
+        tokens.push(token);
     }
 }

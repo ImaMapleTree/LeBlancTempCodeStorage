@@ -86,7 +86,7 @@ pub struct NodeData<T>
 
 impl<T: Display + Clone> NodeData<T> {
     pub fn get_value(&self) -> &T {
-        return &self.value;
+        &self.value
     }
 }
 
@@ -135,12 +135,12 @@ impl<T> Node<T>
         Node { arc_ref }
     }
 
-    pub fn get_copy_of_internal_arc(self: &Self) -> NodeDataRef<T> {
+    pub fn get_copy_of_internal_arc(&self) -> NodeDataRef<T> {
         Arc::clone(&self.arc_ref)
     }
 
     pub fn create_and_add_child(
-        self: &Self,
+        &self,
         value: T,
     ) -> NodeDataRef<T> {
         let new_child = Node::new(value);
@@ -150,7 +150,7 @@ impl<T> Node<T>
 
     /// 🔏 Write locks used.
     pub fn add_child_and_update_its_parent(
-        self: &Self,
+        &self,
         child: &Node<T>,
     ) {
         {
@@ -164,18 +164,14 @@ impl<T> Node<T>
         } // `my_parent` guard dropped.
     }
 
-    pub fn has_parent(self: &Self) -> bool {
+    pub fn has_parent(&self) -> bool {
         self.get_parent().is_some()
     }
 
     /// 🔒 Read lock used.
-    pub fn get_parent(self: &Self) -> Option<NodeDataRef<T>> {
+    pub fn get_parent(&self) -> Option<NodeDataRef<T>> {
         let my_parent_weak = self.arc_ref.parent.read().unwrap();
-        if let Some(my_parent_arc_ref) = my_parent_weak.upgrade() {
-            Some(my_parent_arc_ref)
-        } else {
-            None
-        }
+        my_parent_weak.upgrade()
     }
 }
 
@@ -224,7 +220,7 @@ impl DerefMut for Node<TypedToken> {
 }
 
 pub fn child_adapter<T: Display + Clone>(c: NodeDataRef<T>) -> Node<T> {
-    return Node {
+    Node {
         arc_ref: c,
     }
 }

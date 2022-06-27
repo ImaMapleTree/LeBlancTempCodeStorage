@@ -1,11 +1,11 @@
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::{FxHashMap};
 
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 use alloc::rc::Rc;
 use std::cell::RefCell;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
+use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 
@@ -13,7 +13,7 @@ pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
     let base_methods = base_methods();
 
 
-    return LeBlancObject::new(
+    LeBlancObject::new(
         LeBlancObjectData::Int(integer),
         LeBlancType::Int,
         base_methods,
@@ -38,6 +38,29 @@ pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
 }*/
 
 impl ToLeblanc for i32 {
-    fn create(&self) -> LeBlancObject { return leblanc_object_int(*self); }
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { return Rc::new(RefCell::new(self.create())) }
+    fn create(&self) -> LeBlancObject { leblanc_object_int(*self) }
+    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
+}
+
+impl RustDataCast<i32> for LeBlancObjectData {
+    fn clone_data(&self) -> Option<i32> {
+        match self {
+            LeBlancObjectData::Int(int) => Some(*int),
+            _ => None,
+        }
+    }
+
+    fn ref_data(&self) -> Option<&i32> {
+        match self {
+            LeBlancObjectData::Int(int) => Some(int),
+            _ => None,
+        }
+    }
+
+    fn mut_data(&mut self) -> Option<&mut i32> {
+        match self {
+            LeBlancObjectData::Int(int) => Some(int),
+            _ => None,
+        }
+    }
 }

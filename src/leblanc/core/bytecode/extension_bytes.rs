@@ -18,7 +18,7 @@ pub struct ExtensionBytecode {
 
 impl ExtensionBytecode {
     pub fn new() -> ExtensionBytecode {
-        return ExtensionBytecode {
+        ExtensionBytecode {
             name_length: ByteRestriction::once(Limited(4)),
             name: ByteRestriction::once(Undefined),
             total_parameter_length: ByteRestriction::once(Limited(4)),
@@ -73,7 +73,7 @@ impl ExtensionBytecode {
         bytecode.total_parameter_length.consume_bytes(total_parameter_length).unwrap();
         bytecode.total_method_length.consume_bytes(total_method_length).unwrap();
 
-        return bytecode;
+        bytecode
     }
 
 }
@@ -83,7 +83,7 @@ impl ToBytecode for ExtensionBytecode {
         let parameter_bytes = self.parameter_name_length.join_thrice(&self.parameter_name, &self.parameter_type);
         self.total_parameter_length.consume_bytes(parameter_bytes.len().to_hex(128)).expect("Parameter too long");
 
-        return self.name_length.bytes() + self.name.bytes() + self.total_parameter_length.bytes() + parameter_bytes + self.total_method_length.bytes() + self.owned_method_index.bytes();
+        self.name_length.bytes() + self.name.bytes() + self.total_parameter_length.bytes() + parameter_bytes + self.total_method_length.bytes() + self.owned_method_index.bytes()
 
     }
 }

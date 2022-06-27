@@ -30,7 +30,7 @@ use crate::leblanc::core::leblanc_object::{LeBlancObject};
 fn test() -> LeBlancObject {
 
     println!("\n---------------");
-    return LeBlancObject::null();
+    LeBlancObject::null()
 
 }
 

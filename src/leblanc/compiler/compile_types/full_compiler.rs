@@ -25,7 +25,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
 
     let mut partial_functions = create_partial_functions();
     stack.iter().filter(|t| t.lang_type() == CompileVocab::FUNCTION(FunctionType::Header)).for_each(|t| {
-        let p = PartialFunction::from_token_args(&t);
+        let p = PartialFunction::from_token_args(t);
         if !partial_functions.contains(&p) {
             partial_functions.push(p);
         }
@@ -132,7 +132,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
                 instruction = CallClassMethod
             } else if instruction == CallFunction {
                 let token_partial_function = PartialFunction::from_token_args(&token);
-                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(_index, p)| *p == token_partial_function).next();
+                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().find(|(_index, p)| *p == token_partial_function);
                 if index_partial.is_none() {
                     println!("{:#?}", partial_functions);
                     println!("{:?}", PartialFunction::from_token_args(&token));
@@ -143,7 +143,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
                     arg_byte = (token_partial_function.args.len() as u16).to_hex(2);
                 }
             } else if instruction == LoadFunction {
-                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().filter(|(_index, p)| *p.name == token.as_string()).next();
+                let index_partial: Option<(usize, PartialFunction)> = partial_functions.iter().cloned().enumerate().find(|(_index, p)| *p.name == token.as_string());
                 if index_partial.is_none() {
                     println!("{:#?}", partial_functions);
                     println!("{:?}", PartialFunction::from_token_args(&token));
@@ -211,6 +211,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
     functions.push(function);
 
     let mut header = FileHeaderBytecode::new();
+    header.set_file_name(&fabric.path);
     for import in fabric.imports() {
         header.add_import_name(&import.source);
     }
@@ -225,7 +226,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
                 constant_string = "\"".to_owned() + &constant_string + "\"";
                 LeBlancType::String
             } else {
-                constant.lang_type().extract_native_type().clone()
+                *constant.lang_type().extract_native_type()
             };
             //println!("{:?}, {} | {}", constant, native_type, native_type.transform(constant.as_string()));
             function_bytecode.add_constant(native_type.transform(constant_string), native_type.enum_id() as u16);
@@ -274,7 +275,7 @@ fn build_function(tokens: &mut Vec<TypedToken>) -> Function {
         next_token = tokens.pop().unwrap();
     }
 
-    return func;
+    func
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -289,7 +290,7 @@ struct Function {
 
 impl Function {
     pub fn new(name: String) -> Function {
-        return Function {
+        Function {
             name,
             arg_types: vec![],
             return_types: vec![],
@@ -314,7 +315,7 @@ impl Function {
         }
         let value = self.variables.len() as u64;
         self.variables.insert(name, value);
-        return value;
+        value
     }
 }
 

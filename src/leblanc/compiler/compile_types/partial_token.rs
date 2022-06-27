@@ -9,14 +9,14 @@ pub struct PartialToken {
 
 impl PartialToken {
     pub fn new(string: String, lang_type: CompileVocab) -> PartialToken {
-        return PartialToken {
+        PartialToken {
             token: string,
             lang_type
         }
     }
 
     pub fn from(token: &TypedToken) -> PartialToken {
-        return PartialToken {
+        PartialToken {
             token: token.as_string(),
             lang_type: token.lang_type()
         }
@@ -27,7 +27,7 @@ impl PartialEq for PartialToken {
     fn eq(&self, other: &Self) -> bool {
         if self.token != other.token { return false; }
         if self.lang_type.to_string() == other.lang_type.to_string() { return true; }
-        return self.lang_type.matches("function") && other.lang_type.matches("function")
+        self.lang_type.matches("function") && other.lang_type.matches("function")
     }
 }
 

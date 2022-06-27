@@ -9,7 +9,7 @@ pub fn leblanc_object_char(ch: char) -> LeBlancObject {
     let base_methods = Arc::new(FxHashSet::default());
 
 
-    return LeBlancObject::new(
+    LeBlancObject::new(
         LeBlancObjectData::Char(ch),
         LeBlancType::Char,
         base_methods,

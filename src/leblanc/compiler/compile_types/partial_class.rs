@@ -9,14 +9,14 @@ pub struct PartialClass {
 
 impl PartialClass {
     pub fn new(methods: Vec<PartialFunction>, members: Vec<PartialToken>) -> PartialClass {
-        return PartialClass {
+        PartialClass {
             methods,
             members
         }
     }
 
     pub fn empty() -> PartialClass {
-        return PartialClass {
+        PartialClass {
             methods: vec![],
             members: vec![]
         }

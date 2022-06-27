@@ -32,7 +32,7 @@ pub fn is_operator(value: &str) -> bool {
 }
 
 pub fn operator_type(value: &str) -> LBOperator {
-    return match value {
+    match value {
         "+" => LBOperator::Plus,
         "-" => LBOperator::Minus,
         "*" => LBOperator::Multiply,

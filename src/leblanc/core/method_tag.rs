@@ -13,7 +13,7 @@ impl MethodTag {
     pub fn singleton(&self) -> BTreeSet<MethodTag> {
         let mut set = BTreeSet::new();
         set.insert(*self);
-        return set;
+        set
     }
 }
 

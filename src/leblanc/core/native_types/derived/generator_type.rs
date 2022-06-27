@@ -1,7 +1,7 @@
 use alloc::rc::Rc;
 use core::fmt::{Display, Formatter};
 use std::cell::RefCell;
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::{FxHashMap};
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
@@ -21,7 +21,7 @@ pub fn leblanc_object_generator(leblanc_handle: LeblancHandle) -> LeBlancObject 
     let generator = LeblancGenerator {leblanc_handle};
 
 
-    return LeBlancObject::new(
+    LeBlancObject::new(
         LeBlancObjectData::Iterator(LeblancIterator::new(Box::new(generator))),
         LeBlancType::Derived(DerivedType::Iterator),
         base_methods,
@@ -37,11 +37,11 @@ impl Display for LeblancGenerator {
 }
 
 impl LeblancIterable for LeblancGenerator {
-    fn next(&mut self) -> Rc<RefCell<LeBlancObject>> {
-        self.leblanc_handle.execute_from_last_point().clone()
+    fn next(&mut self) -> LeBlancObject {
+        self.leblanc_handle.execute_from_last_point()
     }
     fn has_next(&self) -> bool {
-        return self.leblanc_handle.current_instruct < self.leblanc_handle.instructions.len() as u64
+        self.leblanc_handle.current_instruct < self.leblanc_handle.instructions.len() as u64
     }
 }
 

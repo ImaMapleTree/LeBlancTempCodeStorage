@@ -29,7 +29,7 @@ impl PartialFunction {
     }
 
     pub fn from_method_store(method_store: &MethodStore) -> PartialFunction {
-        return PartialFunction {
+        PartialFunction {
             name: method_store.name.clone(),
             args: method_store.arguments.clone()
         }
@@ -50,6 +50,6 @@ impl PartialEq for PartialFunction {
                 return false;
             }
         }
-        return true;
+        true
     }
 }

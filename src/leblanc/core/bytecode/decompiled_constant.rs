@@ -21,7 +21,7 @@ pub struct DecompiledConstant {
 
 impl DecompiledConstant {
     pub fn new(constant_data: Hexadecimal, constant_type: LeBlancType) -> DecompiledConstant {
-        return DecompiledConstant {
+        DecompiledConstant {
             constant_data,
             constant_type
         }
@@ -29,7 +29,7 @@ impl DecompiledConstant {
 
     pub fn to_leblanc_object(self) -> LeBlancObject {
         println!("{:#?}", self);
-        return match self.constant_type {
+        match self.constant_type {
             LeBlancType::Char => leblanc_object_char(char::from_hex(&self.constant_data)),
             LeBlancType::Short => leblanc_object_short(i16::from_hex(&self.constant_data)),
             LeBlancType::Int => leblanc_object_int(i32::from_hex(&self.constant_data)),

@@ -46,20 +46,20 @@ pub fn identify(mut typed_tokens: Vec<TypedToken>, mut import_tokens: Vec<Node<T
     }
 
 
-    return create_ownership(typed_tokens, mode);
+    create_ownership(typed_tokens, mode)
 }
 
 pub fn identify_caller_function_args(typed_tokens: &mut Vec<TypedToken>, left_bound: usize, right_bound: usize) -> usize {
     let length = typed_tokens.len();
     let mut i_addition = 0;
     for mut i in left_bound..right_bound {
-        i = i + i_addition;
+        i += i_addition;
         if typed_tokens.len() > i && typed_tokens[i].lang_type() == FUNCTION(FunctionType::Call) && length > i+1 {
             let mut can_add_type = true;
             let mut j_addition = 0;
             for mut j in i+1..length {
                 /*println!("J token: {}", typed_tokens[j]);*/
-                j = j + j_addition;
+                j += j_addition;
                 if can_add_type && typed_tokens[j].lang_type() == FUNCTION(FunctionType::Call) {
                     let j_index = j;
                     j_addition = identify_caller_function_args(typed_tokens, j, 1+typed_tokens.iter().enumerate()
@@ -68,7 +68,7 @@ pub fn identify_caller_function_args(typed_tokens: &mut Vec<TypedToken>, left_bo
                     typed_tokens[i].set_typing_args(&mut j_token.typing_mut().pop().unwrap());
                     can_add_type = false;
                 } else if can_add_type && typed_tokens[j].lang_type().stores_native_type() {
-                    let j_type = typed_tokens[j].lang_type().extract_native_type().clone();
+                    let j_type = *typed_tokens[j].lang_type().extract_native_type();
                     typed_tokens[i].set_typing_args(&mut vec![j_type]);
                     can_add_type = false;
                 } else if typed_tokens[j].lang_type() == CompileVocab::FUNCTION(FunctionType::Reference) {
@@ -79,14 +79,14 @@ pub fn identify_caller_function_args(typed_tokens: &mut Vec<TypedToken>, left_bo
                     can_add_type = true;
                 }
                 else if typed_tokens[j].lang_type() == CompileVocab::BOUNDARY(ParenthesisClosed) || typed_tokens[j].lang_type() == CompileVocab::BOUNDARY(Semicolon) {
-                    i_addition = i_addition + j_addition;
+                    i_addition += j_addition;
                     break;
                 }
 
             }
         }
     }
-    return right_bound-left_bound;
+    right_bound-left_bound
 }
 
 pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, errors: &mut Vec<ErrorStub>) -> HashMap<PartialToken, Vec<LeBlancType>>{
@@ -142,7 +142,7 @@ pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, errors: &mut Vec<E
 
 
     }
-    return func_matcher;
+    func_matcher
 }
 
 pub fn identify_unknown(typed_tokens: &mut Vec<TypedToken>, type_map: &mut HashMap<String, Vec<Vec<CompileVocab>>>) {
@@ -174,38 +174,34 @@ pub fn create_ownership(typed_tokens: Vec<TypedToken>, mode: CompilationMode) ->
     for typed_token in typed_tokens {
         if mode == CompilationMode::StubFile {
             node_tokens.append_item(Node::new(typed_token));
-        } else {
-            if typed_token.lang_type() == CompileVocab::BOUNDARY(BoundaryType::ParenthesisOpen) {
-                if parents.is_empty() {
-                    parents.push(Node::new(typed_token));
-                } else {
-                    let new_parent = Node::new(typed_token);
-                    //parents.get(parents.len() - 1).expect("PARENT MUST EXIST").add_child_and_update_its_parent(&new_parent);
-                    parents.push(new_parent);
-                }
-
-                //parent_vec_pointer = TTRefTrack::new(std::ptr::addr_of_mut!(parent_vec_pointer), Box::new(*typed_token.clone().children));
-            } else if typed_token.lang_type() == CompileVocab::BOUNDARY(BoundaryType::ParenthesisClosed) {
-                if !parents.is_empty() {
-                    let p = parents.pop().unwrap();
-                    if !parents.is_empty() {
-                        parents[parents.len()-1].add_child_and_update_its_parent(&p);
-                    } else {
-                        node_tokens.append_item(p);
-                    }
-                    node_tokens.append_item(Node::new(typed_token));
-                }
+        } else if typed_token.lang_type() == CompileVocab::BOUNDARY(BoundaryType::ParenthesisOpen) {
+            if parents.is_empty() {
+                parents.push(Node::new(typed_token));
             } else {
-                if !parents.is_empty() {
-                    parents.get(parents.len() - 1).expect("PARENT MUST EXIST").create_and_add_child(typed_token);
-                } else {
-                    node_tokens.append_item(Node::new(typed_token));
-                }
+                let new_parent = Node::new(typed_token);
+                //parents.get(parents.len() - 1).expect("PARENT MUST EXIST").add_child_and_update_its_parent(&new_parent);
+                parents.push(new_parent);
             }
+
+            //parent_vec_pointer = TTRefTrack::new(std::ptr::addr_of_mut!(parent_vec_pointer), Box::new(*typed_token.clone().children));
+        } else if typed_token.lang_type() == CompileVocab::BOUNDARY(BoundaryType::ParenthesisClosed) {
+            if !parents.is_empty() {
+                let p = parents.pop().unwrap();
+                if !parents.is_empty() {
+                    parents[parents.len()-1].add_child_and_update_its_parent(&p);
+                } else {
+                    node_tokens.append_item(p);
+                }
+                node_tokens.append_item(Node::new(typed_token));
+            }
+        } else if !parents.is_empty() {
+            parents.last().expect("PARENT MUST EXIST").create_and_add_child(typed_token);
+        } else {
+            node_tokens.append_item(Node::new(typed_token));
         }
     }
     if !parents.is_empty() {
         node_tokens.push(parents.pop().unwrap())
     }
-    return node_tokens;
+    node_tokens
 }

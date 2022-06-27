@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 use std::io;
 
 
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 use alloc::rc::Rc;
 use std::cell::RefCell;
 
@@ -15,7 +15,7 @@ use crate::leblanc::core::leblanc_object::{LeBlancObject, Reflect, Stringify};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
-use crate::leblanc::rustblanc::strawberry::Either;
+
 
 use crate::LeBlancType;
 
@@ -50,7 +50,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCel
             } else {line_number_format = grow_to_size("", 8)}
 
             let arg_string = match instruction.instruct {
-                InstructionBase::LoadLocal => format!("({})", leblanc_handle.borrow().variable_context.values().filter(|context| context.relationship == instruction.arg as u32).next().unwrap().name),
+                InstructionBase::LoadLocal => format!("({})", leblanc_handle.borrow().variable_context.values().find(|context| context.relationship == instruction.arg as u32).unwrap().name),
                 InstructionBase::LoadConstant => format!("({})", leblanc_handle.borrow().constants[instruction.arg as usize].borrow().data),
                 InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].borrow().data.get_inner_method().unwrap().context.name.clone()}),
                 InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),
@@ -74,7 +74,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCel
         }
         io::copy(&mut output.as_bytes(), &mut STDOUT.as_mut().unwrap()).unwrap();
     }
-    return LeBlancObject::unsafe_null()
+    LeBlancObject::unsafe_null()
 }
 
 pub fn _BUILTIN_DISASSEMBLE_METHOD_() -> Method {
@@ -89,7 +89,7 @@ pub fn _BUILTIN_DISASSEMBLE_METHOD_() -> Method {
 }
 
 pub fn _BUILTIN_DISASSEMBLE_OBJECT_() -> LeBlancObject {
-    return internal_method(_BUILTIN_DISASSEMBLE_METHOD_());
+    internal_method(_BUILTIN_DISASSEMBLE_METHOD_())
 }
 
 fn grow_to_size(string: &str, number: usize) -> String {
@@ -97,7 +97,7 @@ fn grow_to_size(string: &str, number: usize) -> String {
     while new_string.len() < number {
         new_string += " ";
     }
-    return new_string;
+    new_string
 }
 
 fn recover_equality_op(n: u8) -> String {

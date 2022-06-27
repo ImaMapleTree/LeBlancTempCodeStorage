@@ -54,7 +54,7 @@ pub fn error_report(cr: &mut CharReader, tokens: &Vec<TypedToken>, errors: &Vec<
     };
     let mut symbol_number = 0;
 
-    let line_tokens = get_line_tokens(&tokens, line_number);
+    let line_tokens = get_line_tokens(tokens, line_number);
 
     let mut exact_token = TypedToken::empty();
     let mut fix = String::new();
@@ -89,7 +89,7 @@ pub fn error_report(cr: &mut CharReader, tokens: &Vec<TypedToken>, errors: &Vec<
             + "\n| " + &line_number.to_string() + " \t" + repair_missing_global_error(error_line).as_str());
     } else if let ErrorStub::IncompatibleType(ref incompatible) = error {
         error_name = String::from("Attempt to assign variable an incompatible type.");
-        let line_tokens = get_line_tokens(&tokens, line_number);
+        let line_tokens = get_line_tokens(tokens, line_number);
         symbol_number = line_tokens[0].token().first_symbol_or_empty().symbol_number();
         error_syntax = stripped_error_line.clone();
         let mut declaration_line = Option::None;
@@ -117,12 +117,12 @@ pub fn error_report(cr: &mut CharReader, tokens: &Vec<TypedToken>, errors: &Vec<
     else if let ErrorStub::VariableAlreadyDefined(imbalanced) = error {
         error_name = String::from("Variable already declared in this scope");
         println!("tokens: {:?}", &tokens);
-        symbol_number = get_line_tokens(&tokens, line_number)[0].token().first_symbol_or_empty().symbol_number();
+        symbol_number = get_line_tokens(tokens, line_number)[0].token().first_symbol_or_empty().symbol_number();
         error_syntax = stripped_error_line.clone();
-        fix = bright_white("\nPossible Fix - ") + &ColorString::new(&format!("Rename the new variable")).green().string();
+        fix = bright_white("\nPossible Fix - ") + &ColorString::new("Rename the new variable").green().string();
 
         let similar_tokens: Vec<TypedToken> = tokens.iter().filter(|t|
-            (t.scope() == imbalanced.scope()) && t.as_string().starts_with(&imbalanced.as_string().trim_end_matches(digits).to_owned())).map(|t| t.clone()).collect();
+            (t.scope() == imbalanced.scope()) && t.as_string().starts_with(&imbalanced.as_string().trim_end_matches(digits).to_owned())).cloned().collect();
         let mut var_count = 1;
         let mut new_var_name = imbalanced.as_string().trim_end_matches(digits).to_owned() + &var_count.to_string();
         println!("Similar tokens: {:?}", similar_tokens);
@@ -143,11 +143,9 @@ pub fn error_report(cr: &mut CharReader, tokens: &Vec<TypedToken>, errors: &Vec<
             let imbalance_char = imbalanced.char();
             let first_symbol = token.token().first_symbol_or_empty();
 
-            if *imbalance_char == '(' {
-                if first_symbol.is_boundary() {
-                    exact_token = token;
-                    fix = bright_white("\nPossible Fix - ") + &ColorString::new("Add closing ')'").green().string();
-                }
+            if *imbalance_char == '(' && first_symbol.is_boundary() {
+                exact_token = token;
+                fix = bright_white("\nPossible Fix - ") + &ColorString::new("Add closing ')'").green().string();
             }
         }
 
@@ -191,7 +189,7 @@ pub fn error_report(cr: &mut CharReader, tokens: &Vec<TypedToken>, errors: &Vec<
 fn get_line_tokens(all_tokens: &Vec<TypedToken>, line_number: u32) -> Vec<TypedToken> {
     let mut line_tokens: Vec<TypedToken> = Vec::new();
     all_tokens.iter().filter(|t| t.token().line_number() == line_number).for_each(|t| line_tokens.insert(line_tokens.len(), t.clone()));
-    return line_tokens;
+    line_tokens
 }
 
 fn generate_file_path(path: &String, line_number: u32, symbol_number: u32) -> String {
@@ -202,30 +200,30 @@ fn repair_syntax_error(text: String, token: TypedToken, insert_char: char) -> St
     let stripped = strip_start_of_line(text.clone());
     let strip_amount = text.len() - stripped.len();
     let last_symbol_index = token.token().last_symbol_or_empty().symbol_number() as usize - 1 - strip_amount;
-    return colorize(stripped[..last_symbol_index].to_string() + &colorize(String::from(insert_char), Color::Bright(BrightGreen)) + &stripped[last_symbol_index..], Color::White);
+    colorize(stripped[..last_symbol_index].to_string() + &colorize(String::from(insert_char), Color::Bright(BrightGreen)) + &stripped[last_symbol_index..], Color::White)
 }
 
 fn repair_missing_global_error(text: String) -> String {
     let stripped = strip_start_of_line(text);
-    return colorize(String::from("global "), Color::Bright(ColorBright::BrightGreen)) + &colorize(stripped, Color::Yellow);
+    colorize(String::from("global "), Color::Bright(ColorBright::BrightGreen)) + &colorize(stripped, Color::Yellow)
 }
 
 fn repair_incompatible_type_error(text: String, token: &TypedToken, fix_type: String) -> String {
     let stripped = strip_start_of_line(text);
     let re = Regex::new(&format!("{}{}{}", r"\b", token.as_string(), r"\b")).unwrap();
     let p = re.find(&stripped).unwrap().start();
-    return colorize(fix_type + " ", Color::Bright(ColorBright::BrightGreen)) + &colorize_str(&stripped[p..], Color::Yellow);
+    colorize(fix_type + " ", Color::Bright(ColorBright::BrightGreen)) + &colorize_str(&stripped[p..], Color::Yellow)
 }
 
 fn repair_var_already_defined_error(text: String, old_name: String, new_name: String) -> String {
     let stripped = strip_start_of_line(text);
     let re = Regex::new(&format!("{}{}{}", r"\b", old_name.as_str(), r"\b")).unwrap();
     let stripped = re.replace(&stripped, &colorize(new_name, Bright(BrightGreen)));
-    return colorize(stripped.to_string(), Color::Yellow);
+    colorize(stripped.to_string(), Color::Yellow)
 }
 
 fn generate_error_name(text: &str, line_number: u32, symbol_number: u32) -> String {
-    return colorize(format!("Parse Error at: ({}::{}) -> {}", line_number, symbol_number, text), Color::Red)
+    colorize(format!("Parse Error at: ({}::{}) -> {}", line_number, symbol_number, text), Color::Red)
 }
 
 fn generate_arrows(token_string: String) -> String {
@@ -233,16 +231,16 @@ fn generate_arrows(token_string: String) -> String {
     for _i in 0..token_string.len() {
         arrows += "^";
     }
-    return arrows;
+    arrows
 }
 
 fn bright_white(string: &str) -> String {
-    return colorize_str(string, Color::Bright(BrightWhite));
+    colorize_str(string, Color::Bright(BrightWhite))
 }
 
 fn in_same_scope(token: TypedToken, scope: i32) -> bool {
     if token.scope() == 0 || token.scope() == scope {
         return true;
     }
-    return false;
+    false
 }

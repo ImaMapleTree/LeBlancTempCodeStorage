@@ -126,7 +126,7 @@ pub struct Timing {
 
 impl Timing {
     pub fn zero() -> Timing {
-        return Timing {
+        Timing {
             count: 0,
             locked_calls: 0,
             time: 0.0,

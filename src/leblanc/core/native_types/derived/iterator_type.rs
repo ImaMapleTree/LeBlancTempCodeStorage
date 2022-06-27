@@ -7,10 +7,10 @@ use fxhash::{FxHashMap, FxHashSet};
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_iterator::{_internal_iterator_next, _internal_iterator_to_list_};
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
+use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
-use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_methods, base_to_string_method};
+use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method};
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::LeBlancType;
 
@@ -37,7 +37,7 @@ where
 }
 
 pub trait LeblancIterable: IteratorUtils {
-    fn next(&mut self) -> Rc<RefCell<LeBlancObject>>;
+    fn next(&mut self) -> LeBlancObject;
     fn has_next(&self) -> bool;
 }
 
@@ -48,9 +48,8 @@ pub struct LeblancIterator {
 
 pub fn leblanc_object_iterator(leblanc_iterable: Box<dyn LeblancIterable>) -> LeBlancObject {
     let base_methods = iterator_methods();
-    println!("Iterator new");
 
-    return LeBlancObject::new(
+    LeBlancObject::new(
         LeBlancObjectData::Iterator(LeblancIterator::new(leblanc_iterable)),
         LeBlancType::Derived(DerivedType::Iterator),
         base_methods,
@@ -62,17 +61,15 @@ pub fn leblanc_object_iterator(leblanc_iterable: Box<dyn LeblancIterable>) -> Le
 
 impl LeblancIterator {
     pub fn new(iterator: Box<dyn LeblancIterable>) -> LeblancIterator {
-        return LeblancIterator {
+        LeblancIterator {
             iterator
         }
     }
 
-    pub fn next(&mut self) -> Rc<RefCell<LeBlancObject>> {
-        return self.iterator.next();
-    }
+    pub fn next(&mut self) -> LeBlancObject { self.iterator.next() }
 
     pub fn has_next(&self) -> bool {
-        return self.iterator.has_next();
+        self.iterator.has_next()
     }
 }
 
@@ -91,12 +88,12 @@ pub fn iterator_methods() -> Arc<FxHashSet<Method>> {
     hash_set.insert(Method::default(base_field_method(), _internal_field_));
     hash_set.insert( iterator_next_method());
     hash_set.insert(iterator_to_list());
-    return Arc::new(hash_set);
+    Arc::new(hash_set)
 }
 
 pub fn iterator_next_method() -> Method {
     let method_store = MethodStore::new("next".to_string(), vec![]);
-    return Method::new(
+    Method::new(
         method_store,
         _internal_iterator_next,
         BTreeSet::new()
@@ -105,7 +102,7 @@ pub fn iterator_next_method() -> Method {
 
 pub fn iterator_to_list() -> Method {
     let method_store = MethodStore::new("list".to_string(), vec![]);
-    return Method::new(
+    Method::new(
         method_store,
         _internal_iterator_to_list_,
         BTreeSet::new()
@@ -115,8 +112,6 @@ pub fn iterator_to_list() -> Method {
 
 impl Clone for Box<dyn LeblancIterable> {
     fn clone(&self) -> Box<dyn LeblancIterable> {
-
-        println!("Cloning box");
         self.leblanc_iterator_clone()
     }
 }
@@ -128,19 +123,42 @@ impl std::fmt::Debug for Box<dyn LeblancIterable> {
 }
 
 impl PartialEq for Box<dyn LeblancIterable> {
-    fn eq(&self, other: &Self) -> bool {
-        return true
+    fn eq(&self, _other: &Self) -> bool {
+        true
     }
 }
 
 impl PartialOrd for Box<dyn LeblancIterable> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        return None;
+    fn partial_cmp(&self, _other: &Self) -> Option<std::cmp::Ordering> {
+        None
     }
 }
 
 impl PartialEq for LeblancIterator {
-    fn eq(&self, other: &Self) -> bool {
-        return true;
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl RustDataCast<LeblancIterator> for LeBlancObjectData {
+    fn clone_data(&self) -> Option<LeblancIterator> {
+        match self {
+            LeBlancObjectData::Iterator(iterator) => Some(iterator.clone()),
+            _ => None
+        }
+    }
+
+    fn ref_data(&self) -> Option<&LeblancIterator> {
+        match self {
+            LeBlancObjectData::Iterator(iterator) => Some(iterator),
+            _ => None
+        }
+    }
+
+    fn mut_data(&mut self) -> Option<&mut LeblancIterator> {
+        match self {
+            LeBlancObjectData::Iterator(iterator) => Some(iterator),
+            _ => None
+        }
     }
 }

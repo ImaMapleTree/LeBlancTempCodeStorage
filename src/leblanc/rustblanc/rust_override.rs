@@ -204,14 +204,14 @@ impl Hexable for bool {
         if *self {
             return Hexadecimal::new(vec!["01".to_string()])
         }
-        return Hexadecimal::new(vec!["00".to_string()])
+        Hexadecimal::new(vec!["00".to_string()])
     }
 
     fn from_hex(hex: &Hexadecimal) -> Self {
         if hex.is_zero() {
            return false;
         }
-        return true;
+        true
     }
 }
 
@@ -225,13 +225,13 @@ impl Hexable for char {
     fn from_hex(hex: &Hexadecimal) -> Self {
         let bytes = decode_hex_u16(hex).unwrap();
         let u16_bytes: [u16; 4] = <[u16; 4]>::try_from(bytes).unwrap();
-        return char::decode_utf16(u16_bytes).next().unwrap().unwrap();
+        char::decode_utf16(u16_bytes).next().unwrap().unwrap()
     }
 }
 
 impl Hexable for String {
     fn to_hex(&self, _bytes: usize) -> Hexadecimal {
-        encode_hex(&self.as_bytes())
+        encode_hex(self.as_bytes())
     }
 
     fn from_hex(hex: &Hexadecimal) -> Self {

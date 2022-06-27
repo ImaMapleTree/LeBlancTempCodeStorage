@@ -1,6 +1,6 @@
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::{FxHashMap};
 
-use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
+
 use alloc::rc::Rc;
 use std::cell::RefCell;
 
@@ -46,7 +46,7 @@ pub fn _internal_expose_(_self: Rc<RefCell<LeBlancObject>>, _arguments: &mut [Rc
     expose_object.members.insert("variableContext".to_string(), variable_state);
 
 
-    return expose_object.to_mutex()
+    expose_object.to_mutex()
 }
 
 pub fn _internal_to_string_(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {

@@ -3,7 +3,7 @@ use core::fmt::{Debug, Formatter};
 use std::cell::RefCell;
 use std::mem::swap;
 use crate::leblanc::core::internal::internal_range_generator::RangeGeneratorStepType::{ConditionalStep, FunctionStep, NormalStep};
-use crate::leblanc::core::leblanc_object::{Callable, LBODOperation, LeBlancObject, Reflect, Stringify};
+use crate::leblanc::core::leblanc_object::{LBODOperation, LeBlancObject, Reflect, Stringify};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::derived::iterator_type::{leblanc_object_iterator, LeblancIterable};
 use crate::LeBlancType;
@@ -19,7 +19,7 @@ pub struct LeblancInternalRangeGenerator {
 }
 
 impl LeblancIterable for LeblancInternalRangeGenerator {
-    fn next(&mut self) -> Rc<RefCell<LeBlancObject>> {
+    fn next(&mut self) -> LeBlancObject {
         match &mut self.step_type {
             NormalStep => {
                 swap(&mut self.value, &mut self.next_value);
@@ -31,7 +31,7 @@ impl LeblancIterable for LeblancInternalRangeGenerator {
             ConditionalStep => { }
         }
         //println!("{}", self.value.to_string());
-        return self.value._clone().to_mutex()
+        self.value._clone()
     }
 
     fn has_next(&self) -> bool {
@@ -64,7 +64,7 @@ impl LeblancInternalRangeGenerator {
                 }).next().cloned();
                 match matched_method {
                     None => { return Err(step.to_mutex()) }
-                    Some(mut method) => FunctionStep(method)
+                    Some(method) => FunctionStep(method)
                  }
             },
             _ => return Err(step.to_mutex())

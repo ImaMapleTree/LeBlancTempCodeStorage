@@ -1,6 +1,6 @@
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::{FxHashMap};
 
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 use alloc::rc::Rc;
 use std::cell::RefCell;
 
@@ -12,7 +12,7 @@ use crate::leblanc::core::native_types::LeBlancType;
 pub fn leblanc_object_float(float: f32) -> LeBlancObject {
     let base_methods = base_methods();
 
-    return LeBlancObject::new(
+    LeBlancObject::new(
         LeBlancObjectData::Float(float),
         LeBlancType::Float,
         base_methods,
@@ -39,7 +39,7 @@ pub fn leblanc_object_float(float: f32) -> LeBlancObject {
 
 impl ToLeblanc for f32 {
     fn create(&self) -> LeBlancObject {
-        return leblanc_object_float(*self);
+        leblanc_object_float(*self)
     }
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { return Rc::new(RefCell::new(self.create())) }
+    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
 }

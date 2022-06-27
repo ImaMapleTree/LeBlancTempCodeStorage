@@ -25,7 +25,7 @@ pub enum SymbolType {
 impl SymbolType {
     pub fn of(character: char) -> SymbolType {
         if character.is_whitespace() { Whitespace }
-        else if character.is_digit(10) { Digit }
+        else if character.is_ascii_digit() { Digit }
         else if character.is_alphabetic() {Alphabetic}
         else if character.is_ascii_punctuation() { ControlCharacter }
         else { Unknown }
@@ -35,9 +35,9 @@ impl SymbolType {
 impl Symbol {
     pub fn new(character: char, pre_whitespace: bool, post_whitespace: bool, is_start_quote: bool, is_end_quote: bool,
                symbol_type: SymbolType, symbol_number: u32, line_number: u32) -> Symbol {
-        return Symbol {
+        Symbol {
             character, pre_whitespace, post_whitespace, is_start_quote, is_end_quote, symbol_type, symbol_number, line_number
-        };
+        }
     }
 
     pub fn get_type(&self) -> &SymbolType {&self.symbol_type}
@@ -49,7 +49,7 @@ impl Symbol {
     pub fn char(&self) -> &char {&self.character}
 
     pub fn empty() -> Symbol {
-        return Symbol {
+        Symbol {
             character: '\0',
             pre_whitespace: false,
             post_whitespace: false,
@@ -58,7 +58,7 @@ impl Symbol {
             symbol_type: Unknown,
             symbol_number: 0,
             line_number: 0
-        };
+        }
     }
 
     pub fn as_string(&self) -> String {

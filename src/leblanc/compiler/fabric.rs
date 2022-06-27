@@ -17,7 +17,7 @@ pub struct Fabric {
 
 impl Fabric {
     pub fn new(path: String, tokens: Vec<Node<TypedToken>>, imports: Vec<Import>,  classes: Vec<PartialClass>, errors: Vec<ErrorStub>) -> Fabric {
-        return Fabric {
+        Fabric {
             path,
             tokens,
             imports,
@@ -28,7 +28,7 @@ impl Fabric {
     }
 
     pub fn no_path(tokens: Vec<Node<TypedToken>>, imports: Vec<Import>, classes: Vec<PartialClass>, errors: Vec<ErrorStub>) -> Fabric {
-        return Fabric::new("".to_string(), tokens, imports, classes, errors);
+        Fabric::new("".to_string(), tokens, imports, classes, errors)
     }
 
     pub fn tokens(&mut self) -> &mut Vec<Node<TypedToken>> { &mut self.tokens }

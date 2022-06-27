@@ -9,7 +9,7 @@ pub struct ClassMeta {
 
 impl ClassMeta {
     pub fn default<'a>(name: String, parse_id: u32) -> ClassMeta {
-        return ClassMeta {
+        ClassMeta {
             name,
             supertypes: vec![],
             parse_id
@@ -18,7 +18,7 @@ impl ClassMeta {
     }
 
     pub fn null() -> ClassMeta {
-        return ClassMeta {
+        ClassMeta {
             name: "NULL".to_string(),
             supertypes: vec![],
             parse_id: 0

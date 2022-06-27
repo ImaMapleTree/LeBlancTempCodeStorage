@@ -1,4 +1,4 @@
-use fxhash::{FxHashMap, FxHashSet};
+use fxhash::{FxHashMap};
 use crate::leblanc::core::bytecode::byte_limiter::ByteLimit::{Limited, Undefined};
 use crate::leblanc::core::bytecode::byte_limiter::ByteRestriction;
 use crate::leblanc::core::bytecode::decompiled_constant::DecompiledConstant;
@@ -33,7 +33,7 @@ pub struct FunctionBytecode {
 
 impl FunctionBytecode {
     pub fn new() -> FunctionBytecode {
-        return FunctionBytecode {
+        FunctionBytecode {
             name_length: ByteRestriction::once(Limited(4)),
             name: ByteRestriction::once(Undefined),
             argument_length: ByteRestriction::once(Limited(4)),
@@ -89,7 +89,7 @@ impl FunctionBytecode {
     }
 
     pub fn instruction_lines(&mut self) -> Vec<InstructionBytecode> {
-        return self.instruction_line.iter_mut().unwrap().map(|b| InstructionBytecode::from(b)).collect::<Vec<InstructionBytecode>>();
+        return self.instruction_line.iter_mut().unwrap().map(InstructionBytecode::from).collect::<Vec<InstructionBytecode>>();
     }
 
     pub fn constants(&mut self) -> Vec<DecompiledConstant> {
@@ -101,7 +101,7 @@ impl FunctionBytecode {
             println!("Constant type: {:#?}", constant_type);
             constants.push(DecompiledConstant::new(constant_value, LeBlancType::from_enum_id(constant_type.to_hexable::<u16>())))
         }
-        return constants;
+        constants
     }
 
     pub fn variables(&mut self) -> FxHashMap<String, VariableContext> {
@@ -112,7 +112,7 @@ impl FunctionBytecode {
             let variable_relationship = self.variable_relationship.remove(0).unwrap();
             variables.insert(variable_name.clone(), VariableContext::shell(variable_name, variable_relationship.to_hexable::<u32>()));
         }
-        return variables;
+        variables
     }
 
     pub fn arguments(&mut self) -> Vec<LeBlancType> {
@@ -191,7 +191,7 @@ impl FunctionBytecode {
         fb.name.consume_bytes(name).unwrap();
         fb.name_length.consume_bytes(name_length).unwrap();
 
-        return fb;
+        fb
     }
 }
 
@@ -212,7 +212,7 @@ impl ToBytecode for FunctionBytecode {
 
         self.argument_length.consume_bytes(self.arguments.bytes().len().to_hex(4)).expect("arguments too long");
 
-        return self.name_length.bytes() + self.name.bytes() + self.argument_length.bytes() + self.arguments.bytes() + self.constants_total_length.bytes() + constants +
-            self.variable_total_length.bytes() + variables + self.precompiled_total_length.bytes() + precompile + self.instructions_total_size.bytes() + instruction_bytes;
+        self.name_length.bytes() + self.name.bytes() + self.argument_length.bytes() + self.arguments.bytes() + self.constants_total_length.bytes() + constants +
+            self.variable_total_length.bytes() + variables + self.precompiled_total_length.bytes() + precompile + self.instructions_total_size.bytes() + instruction_bytes
     }
 }

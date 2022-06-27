@@ -26,8 +26,11 @@ pub fn run(mut bytecode: LeblancBytecode) {
         let leblanc_handle = LeblancHandle::from_function_bytecode(function);
         let method_store = MethodStore::new(name.clone(), LeBlancArgument::from_positional(arguments));
         let method = Method::of_leblanc_handle(method_store, leblanc_handle, BTreeSet::new());
+        let mut lbo = internal_method(method);
+        lbo.context.file = bytecode.file_header().get_file_name();
+        println!("lbo: {}", lbo.context.file);
         if name != "__GLOBAL__" {
-            globals.push(internal_method(method).to_mutex());
+            globals.push(lbo.to_mutex());
         }
     }
 

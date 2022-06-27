@@ -17,5 +17,5 @@ pub fn date_as_hex() -> Hexadecimal {
     year.append(&mut minute);
     year.append(&mut second);
     year.append(&mut nanosecond);
-    return year;
+    year
 }

@@ -51,7 +51,7 @@ fn retrieve_input() -> String {
     }
 
 
-    return final_line;
+    final_line
 }
 
 #[derive(Debug)]
@@ -63,7 +63,7 @@ struct DelimiterCount {
 
 impl DelimiterCount {
     pub fn new() -> DelimiterCount {
-        return DelimiterCount {
+        DelimiterCount {
             bracket: 0,
             parenthesis: 0,
             brace: 0
@@ -83,10 +83,10 @@ impl DelimiterCount {
     }
 
     pub fn balanced(&self) -> bool {
-        return self.bracket == 0 && self.parenthesis == 0 && self.brace == 0;
+        self.bracket == 0 && self.parenthesis == 0 && self.brace == 0
     }
 }
 
 pub fn wrap_in_main(string: String) -> String {
-    return "func main() {\n".to_owned() + "\t" + &string.replace(";;", ";\n\t") + "\n}";
+    "func main() {\n".to_owned() + "\t" + &string.replace(";;", ";\n\t") + "\n}"
 }

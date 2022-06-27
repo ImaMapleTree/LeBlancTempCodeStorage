@@ -1,7 +1,7 @@
 use crate::LeBlancType;
 
 pub fn can_add_self(lbt: &LeBlancType) -> bool {
-    return match lbt {
+    match lbt {
         LeBlancType::Short => true,
         LeBlancType::Int => true,
         LeBlancType::Int64 => true,

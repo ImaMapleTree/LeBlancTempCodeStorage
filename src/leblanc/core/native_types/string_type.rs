@@ -2,7 +2,7 @@ use alloc::rc::Rc;
 use std::cell::RefCell;
 use fxhash::{FxHashMap, FxHashSet};
 use std::sync::{Arc};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_string::_internal_add_string;
@@ -26,7 +26,7 @@ pub fn leblanc_object_string(string: String) -> LeBlancObject {
     hash_set.insert( string_addition_method());
 
 
-    return LeBlancObject::new(
+    LeBlancObject::new(
         LeBlancObjectData::String(string),
         LeBlancType::String,
         Arc::new(hash_set),
@@ -37,14 +37,14 @@ pub fn leblanc_object_string(string: String) -> LeBlancObject {
 
 impl ToLeblanc for String {
     fn create(&self) -> LeBlancObject {
-        return leblanc_object_string(self.clone());
+        leblanc_object_string(self.clone())
     }
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { return Rc::new(RefCell::new(self.create())) }
+    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
 }
 
 pub fn string_addition_method() -> Method {
     let method_store = MethodStore::new("_ADD_".to_string(), LeBlancArgument::from_positional(&[Flex]));
-    return Method::new(
+    Method::new(
         method_store,
         _internal_add_string,
         MethodTag::Addition.singleton()

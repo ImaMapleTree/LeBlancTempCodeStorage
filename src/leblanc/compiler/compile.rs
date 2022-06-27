@@ -1,6 +1,7 @@
 use std::fs::File;
 use crate::{BraceOpen, CompileVocab, create_stack, create_tokens, Fabric, Semicolon, TypedToken};
 use crate::leblanc::compiler::char_reader::CharReader;
+use crate::leblanc::compiler::compile_error_reporter::error_report;
 use crate::leblanc::compiler::compile_types::CompilationMode;
 use crate::leblanc::compiler::compile_types::full_compiler::write_bytecode;
 use crate::leblanc::compiler::compile_types::stub_compiler::read_from_stub_dump;
@@ -50,7 +51,7 @@ pub fn compile(string: String, mode: CompilationMode) -> Fabric {
     }
 
     //("test.lbsf".to_string());
-    return fabric;
+    fabric
 }
 
 // haha I'm so hip because I call my methods fancy things
@@ -70,11 +71,11 @@ pub fn partial_spin(cr: &mut CharReader, mode: CompilationMode) -> Fabric {
 
     println!("Errors: {:?}", fabric.errors());
 
-    if fabric.errors().len() > 0 {
-        //error_report(cr, &fabric.tokens().iter().cloned().map(|t| t.value.clone()).collect(), fabric.errors());
+    if !fabric.errors().is_empty() {
+        error_report(cr, &fabric.tokens().iter().cloned().map(|t| t.value.clone()).collect(), fabric.errors());
     }
 
-    return fabric;
+    fabric
 
 
 }
@@ -116,5 +117,5 @@ pub fn create_execution_stack(fabric: &mut Fabric) -> Vec<TypedToken> {
         stack.append(&mut mini_stack);
     }
 
-    return stack;
+    stack
 }

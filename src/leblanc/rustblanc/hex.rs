@@ -15,13 +15,13 @@ pub struct Hexadecimal {
 
 impl Hexadecimal {
     pub fn new(bytes: Vec<String>) -> Hexadecimal {
-        return Hexadecimal {
+        Hexadecimal {
             bytes
         }
     }
 
     pub fn empty() -> Hexadecimal {
-        return Hexadecimal {
+        Hexadecimal {
             bytes: Vec::new()
         }
     }
@@ -30,9 +30,9 @@ impl Hexadecimal {
         let mut hex_vec = vec![];
         for mut i in 0..string.len()/2 {
             hex_vec.push(string[(i*2)..(i*2)+2].to_string());
-            i = i + 1;
+            i += 1;
         }
-        return Hexadecimal::new(hex_vec);
+        Hexadecimal::new(hex_vec)
     }
 
     pub fn append(&mut self, hex: &mut Hexadecimal) {
@@ -49,19 +49,19 @@ impl Hexadecimal {
     }
 
     pub fn to_vec(self) -> Vec<String> {
-        return self.bytes;
+        self.bytes
     }
 
     pub fn len(&self) -> usize {
-        return self.bytes.len();
+        self.bytes.len()
     }
 
     pub fn is_empty(&self) -> bool {
-        return self.bytes.is_empty();
+        self.bytes.is_empty()
     }
 
     pub fn iter(&self) -> Iter<'_, String> {
-        return self.bytes.iter();
+        self.bytes.iter()
     }
 
     pub fn pop(&mut self, amount: usize) -> Hexadecimal {
@@ -70,7 +70,7 @@ impl Hexadecimal {
             new_hex.insert(0, self.bytes.pop().unwrap())
         }
 
-        return Hexadecimal::new(new_hex)
+        Hexadecimal::new(new_hex)
     }
 
     pub fn is_zero(&self) -> bool {
@@ -82,7 +82,7 @@ impl Hexadecimal {
     }
 
     pub fn strip_leading_zeroes(&mut self) {
-        self.bytes = self.bytes.iter().map(|s| s.clone()).filter(|b| b != "00").collect();
+        self.bytes = self.bytes.iter().cloned().filter(|b| b != "00").collect();
     }
 
     pub fn extend_to_length(&mut self, bytes: usize) {
@@ -96,11 +96,11 @@ impl Hexadecimal {
         for _i in 0..bytes-self.bytes.len() {
             new_bytes.bytes.insert(0, "00".to_string());
         }
-        return new_bytes;
+        new_bytes
     }
 
     pub fn bytes_at(&mut self, index: usize, size: usize) -> Hexadecimal {
-        return Hexadecimal::new(self.bytes[index..index+size].to_vec())
+        Hexadecimal::new(self.bytes[index..index+size].to_vec())
     }
 
     pub fn scrape(&mut self, amount: usize) -> Hexadecimal {
@@ -108,11 +108,11 @@ impl Hexadecimal {
         for _i in 0..amount {
             new_hex.push(self.bytes.remove(0))
         }
-        return Hexadecimal::new(new_hex);
+        Hexadecimal::new(new_hex)
     }
 
     pub fn to_hexable<T: Hexable>(&self) -> T {
-        return T::from_hex(self)
+        T::from_hex(self)
     }
 }
 

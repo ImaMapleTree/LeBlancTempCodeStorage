@@ -12,7 +12,7 @@ pub struct LeblancBaseException {
 
 impl LeblancBaseException {
     pub fn from(rust_error: Box<dyn Error>, message: &String, critical: bool, error_code: i32) -> LeblancBaseException {
-        return LeblancBaseException {
+        LeblancBaseException {
             rust_error,
             message: message.to_string(),
             critical,
@@ -21,7 +21,7 @@ impl LeblancBaseException {
     }
 
     pub fn new(message: &String, critical: bool, error_code: i32) -> LeblancBaseException {
-        return LeblancBaseException {
+        LeblancBaseException {
             rust_error: Box::new(EmptyError::new()),
             message: message.to_string(),
             critical,

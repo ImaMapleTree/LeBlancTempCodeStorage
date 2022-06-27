@@ -1,6 +1,6 @@
 use alloc::rc::Rc;
 use core::fmt::Debug;
-use std::ptr::null_mut;
+
 use std::sync::{Arc};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -15,16 +15,16 @@ impl<T: Clone + Debug> Strawberry<T> {
     pub fn new(data: T) -> Strawberry<T> {
         let mut data = Rc::new(data);
         let ptr = Rc::get_mut(&mut data).unwrap() as *mut T;
-        return Strawberry {
+        Strawberry {
             ptr,
             data,
             loans: Arc::new(AtomicUsize::new(0))
         }
     }
 
-    pub fn from_arc(mut arc: Arc<T>) -> Strawberry<T> {
+    pub fn from_arc(arc: Arc<T>) -> Strawberry<T> {
         let obj = Arc::unwrap_or_clone(arc);
-        return Strawberry::new(obj);
+        Strawberry::new(obj)
 
         /*let ptr = Rc::make_mut(&mut arc) as *mut T;
         return Strawberry {
@@ -47,7 +47,7 @@ impl<T: Clone + Debug> Strawberry<T> {
     }
 
     pub fn bypass_loan(&self) -> &mut T {
-        unsafe { return &mut (*self.ptr) }
+        unsafe { &mut (*self.ptr) }
     }
 
 }
@@ -55,7 +55,7 @@ impl<T: Clone + Debug> Strawberry<T> {
 impl<T: Clone + Debug> Clone for Strawberry<T> {
     fn clone(&self) -> Self {
         unsafe {COUNT4 += 1;}
-        return Strawberry {
+        Strawberry {
             ptr: self.ptr,
             data: self.data.clone(),
             loans: self.loans.clone()
@@ -72,14 +72,14 @@ pub struct StrawberryLoan<'a, T: Clone + Debug> {
 
 impl<'a, T: Clone + Debug> StrawberryLoan<'_, T> {
     pub fn mutable(reference: &'a mut T, parent: &'a Strawberry<T>) -> StrawberryLoan<'a, T> {
-        return StrawberryLoan {
+        StrawberryLoan {
             reference,
             parent: (parent as *const Strawberry<T>).as_mut(),
             mutability: StrawberryMutability::Mutable
         }
     }
     pub fn immutable(reference: &'a mut T, parent: &'a Strawberry<T>) -> StrawberryLoan<'a, T> {
-        return StrawberryLoan {
+        StrawberryLoan {
             reference,
             parent: (parent as *const Strawberry<T>).as_mut(),
             mutability: StrawberryMutability::Immutable
@@ -125,7 +125,7 @@ enum StrawberryMutability {
 
 impl<'a, T: Clone + Debug> Drop for StrawberryLoan<'_, T> {
     fn drop(&mut self) {
-        unsafe { (&mut *self.parent).loans.fetch_sub(1, Ordering::Relaxed); }
+        unsafe { (*self.parent).loans.fetch_sub(1, Ordering::Relaxed); }
     }
 }
 

@@ -46,7 +46,7 @@ pub struct LeblancBytecode {
 
 impl LeblancBytecode {
     pub fn new(file_header: FileHeaderBytecode, body: FileBodyBytecode) -> LeblancBytecode {
-        return LeblancBytecode {
+        LeblancBytecode {
             file_header,
             body
         }
@@ -56,7 +56,7 @@ impl LeblancBytecode {
     pub fn from(mut hex: Hexadecimal) -> LeblancBytecode {
         let file_header = FileHeaderBytecode::from(&mut hex);
         let body = FileBodyBytecode::from(&mut hex);
-        return LeblancBytecode::new(file_header, body);
+        LeblancBytecode::new(file_header, body)
     }
 
     pub fn file_header(&mut self) -> &mut FileHeaderBytecode { &mut self.file_header }
@@ -72,6 +72,6 @@ impl ToBytecode for LeblancBytecode {
     fn generate(&mut self) -> Hexadecimal {
         let mut header_bytes = self.file_header.generate();
         header_bytes.consume( self.body.generate());
-        return header_bytes;
+        header_bytes
     }
 }

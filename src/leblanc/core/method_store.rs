@@ -11,14 +11,14 @@ pub struct MethodStore {
 
 impl MethodStore {
     pub fn no_args(name: String) -> MethodStore {
-        return MethodStore {
+        MethodStore {
             name,
             arguments: vec![],
         }
     }
 
     pub fn new(name: String, arguments: Vec<LeBlancArgument>) -> MethodStore {
-        return MethodStore {
+        MethodStore {
             name,
             arguments,
         }
@@ -34,7 +34,7 @@ pub struct MethodShell {
 
 impl MethodShell {
     pub fn new(context: MethodStore, tags: BTreeSet<MethodTag>) -> MethodShell {
-        return MethodShell {
+        MethodShell {
             context,
             tags
         }
