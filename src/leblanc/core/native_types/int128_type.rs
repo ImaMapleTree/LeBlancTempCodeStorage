@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use fxhash::{FxHashMap, FxHashSet};
 
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use alloc::rc::Rc;
@@ -16,7 +16,7 @@ pub fn leblanc_object_int128(integer: i128) -> LeBlancObject {
         LeBlancObjectData::Int128(integer),
         LeBlancType::Int128,
         base_methods,
-        HashMap::new(),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }

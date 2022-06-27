@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use std::fmt::{Display, Formatter};
 
 use crate::leblanc::rustblanc::strawberry::Strawberry;
@@ -22,7 +22,7 @@ pub fn leblanc_object_block(block: NativeBlock) -> LeBlancObject {
         LeBlancObjectData::Block(block),
         LeBlancType::Block,
         base_methods,
-        HashMap::new(),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }

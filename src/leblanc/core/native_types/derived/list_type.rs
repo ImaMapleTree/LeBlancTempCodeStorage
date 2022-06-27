@@ -1,6 +1,6 @@
 use core::fmt::{Display, Formatter};
 use std::cmp::Ordering;
-use std::collections::HashMap;
+use fxhash::{FxHashMap, FxHashSet};
 
 use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
 use alloc::rc::Rc;
@@ -23,6 +23,12 @@ impl LeblancList {
             internal_vec: vec![]
         }
     }
+
+    pub fn new(internal_vec: Vec<Rc<RefCell<LeBlancObject>>>) -> LeblancList {
+        return LeblancList {
+            internal_vec
+        }
+    }
 }
 
 pub fn leblanc_object_list_empty() -> LeBlancObject {
@@ -32,7 +38,7 @@ pub fn leblanc_object_list_empty() -> LeBlancObject {
         LeBlancObjectData::List(LeblancList::empty()),
         LeBlancType::Derived(DerivedType::List),
         base_methods,
-        HashMap::new(),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -44,7 +50,7 @@ pub fn leblanc_object_list(list: LeblancList) -> LeBlancObject {
         LeBlancObjectData::List(list),
         LeBlancType::Derived(DerivedType::List),
         base_methods,
-        HashMap::new(),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }

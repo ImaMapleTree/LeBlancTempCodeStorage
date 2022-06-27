@@ -1,12 +1,9 @@
 func main() {
-    print(test());
-    (0 to 100).iterate().filter(i: {
-        if i < 30 -> i > 40
-        else -> i % 2 == 0
-    }).first();
+	test();
 
 }
 
 func test() returns int {
-    return 3;
+	for int i in 0 to 1000000 {
+	}
 }

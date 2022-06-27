@@ -1,8 +1,9 @@
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet};
 use std::sync::{Arc};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use fxhash::FxHashMap;
 
 use crate::leblanc::core::internal::methods::internal_math::_internal_inplace_add_;
 use crate::leblanc::core::leblanc_argument::number_argset;
@@ -22,7 +23,7 @@ pub fn leblanc_object_int64(integer: i64) -> LeBlancObject {
         LeBlancObjectData::Int64(integer),
         LeBlancType::Int64,
         Arc::new(base_methods),
-        HashMap::new(),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }

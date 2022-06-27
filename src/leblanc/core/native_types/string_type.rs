@@ -1,6 +1,6 @@
 use alloc::rc::Rc;
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use fxhash::{FxHashMap, FxHashSet};
 use std::sync::{Arc};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 
@@ -17,7 +17,7 @@ use crate::leblanc::core::native_types::LeBlancType;
 use crate::LeBlancType::Flex;
 
 pub fn leblanc_object_string(string: String) -> LeBlancObject {
-    let mut hash_set = HashSet::new();
+    let mut hash_set = FxHashSet::default();
     hash_set.insert(Method::default(base_to_string_method(), _internal_to_string_));
     hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
     hash_set.insert(Method::default(base_equals_method(), _internal_to_string_));
@@ -30,7 +30,7 @@ pub fn leblanc_object_string(string: String) -> LeBlancObject {
         LeBlancObjectData::String(string),
         LeBlancType::String,
         Arc::new(hash_set),
-        HashMap::new(),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }

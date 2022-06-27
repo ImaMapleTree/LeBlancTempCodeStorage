@@ -2,10 +2,12 @@ use alloc::rc::Rc;
 use std::any::Any;
 use std::cell::RefCell;
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::hash::Hasher;
+use std::intrinsics::unchecked_add;
+use std::mem::take;
 use std::sync::{Arc};
+use fxhash::{FxHashMap, FxHashSet};
 
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -16,6 +18,7 @@ use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::derived::generator_type::LeblancGenerator;
 use crate::leblanc::core::native_types::derived::iterator_type::{LeblancIterable, LeblancIterator};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
+use crate::leblanc::core::native_types::int_type::leblanc_object_int;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::strawberry::{Strawberry};
@@ -39,13 +42,13 @@ pub trait Reflect {
 pub struct LeBlancObject {
     pub data: LeBlancObjectData,
     pub(crate) typing: LeBlancType,
-    pub methods: Arc<HashSet<Method>>,
-    pub members: HashMap<String, LeBlancObject>,
+    pub methods: Arc<FxHashSet<Method>>,
+    pub members: FxHashMap<String, LeBlancObject>,
     pub context: VariableContext
 }
 
 impl LeBlancObject {
-    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<HashSet<Method>>, members: HashMap<String, LeBlancObject>, context: VariableContext) -> LeBlancObject {
+    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<FxHashSet<Method>>, members: FxHashMap<String, LeBlancObject>, context: VariableContext) -> LeBlancObject {
         return LeBlancObject {data, typing, methods, members, context};
     }
 
@@ -56,8 +59,8 @@ impl LeBlancObject {
         return LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Class(0),
-            methods: Arc::new(HashSet::new()),
-            members: HashMap::new(),
+            methods: Arc::new(FxHashSet::default()),
+            members: FxHashMap::default(),
             context: VariableContext::empty()
         }
     }
@@ -80,8 +83,8 @@ impl LeBlancObject {
         return LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Exception,
-            methods: Arc::new(HashSet::new()),
-            members: HashMap::new(),
+            methods: Arc::new(FxHashSet::default()),
+            members: FxHashMap::default(),
             context: VariableContext::empty()
         }
     }
@@ -130,6 +133,14 @@ impl LeBlancObject {
         self.data = other.data;
     }
 
+    pub fn copy_rc(&mut self, other: &mut Rc<RefCell<LeBlancObject>>) {
+        let mut other = other.borrow_mut();
+        self.members = other.members.clone();
+        self.methods.clone_from(&other.methods);
+        self.data = other.data.clone();
+        self.typing = other.typing;
+    }
+
     pub fn cast(&self, cast: LeBlancType) -> LeBlancObject {
         let object_data = match cast {
             LeBlancType::Char => LeBlancObjectData::Char(unsafe {*self.reflect().downcast_ref_unchecked()}),
@@ -148,7 +159,7 @@ impl LeBlancObject {
             object_data,
             cast,
             self.methods.clone(),
-            HashMap::default(),
+            FxHashMap::default(),
             VariableContext::empty()
         )
     }
@@ -278,7 +289,6 @@ impl Callable for Rc<RefCell<LeBlancObject>> {
     }
 
     fn call_name(&mut self, method_name: &str) -> Rc<RefCell<LeBlancObject>> {
-        //println!("Method name: {}, self: {:#?}", method_name, self);
         let handle = self.borrow().methods.iter().find(|m| m.context.name == method_name).unwrap().handle;
         unsafe { handle(self.clone(), &mut NO_ARGS) }
     }
@@ -326,6 +336,22 @@ impl LeBlancObjectData {
             _ => 0
         }
     }
+    pub fn simple_operation(&self, other: &Self, operation: LBODOperation) -> LeBlancObjectData {
+        match self {
+            LeBlancObjectData::Int(data) => { LeBlancObjectData::Int(*data + other.as_i128() as i32)}
+            _ => LeBlancObjectData::Null,
+            /*LeBlancObjectData::Char(data) => {}
+            LeBlancObjectData::Flex(data) => {}
+            LeBlancObjectData::Short(data) => {}
+            LeBlancObjectData::Int64(data) => {}
+            LeBlancObjectData::Int128(data) => {}
+            LeBlancObjectData::Arch(data) => {}
+            LeBlancObjectData::Float(data) => {}
+            LeBlancObjectData::Double(data) => {}
+            LeBlancObjectData::Boolean(data) => {}
+            LeBlancObjectData::String(data) => {}*/
+        }
+    }
 }
 
 impl PartialOrd for LeBlancObject {
@@ -338,4 +364,11 @@ impl Clone for LeBlancObject {
     fn clone(&self) -> Self {
         self._clone()
     }
+}
+
+pub enum LBODOperation {
+    BinaryAddition,
+    BinarySubtraction,
+    BinaryMultiplication,
+    BinaryDivision
 }

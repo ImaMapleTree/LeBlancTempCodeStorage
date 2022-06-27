@@ -3,6 +3,7 @@ use crate::leblanc::core::native_types::LeBlancType;
 pub fn is_constant(string: &str) -> bool { return constant_type(string) != LeBlancType::Class(0) }
 
 pub fn constant_type(string: &str) -> LeBlancType {
+    if string.starts_with('.') { return LeBlancType::Class(0);}
     if string == "true" { return LeBlancType::Boolean; }
     if string == "false" { return LeBlancType::Boolean; }
     if string.starts_with('"') && string.ends_with('"') { return LeBlancType::String; }

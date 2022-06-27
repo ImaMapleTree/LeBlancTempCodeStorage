@@ -88,9 +88,18 @@ pub fn create_tokens(char_reader: &mut CharReader, mode: CompilationMode) -> Fab
         }
         // Check if the symbol is a character that counts as an individual token or operator
         else if current_symbol.is_boundary() || is_operator(current_symbol.as_string().as_str()) || *current_symbol.char() == '.' {
+            println!("Current symbol: {:?}", current_symbol);
             // If the last token is only an operator then we can add the new operator to it
-            if *current_symbol.char() == '.' && constant_type(token.as_string().as_str()).is_numeric() {
-                token.add_symbol(current_symbol);
+            if *current_symbol.char() == '.' {
+                if constant_type(&(token.as_string() + &current_symbol.as_string())).is_numeric() {
+                    println!("Is constant");
+                    token.add_symbol(current_symbol);
+                } else {
+                    add_token(&mut tokens, token);
+                    token = Token::from(current_symbol);
+                    add_token(&mut tokens, token);
+                    token = Token::empty();
+                }
             }
             else if is_operator(current_symbol.as_string().as_str()) && is_operator(token.as_string().as_str()) {
                 token.add_symbol(current_symbol);

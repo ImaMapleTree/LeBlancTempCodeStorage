@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
 use std::sync::{Arc};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use alloc::rc::Rc;
@@ -15,17 +15,17 @@ use crate::leblanc::core::method_tag::MethodTag;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::core::native_types::LeBlancType::*;
 
-static mut BASE_METHODS: Option<Arc<HashSet<Method>>> = None;
+static mut BASE_METHODS: Option<Arc<FxHashSet<Method>>> = None;
 
 pub trait ToLeblanc {
     fn create(&self) -> LeBlancObject;
     fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>>;
 }
 
-pub fn base_methods() -> Arc<HashSet<Method>> {
+pub fn base_methods() -> Arc<FxHashSet<Method>> {
     unsafe {
         if BASE_METHODS.is_none() {
-            let mut hash_set = HashSet::with_capacity(6);
+            let mut hash_set = FxHashSet::with_capacity_and_hasher(6, FxBuildHasher::default());
             hash_set.insert(Method::default(base_to_string_method(), _internal_to_string_));
             hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
             hash_set.insert(Method::default(base_equals_method(), _internal_to_string_));
@@ -45,7 +45,7 @@ pub fn internal_method(method: Method) -> LeBlancObject {
         data: LeBlancObjectData::Function(method),
         typing: Function,
         methods: Arc::new(methods),
-        members: HashMap::new(),
+        members: FxHashMap::default(),
         context: VariableContext::empty()
     }
 }

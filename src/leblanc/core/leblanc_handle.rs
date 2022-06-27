@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use std::sync::{Arc};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use alloc::rc::Rc;
@@ -23,11 +23,9 @@ static mut TIMINGS: Timings = Timings { map: None};
 pub struct LeblancHandle {
     pub name: String,
     pub constants: Rc<Vec<Rc<RefCell<LeBlancObject>>>>,
-    pub variable_context: Rc<HashMap<String, VariableContext>>,
+    pub variable_context: Rc<FxHashMap<String, VariableContext>>,
     pub variables: Vec<Rc<RefCell<LeBlancObject>>>,
-    pub globals: Box<Vec<Rc<RefCell<LeBlancObject>>>>,
     pub instructions: Rc<Vec<Instruction>>,
-    pub precompiled: Vec<Precompiled>,
     pub current_instruct: u64,
     pub null: bool,
 }
@@ -37,11 +35,9 @@ impl LeblancHandle {
         return LeblancHandle {
             name: "".to_string(),
             constants: Rc::new(vec![]),
-            variable_context: Rc::new(HashMap::new()),
+            variable_context: Rc::new(FxHashMap::default()),
             variables: vec![],
-            globals: Box::new(vec![]),
             instructions: Rc::new(vec![]),
-            precompiled: vec![],
             current_instruct: 0,
             null: true
         }
@@ -60,9 +56,7 @@ impl LeblancHandle {
             constants: Rc::new(constants),
             variable_context: Rc::new(variable_context),
             variables: Vec::with_capacity(context_length),
-            globals: Box::new(vec![]),
             instructions: instructs,
-            precompiled: vec![],
             current_instruct: 0,
             null: false
         }
@@ -160,14 +154,12 @@ impl LeblancHandle {
 
 impl Clone for LeblancHandle {
     fn clone(&self) -> Self {
-        return LeblancHandle {
+        LeblancHandle {
             name: self.name.clone(),
             constants: self.constants.clone(),
             variable_context: self.variable_context.clone(),
             variables: Vec::with_capacity(self.variables.capacity()),
-            globals: self.globals.clone(),
             instructions: self.instructions.clone(),
-            precompiled: vec![],
             current_instruct: self.current_instruct,
             null: self.null
         }

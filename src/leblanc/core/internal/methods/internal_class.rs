@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use fxhash::{FxHashMap, FxHashSet};
 
 use crate::leblanc::rustblanc::strawberry::{Either, Strawberry};
 use alloc::rc::Rc;
@@ -23,7 +23,7 @@ pub fn _internal_expose_(_self: Rc<RefCell<LeBlancObject>>, _arguments: &mut [Rc
         LeBlancObjectData::Class(class_meta.clone()),
         LeBlancType::Class(class_meta.parse_id),
         base_methods(),
-        HashMap::new(),
+        FxHashMap::default(),
         VariableContext::empty(),
     );
 
@@ -34,7 +34,7 @@ pub fn _internal_expose_(_self: Rc<RefCell<LeBlancObject>>, _arguments: &mut [Rc
         LeBlancObjectData::Class(variable_class_meta.clone()),
         LeBlancType::Class(variable_class_meta.parse_id),
         base_methods(),
-        HashMap::new(),
+        FxHashMap::default(),
         VariableContext::empty()
     );
 

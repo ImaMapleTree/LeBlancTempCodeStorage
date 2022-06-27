@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use fxhash::{FxHashMap, FxHashSet};
 use crate::leblanc::core::bytecode::byte_limiter::ByteLimit::{Limited, Undefined};
 use crate::leblanc::core::bytecode::byte_limiter::ByteRestriction;
 use crate::leblanc::core::bytecode::decompiled_constant::DecompiledConstant;
@@ -104,8 +104,8 @@ impl FunctionBytecode {
         return constants;
     }
 
-    pub fn variables(&mut self) -> HashMap<String, VariableContext> {
-        let mut variables: HashMap<String, VariableContext> = HashMap::new();
+    pub fn variables(&mut self) -> FxHashMap<String, VariableContext> {
+        let mut variables: FxHashMap<String, VariableContext> = FxHashMap::default();
         let variable_length = self.variable_name.segments().unwrap().len();
         for _ in 0..variable_length {
             let variable_name = self.variable_name.remove(0).unwrap().to_hexable::<String>();

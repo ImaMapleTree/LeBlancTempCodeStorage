@@ -4,6 +4,7 @@ use std::io;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use std::io::Write;
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Stringify};
 use crate::leblanc::core::method::Method;
@@ -18,12 +19,8 @@ static mut STDOUT: Option<io::Stdout> = None;
 
 fn _BUILTIN_PRINT_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
     let result = args[0].call_name("to_string").to_string() + "\n";
-    unsafe {
-        if STDOUT.is_none() {
-            STDOUT = Some(io::stdout());
-        }
-        io::copy(&mut result.as_bytes(), &mut STDOUT.as_mut().unwrap()).unwrap();
-    }
+    io::stdout().write(&result.as_bytes()).unwrap();
+        //io::copy(&mut result.as_bytes(), &mut STDOUT.as_mut().unwrap()).unwrap();
     return LeBlancObject::unsafe_null()
 }
 

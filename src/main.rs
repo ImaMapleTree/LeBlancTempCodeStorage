@@ -12,10 +12,11 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 
-#![allow(clippy::all)]
+//#![allow(clippy::all)]
 
 // Pedantic
-#![deny(clippy::borrow_as_ptr)]
+#![deny(clippy::borrow_as_ptr, clippy::cloned_instead_of_copied, clippy::explicit_iter_loop, clippy::explicit_into_iter_loop, clippy::copy_iterator,
+clippy::filter_map_next, clippy::map_unwrap_or, )]
 
 #![deny(clippy::box_collection, clippy::boxed_local, clippy::cmp_owned, clippy::expect_fun_call, clippy::extend_with_drain,
 clippy::format_in_format_args, clippy::format_push_string, clippy::iter_nth, clippy::iter_overeager_cloned, clippy::large_const_arrays,

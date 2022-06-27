@@ -273,6 +273,7 @@ fn _INSTRUCT_CALL_CLASS_METHOD_(_handle: &mut LeblancHandle, arg: &Instruction, 
         }
     };
     let mut object = deprecated_safe_stack_pop(stack, error);
+    //println!("object: {:#?}", object);
     if error { return Err(object); }
     stack.push(object.call(method_name.borrow().data.to_string().as_str(), &mut arguments));
     Ok(())
@@ -302,10 +303,11 @@ fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mu
         iterable = iterable.call_name("iterator");
     }
 
-    let inner_iterator = iterable.reflect().downcast_mut::<LeblancIterator>().unwrap();
+    let mut reflection = iterable.reflect();
+    let inner_iterator = reflection.downcast_mut::<LeblancIterator>().unwrap();
 
     while inner_iterator.has_next() {
-        iter_variable.borrow_mut().move_data(inner_iterator.next());
+        iter_variable.borrow_mut().copy_rc(&mut inner_iterator.next());
         let _loop_result = handle.execute_range(loop_start+1, loop_start+1 + arg.arg as u64 );
     }
 

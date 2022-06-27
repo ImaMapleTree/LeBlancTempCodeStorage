@@ -143,7 +143,8 @@ impl LeBlancType {
             Exception => "exception",
             Derived(Derive) => {
                 match Derive {
-                    DerivedType::List => "list"
+                    DerivedType::List => "list",
+                    DerivedType::Iterator => "iterator"
                 }
             }
             Null => "null"

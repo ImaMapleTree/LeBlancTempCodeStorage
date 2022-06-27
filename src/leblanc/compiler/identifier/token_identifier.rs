@@ -24,6 +24,7 @@ pub fn identify(mut typed_tokens: Vec<TypedToken>, mut import_tokens: Vec<Node<T
         }
     }
 
+    println!("{:#?}", func_matcher);
     for token in &mut typed_tokens {
         let mut partial_token = token.as_partial();
         let mut function_ref = false;

@@ -9,6 +9,7 @@ use std::cell::RefCell;
 
 use prettytable::{Cell, format, Row, Table};
 use crate::leblanc::core::interpreter::instructions::InstructionBase;
+use crate::leblanc::core::interpreter::leblanc_runner::get_globals;
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, Reflect, Stringify};
 use crate::leblanc::core::method::Method;
@@ -51,6 +52,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCel
             let arg_string = match instruction.instruct {
                 InstructionBase::LoadLocal => format!("({})", leblanc_handle.borrow().variable_context.values().filter(|context| context.relationship == instruction.arg as u32).next().unwrap().name),
                 InstructionBase::LoadConstant => format!("({})", leblanc_handle.borrow().constants[instruction.arg as usize].borrow().data),
+                InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].borrow().data.get_inner_method().unwrap().context.name.clone()}),
                 InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),
                 _ => "".to_string()
             };

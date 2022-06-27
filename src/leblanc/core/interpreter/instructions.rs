@@ -156,7 +156,7 @@ impl InstructionBase {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Instruction {
     pub instruct: InstructionBase,
     pub arg: u16,
