@@ -1,6 +1,12 @@
 using random;
 
 func main() {
-    print("hello", "moose", "man");
+    disassemble(test, true);
+    test();
+}
+
+func test() returns int {
+    print("hello", "moose", "man", 4, 5);
+
 }
 

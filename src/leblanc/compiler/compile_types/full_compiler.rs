@@ -204,7 +204,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
         }
 
     }
-    println!("partial functions: {:#?}", partial_functions);
+    //println!("partial functions: {:#?}", partial_functions);
     let generated = instruction_bytes.generate();
     if generated.len() != 4 {
         function.add_bytes(generated);

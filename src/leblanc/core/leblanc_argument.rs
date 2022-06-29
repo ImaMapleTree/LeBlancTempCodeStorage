@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
+use crate::LeBlancType::Null;
 
 #[derive(Eq, Clone, Debug, PartialOrd, Copy)]
 pub struct LeBlancArgument {
@@ -91,7 +92,13 @@ impl Hash for LeBlancArgument {
 
 impl PartialEq for LeBlancArgument {
     fn eq(&self, other: &Self) -> bool {
-        if !(self.variable || other.variable) && (self.position != other.position) { return false; }
+        println!("SELF: {:?}", self);
+        println!("OTHER: {:?}", other);
+        if self.variable || other.variable {
+            if self.typing == Null || other.typing == Null { return true }
+            return self.typing == other.typing;
+        }
+        if self.position != other.position { return false; }
         if !self.required && (other.typing == LeBlancType::Null) { return true }
         if !other.required && (self.typing == LeBlancType::Null) { return true }
         self.typing == other.typing

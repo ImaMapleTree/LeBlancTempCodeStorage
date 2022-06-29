@@ -14,12 +14,12 @@ use crate::leblanc::rustblanc::utils::Timings;
 use crate::LeBlancType;
 
 fn _BUILTIN_PRINT_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
-    if args.len() == 0 {
-        io::stdout().write("".as_bytes()).unwrap();
-    }
-    for arg in args {
+    let arg_length = args.len();
+    for i in 0..arg_length {
+        let sep = if i == arg_length-1 { "\n" } else { " " };
+        let arg = &mut args[i];
         let result = match arg.call_name("to_string") {
-            Ok(r) => r.to_string() + "\n",
+            Ok(r) => r.to_string() + sep,
             Err(err) => return err
         };
         io::stdout().write(result.as_bytes()).unwrap();

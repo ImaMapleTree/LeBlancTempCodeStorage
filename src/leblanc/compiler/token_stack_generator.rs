@@ -5,11 +5,11 @@ use crate::leblanc::compiler::lang::leblanc_operators::LBOperator;
 use crate::leblanc::rustblanc::relationship::{Node, to_node_vec};
 
 pub fn create_stack<'a>(tokens: &mut Vec<Node<TypedToken>>, stack: &'a mut Vec<TypedToken>) -> &'a mut Vec<TypedToken> {
-    //println!("Tokens: {:?}", tokens.iter().map(|i| i.value.to_string()).collect::<Vec<String>>());
     while !tokens.is_empty() {
-        let peek_token = &tokens.get(0).unwrap().value;
+        println!("Tokens: {:?}", tokens.iter().map(|i| i.value.to_string()).collect::<Vec<String>>());
+        let peek_token = &tokens.last().unwrap().value;
         let mut prime_token = peek_token;
-        let mut marker = 0;
+        let mut marker = tokens.len()-1;
         for i in (0..tokens.len()).rev() {
             let comp_token = &tokens.get(i).unwrap().value;
             if comp_token.lang_type().priority() < prime_token.lang_type().priority() {
@@ -19,7 +19,7 @@ pub fn create_stack<'a>(tokens: &mut Vec<Node<TypedToken>>, stack: &'a mut Vec<T
         }
 
         let consumed = tokens.remove(marker);
-        //println!("Consumed: {}", &consumed.value);
+        println!("Consumed: {}", &consumed.value);
         if consumed.value.lang_type() == CompileVocab::BOUNDARY(BoundaryType::Semicolon) {
             //continue;
         }

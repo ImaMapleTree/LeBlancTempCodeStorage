@@ -56,19 +56,19 @@ impl PartialEq for PartialFunction {
 
         let mut main_iter = self.args.clone();
         let mut other_iter = other.args.clone();
-        let (max, mut main_iter, mut sub_iter) = if max_self_args > max_other_args {
+        println!("Main Iter: {:#?}", main_iter);
+        println!("Other Iter: {:#?}", other_iter);
+        let (max, main_iter, other_iter) = if max_self_args > max_other_args {
             for _ in 0..(max_self_args-max_other_args) as usize { other_iter.push(LeBlancArgument::null((other_iter.len()) as u32))}
-            (max_self_args, self.args.iter(), other_iter.iter())
+            (max_self_args, self.args.clone(), other_iter)
         } else {
             for _ in 0..(max_other_args-max_self_args) as usize { main_iter.push(LeBlancArgument::null((main_iter.len()) as u32))}
-            (max_other_args, other.args.iter(), main_iter.iter())
+            (max_other_args, other.args.clone(), main_iter)
         };
         for i in 0..max {
-            if !main_iter.any(|arg| arg.position == (i as u32) && sub_iter.any(|o| o == arg)) {
-                println!("False");
+            if !main_iter.iter().any(|arg| arg.position == (i as u32) && other_iter.iter().any(|o| o == arg)) {
                 return false;
             }
-            println!("True");
         }
         true
     }
