@@ -17,7 +17,7 @@ pub fn compile(string: String, mode: CompilationMode) -> Fabric {
     let filesf_name = string.replace(".lb", ".lbsf");
     let filesf = File::open(filesf_name);
     let mut stub_file_exists = false;
-    let mut fabric = Fabric::no_path(vec![], vec![], vec![],vec![]);
+    let mut fabric = Fabric::no_path(vec![], vec![], vec![],vec![],vec![]);
     if filesf.is_ok() {
         fabric = read_from_stub_dump(filesf.unwrap());
         stub_file_exists = true;

@@ -64,7 +64,7 @@ impl ToLeblanc for LeblancList {
 
 impl Display for LeblancList {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").borrow_mut().data.to_string()).collect::<Vec<String>>().join(", "))
+        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().borrow_mut().data.to_string()).collect::<Vec<String>>().join(", "))
     }
 }
 

@@ -12,6 +12,7 @@ use crate::leblanc::core::internal::methods::builtins::builtin_print::{_BUILTIN_
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
 use crate::leblanc::core::internal::methods::builtins::builtin_debug::builtin_disassemble::{_BUILTIN_DISASSEMBLE_METHOD_, _BUILTIN_DISASSEMBLE_OBJECT_};
+use crate::LeBlancType;
 
 pub mod builtin_print;
 pub mod builtin_debug;
@@ -23,7 +24,7 @@ pub enum BuiltinFunctions {
 }
 
 pub fn create_partial_functions() -> Vec<PartialFunction> {
-    vec![PartialFunction::from_method(_BUILTIN_PRINT_METHOD_()), PartialFunction::from_method(_BUILTIN_DISASSEMBLE_METHOD_())]
+    vec![PartialFunction::from_method(_BUILTIN_PRINT_METHOD_(), vec![LeBlancType::Null]), PartialFunction::from_method(_BUILTIN_DISASSEMBLE_METHOD_(), vec![LeBlancType::Null])]
 }
 
 pub fn create_builtin_function_objects() -> Vec<Rc<RefCell<LeBlancObject>>> {

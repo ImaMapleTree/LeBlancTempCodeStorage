@@ -82,17 +82,17 @@ impl LeblancError {
     pub fn print_stack_trace(&self) {
         let func_details = get_func_details(self.stack_trace[0].arg as u32);
         eprintln!("{}", colorize(format!("Exception starts at {} on {}", colorize(func_details.name, Color::Bright(ColorBright::BrightYellow)), ColorString::new(&("line ".to_owned() + &self.stack_trace[0].line_number.to_string())).colorize(Color::Bright(ColorBright::BrightRed)).bold().to_string()), Color::Red));
-        eprintln!("{}", colorize(format!("   - {}:{}", func_details.file, self.stack_trace[0].line_number), Color::Red));
+        eprintln!("   -file:///{}:{}", func_details.file.replace('\\', "/"), self.stack_trace[0].line_number);
         for instruct in self.stack_trace[1..self.stack_trace.len()-1].iter() {
             if instruct.instruct == LoadFunction {
                 let func_details = get_func_details(instruct.arg as u32);
                 eprintln!("{}", colorize(format!("Which calls {} on {}", colorize(func_details.name, Color::Bright(ColorBright::BrightYellow)), ColorString::new(&("line ".to_owned() + &instruct.line_number.to_string())).colorize(Color::Bright(ColorBright::BrightRed)).bold().to_string()), Color::Red));
-                eprintln!("{}", colorize(format!("   - {}:{}", func_details.file, instruct.line_number), Color::Red));
+                eprintln!("   -file:///{}:{}", func_details.file.replace('\\', "/"), instruct.line_number);
             }
         }
         let func_details = get_func_details(self.stack_trace[self.stack_trace.len()-1].arg as u32);
         eprintln!("{}", colorize(format!("And finally errors in {} on {}", colorize(func_details.name, Color::Bright(ColorBright::BrightYellow)),  ColorString::new(&("line ".to_owned() + &self.stack_trace[self.stack_trace.len()-1].line_number.to_string())).colorize(Color::Bright(ColorBright::BrightRed)).bold().to_string()), Color::Red));
-        eprintln!("{}", colorize(format!("   - {}:{}", func_details.file, self.stack_trace[self.stack_trace.len()-1].line_number), Color::Red));
+        eprintln!("   -file:///{}:{}", func_details.file.replace('\\', "/"), self.stack_trace[self.stack_trace.len()-1].line_number);
         println!("{}", format!("{}: {}", ColorString::new(self.name.as_str()).colorize(Color::Bright(ColorBright::BrightRed)).bold().string(), colorize(self.message.clone(), Color::Red)))
     }
 

@@ -24,6 +24,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
     let _globals: HashMap<String, u64> = HashMap::new();
 
     let mut partial_functions = create_partial_functions();
+    fabric.core_modules().iter().for_each(|f| partial_functions.append(&mut f.methods_as_partials()));
     stack.iter().filter(|t| t.lang_type() == CompileVocab::FUNCTION(FunctionType::Header)).for_each(|t| {
         let p = PartialFunction::from_token_args(t);
         if !partial_functions.contains(&p) {

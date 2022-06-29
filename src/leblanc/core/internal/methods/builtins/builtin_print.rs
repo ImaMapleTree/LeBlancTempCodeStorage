@@ -13,13 +13,20 @@ use crate::leblanc::core::native_types::base_type::internal_method;
 use crate::leblanc::rustblanc::utils::Timings;
 use crate::LeBlancType;
 
-static mut TIMING: Timings = Timings { map: None };
-
-static mut STDOUT: Option<io::Stdout> = None;
-
 fn _BUILTIN_PRINT_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
-    let result = args[0].call_name("to_string").to_string() + "\n";
-    io::stdout().write(result.as_bytes()).unwrap();
+    if args.len() == 0 {
+        io::stdout().write("".as_bytes()).unwrap();
+    }
+    for arg in args {
+        let result = match arg.call_name("to_string") {
+            Ok(r) => r.to_string() + "\n",
+            Err(err) => return err
+        };
+        io::stdout().write(result.as_bytes()).unwrap();
+    }
+
+
+
         //io::copy(&mut result.as_bytes(), &mut STDOUT.as_mut().unwrap()).unwrap();
     LeBlancObject::unsafe_null()
 }
@@ -28,7 +35,7 @@ pub fn _BUILTIN_PRINT_METHOD_() -> Method {
     Method::new(
         MethodStore::new(
             "print".to_string(),
-            vec![LeBlancArgument::default(LeBlancType::Flex, 0)]
+            vec![LeBlancArgument::variable(LeBlancType::Flex, 0)]
         ),
         _BUILTIN_PRINT_,
         BTreeSet::new()

@@ -36,7 +36,7 @@ pub fn read_from_stub_dump(file: File) -> Fabric {
         tokens.append_item(Node::new(parse_stub_token(line.unwrap())));
     }
 
-    Fabric::new(path, tokens, vec![], vec![], vec![])
+    Fabric::new(path, tokens, vec![], vec![], vec![], vec![])
 }
 
 pub fn parse_stub_token(line: String) -> TypedToken {

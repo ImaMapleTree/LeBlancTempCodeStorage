@@ -111,6 +111,8 @@ impl FileHeaderBytecode {
     pub fn get_file_name(&self) -> String {
         self.file_name.bytes().to_hexable::<String>()
     }
+
+    pub fn imports(&self) -> Vec<String> {self.import_name.iter().unwrap().map(String::from_hex).collect()}
 }
 
 impl ToBytecode for FileHeaderBytecode {

@@ -1,27 +1,6 @@
+using random;
+
 func main() {
-    print(a);
-
-	print(f1());
+    print("hello", "moose", "man");
 }
 
-func test() returns int {
-	if a < 100 -> print("What");
-	return a;
-}
-
-func fib(int a) returns int {
-    if a <= 1 -> return a;
-    else -> return fib(a-1) + fib(a-2);
-}
-
-func f1() {
-    f2();
-}
-
-func f2() {
-    f3();
-}
-
-func f3() {
-    test();
-}

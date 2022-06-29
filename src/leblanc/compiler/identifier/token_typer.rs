@@ -16,9 +16,12 @@ use crate::leblanc::core::native_types::LeBlancType::Class;
 use crate::leblanc::core::native_types::{is_native_type, type_value};
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::{CompilationMode, compile, LeBlancType};
+use crate::leblanc::compiler::compile_types::partial_token::PartialToken;
 use crate::leblanc::compiler::import::{Import, ImportType};
 use crate::leblanc::compiler::lang::leblanc_lang::ExtensionType::{ExtensionTypeParam, ExtensionTypeExport, ExtensionTypeImport};
+use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
 use crate::leblanc::rustblanc::Appendable;
+use crate::leblanc::rustblanc::lib::get_core_modules;
 
 
 pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub>, mode: CompilationMode) -> Fabric {
@@ -310,20 +313,36 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
         typed_tokens.append_item(typed_token);
     }
 
+    let core_modules = get_core_modules();
+    let mut used_cores = vec![];
     let mut import_tokens = vec![];
     imports.iter_mut().for_each(|import| {
+        let mut import_name = import.source.clone();
         if !import.source.contains('.') {
-            import.source = import.source.clone() + ".lb";
+            import_name += ".lb";
         }
-        import_tokens.append(compile(import.source.clone(), CompilationMode::StubFile).tokens())
+        let matched_core = core_modules.iter().find(|module| module.name == import.name);
+        if let Some(result) = matched_core {
+            used_cores.push(result.clone());
+
+        } else {
+            import_tokens.append(compile(import_name, CompilationMode::StubFile).tokens())
+        }
     });
 
-    let mut node_tokens = identify(typed_tokens, import_tokens, &mut type_map, &mut errors, mode);
+    let mut func_matcher: HashMap<PartialToken, Vec<Vec<LeBlancType>>> = HashMap::new();
+    let mut partial_functions = create_partial_functions();
+    used_cores.iter().for_each(|core| partial_functions.append(&mut core.methods_as_partials()));
+    partial_functions.iter().for_each(|p| {func_matcher.insert(PartialToken::new(p.name.clone(), FUNCTION(FunctionType::Header)),
+                                                                        vec![p.args.iter().map(|a| a.typing).collect::<Vec<LeBlancType>>(),
+                                                                             p.returns.clone()]);});
+
+    let mut node_tokens = identify(typed_tokens, import_tokens, &mut type_map, func_matcher, &mut errors, mode);
 
 
     analysis.evaluate(&mut errors, &mut node_tokens);
 
-    Fabric::no_path(node_tokens, imports, vec![], errors)
+    Fabric::no_path(node_tokens, imports, used_cores, vec![], errors)
 }
 
 fn exists_in_scope(type_map: &HashMap<String, Vec<Vec<CompileVocab>>>, value: String, scope_value: i32) -> bool {

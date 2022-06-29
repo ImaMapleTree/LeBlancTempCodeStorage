@@ -31,13 +31,13 @@ impl LeBlancRunner {
         let main_object = self.globals.iter_mut().filter(|g| g.borrow().typing == LeBlancType::Function).find(|g| g.reflect().downcast_ref::<Method>().unwrap().context.name == "main");
 
         let main_elapsed = Instant::now();
-        let f = main_object.unwrap().call("main", &mut []);
+        let f = main_object.unwrap().call("main", &mut []).unwrap();
         if f.borrow().typing == LeBlancType::Exception {
             let borrowed = f.borrow();
             let error: &LeblancError = borrowed.data.ref_data().unwrap();
             error.print_stack_trace();
         }
-        println!("Final: {:#?}", f.borrow().data);
+        //println!("Final: {:#?}", f.borrow().data);
         println!("Execution Elapsed: {}", main_elapsed.elapsed().as_secs_f64());
     }
 }

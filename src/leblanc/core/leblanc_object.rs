@@ -31,8 +31,8 @@ static mut ERROR: Option<Rc<RefCell<LeBlancObject>>> = None;
 static mut NO_ARGS: [Rc<RefCell<LeBlancObject>>; 0] = [];
 
 pub trait Callable {
-    fn call(&mut self, method_name: &str, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>;
-    fn call_name(&mut self, method_name: &str) -> Rc<RefCell<LeBlancObject>>;
+    fn call(&mut self, method_name: &str, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Result<Rc<RefCell<LeBlancObject>>, Rc<RefCell<LeBlancObject>>>;
+    fn call_name(&mut self, method_name: &str) -> Result<Rc<RefCell<LeBlancObject>>, Rc<RefCell<LeBlancObject>>>;
 }
 
 pub trait Reflect {
@@ -65,7 +65,7 @@ impl LeBlancObject {
     pub fn null() -> LeBlancObject {
         LeBlancObject {
             data: LeBlancObjectData::Null,
-            typing: LeBlancType::Class(0),
+            typing: LeBlancType::Null,
             methods: Arc::new(FxHashSet::default()),
             members: FxHashMap::default(),
             context: VariableContext::empty()
@@ -153,7 +153,6 @@ impl LeBlancObject {
     }
 
     pub fn cast(&self, cast: LeBlancType) -> LeBlancObject {
-        println!("Cast called");
         let object_data = match cast {
             LeBlancType::Char => LeBlancObjectData::Char(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Short => LeBlancObjectData::Short(unsafe {*self.reflect().downcast_ref_unchecked()}),
@@ -285,7 +284,7 @@ impl Display for LeBlancObjectData {
 }
 
 impl Callable for Rc<RefCell<LeBlancObject>> {
-    fn call(&mut self, method_name: &str, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
+    fn call(&mut self, method_name: &str, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Result<Rc<RefCell<LeBlancObject>>, Rc<RefCell<LeBlancObject>>> {
         let argument_vec = arguments.to_vec();
         let args = passed_args_to_types(&argument_vec);
 
@@ -295,17 +294,18 @@ impl Callable for Rc<RefCell<LeBlancObject>> {
             m.matches(method_name.to_string(), &args)
         }).next().cloned();
         if method.is_none() {
-            return LeBlancObject::unsafe_error();
+            return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.borrow().typing),vec![]).create_mutex());
         }
-        method.unwrap().run( self.clone(), arguments)
+        Ok(method.unwrap().run( self.clone(), arguments))
     }
 
-    fn call_name(&mut self, method_name: &str) -> Rc<RefCell<LeBlancObject>> {
+    fn call_name(&mut self, method_name: &str) -> Result<Rc<RefCell<LeBlancObject>>, Rc<RefCell<LeBlancObject>>> {
+        if self.borrow().typing == LeBlancType::Null { return Err(LeblancError::new("OperationOnNullException".to_string(), "".to_string(), vec![]).create_mutex())}
         let handle = match self.borrow().methods.iter().find(|m| m.context.name == method_name) {
-            None => return LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.borrow().typing),vec![]).create_mutex(),
+            None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.borrow().typing),vec![]).create_mutex()),
             Some(some) => some.handle
         };
-        unsafe { handle(self.clone(), &mut NO_ARGS) }
+        Ok(unsafe { handle(self.clone(), &mut NO_ARGS) })
     }
 }
 

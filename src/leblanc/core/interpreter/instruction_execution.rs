@@ -246,7 +246,7 @@ fn _CALL_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &mut A
 
 
     let is_internal = func.borrow().data.get_inner_method().unwrap().is_internal_method();
-    stack.push( match is_internal {
+    let result = ( match is_internal {
         true => {
             let x = (func.clone().borrow().data.get_inner_method().unwrap().handle)(func, &mut arguments); x
         },
@@ -256,6 +256,12 @@ fn _CALL_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &mut A
                 Err(_err) => unsafe {&mut (*func.borrow().data.get_inner_method().unwrap().leblanc_handle.as_ptr())}.clone().execute(&mut arguments)
             }}
         });
+
+    let typing = result.borrow().typing;
+    match typing {
+        LeBlancType::Exception => return Err(result),
+        _ => stack.push(result)
+    }
 
     Ok(())
 }
@@ -280,7 +286,11 @@ fn _INSTRUCT_CALL_CLASS_METHOD_(_handle: &mut LeblancHandle, arg: &Instruction, 
     let mut object = deprecated_safe_stack_pop(stack, error);
     //println!("object: {:#?}", object);
     if error { return Err(object); }
-    stack.push(object.call(method_name.borrow().data.to_string().as_str(), &mut arguments));
+    match object.call(method_name.borrow().data.to_string().as_str(), &mut arguments) {
+        Ok(result) => stack.push(result),
+        Err(err) => return Err(err)
+    }
+
     Ok(())
 }
 
@@ -306,7 +316,10 @@ fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mu
 
     // make into an iterator eventually, right now we'll just grab the internal list
     if iterable.borrow().typing != LeBlancType::Derived(DerivedType::Iterator) {
-        iterable = iterable.call_name("iterator");
+        iterable = match iterable.call_name("iterator") {
+            Ok(iter) => iter,
+            Err(err) => return Err(err)
+        }
     }
 
     /*let mut reflection = iterable.reflect();

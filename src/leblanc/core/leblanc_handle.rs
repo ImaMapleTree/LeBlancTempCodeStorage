@@ -12,9 +12,10 @@ use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBa
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, RustDataCast, Stringify};
 use crate::leblanc::core::native_types::error_type::LeblancError;
+use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, colorize};
 use crate::leblanc::rustblanc::utils::{Timings};
 
-static DEBUG: bool = true;
+static DEBUG: bool = false;
 static TIME_DEBUG: bool = false;
 static STACK_DEBUG: bool = false;
 static mut GLOBAL_SIGNAL: ExecutionSignal = ExecutionSignal::Normal;
@@ -81,10 +82,9 @@ impl LeblancHandle {
         let mut stack = ArrayVec::<_, 80>::new();
 
         while self.current_instruct < self.instructions.len() as u64 {
-            println!("Self: {}", self.name);
             last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
-            if DEBUG {println!("Normal Instruction: {:?}", instruction);}
+            //if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.clone(), Color::Blue), instruction);}
             match instruction.instruct {
                 InstructionBase::Return => return stack.pop().unwrap(),
                 InstructionBase::CallFunction => {
@@ -110,8 +110,8 @@ impl LeblancHandle {
                     return err
                 }
             };
-            /*if STACK_DEBUG { println!("Stack: {}", if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
-            if TIME_DEBUG {
+            //if STACK_DEBUG { println!("{} Stack: {}", colorize(self.name.clone(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
+            /*if TIME_DEBUG {
                 let duration = now.elapsed().as_secs_f64();
                 unsafe { TIMINGS.add_timing(instruction.instruct.to_string(), duration); }
             }*/

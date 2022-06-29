@@ -23,13 +23,23 @@ impl LeBlancArgument {
         }
     }
 
-    pub fn optional(typing: LeBlancType, position: u32, required: bool) -> LeBlancArgument {
+    pub fn optional(typing: LeBlancType, position: u32) -> LeBlancArgument {
         LeBlancArgument {
             typing,
             position,
-            required,
+            required: false,
             keyword: false,
             variable: false
+        }
+    }
+
+    pub fn variable(typing: LeBlancType, position: u32) -> LeBlancArgument {
+        LeBlancArgument {
+            typing,
+            position,
+            required: false,
+            keyword: false,
+            variable: true
         }
     }
 
@@ -53,13 +63,13 @@ impl LeBlancArgument {
 }
 
 
-pub fn number_argset() -> Vec<LeBlancArgument> {
+pub fn number_argset(position: u32) -> Vec<LeBlancArgument> {
     let mut args = Vec::new();
-    args.append_item(LeBlancArgument::default(LeBlancType::Short, 0));
-    args.append_item(LeBlancArgument::default(LeBlancType::Int, 0));
-    args.append_item(LeBlancArgument::default(LeBlancType::Int64, 0));
-    args.append_item(LeBlancArgument::default(LeBlancType::Int128, 0));
-    args.append_item(LeBlancArgument::default(LeBlancType::Arch, 0));
+    args.append_item(LeBlancArgument::default(LeBlancType::Short, position));
+    args.append_item(LeBlancArgument::default(LeBlancType::Int, position));
+    args.append_item(LeBlancArgument::default(LeBlancType::Int64, position));
+    args.append_item(LeBlancArgument::default(LeBlancType::Int128, position));
+    args.append_item(LeBlancArgument::default(LeBlancType::Arch, position));
     args
 }
 
@@ -81,7 +91,7 @@ impl Hash for LeBlancArgument {
 
 impl PartialEq for LeBlancArgument {
     fn eq(&self, other: &Self) -> bool {
-        if self.position != other.position { return false; }
+        if !(self.variable || other.variable) && (self.position != other.position) { return false; }
         if !self.required && (other.typing == LeBlancType::Null) { return true }
         if !other.required && (self.typing == LeBlancType::Null) { return true }
         self.typing == other.typing

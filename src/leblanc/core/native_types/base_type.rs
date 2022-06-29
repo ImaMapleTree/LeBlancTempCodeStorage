@@ -74,7 +74,7 @@ pub fn base_field_method() -> MethodStore { MethodStore::new("field".to_string()
 
 
 pub fn base_addition_method() -> Method {
-    let method_store = MethodStore::new("_ADD_".to_string(), number_argset());
+    let method_store = MethodStore::new("_ADD_".to_string(), number_argset(0));
     Method::new(
         method_store,
         _internal_add_number_,

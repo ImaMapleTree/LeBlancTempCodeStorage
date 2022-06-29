@@ -37,7 +37,7 @@ impl ToLeblanc for i64 {
 }
 
 fn inplace_addition() -> Method {
-    let method_store = MethodStore::new("inplace_addition".to_string(), number_argset());
+    let method_store = MethodStore::new("inplace_addition".to_string(), number_argset(0));
     let mut method_tag = BTreeSet::new();
     method_tag.insert(MethodTag::InPlaceAddition);
     Method::new(

@@ -12,15 +12,15 @@ use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub::InvalidSynt
 use crate::leblanc::rustblanc::relationship::Node;
 use crate::LeBlancType::Class;
 
-pub fn identify(mut typed_tokens: Vec<TypedToken>, mut import_tokens: Vec<Node<TypedToken>>, type_map: &mut HashMap<String, Vec<Vec<CompileVocab>>>, errors: &mut Vec<ErrorStub>, mode: CompilationMode) -> Vec<Node<TypedToken>>{
+pub fn identify(mut typed_tokens: Vec<TypedToken>, mut import_tokens: Vec<Node<TypedToken>>, type_map: &mut HashMap<String, Vec<Vec<CompileVocab>>>, mut func_matcher: HashMap<PartialToken, Vec<Vec<LeBlancType>>>, errors: &mut Vec<ErrorStub>, mode: CompilationMode) -> Vec<Node<TypedToken>>{
 
     identify_unknown(&mut typed_tokens, type_map);
-    let mut func_matcher = identify_functions(&mut typed_tokens, errors);
+    identify_functions(&mut typed_tokens, &mut func_matcher, errors);
     import_tokens.reverse();
     while !import_tokens.is_empty() {
         let token = &import_tokens.pop().unwrap().value;
         if token.lang_type() == FUNCTION(FunctionType::Header) {
-            func_matcher.insert(token.as_partial(), token.typing()[1].clone());
+            func_matcher.insert(token.as_partial(), vec![token.typing()[0].clone(), token.typing()[1].clone()]);
         }
     }
 
@@ -33,7 +33,7 @@ pub fn identify(mut typed_tokens: Vec<TypedToken>, mut import_tokens: Vec<Node<T
             function_ref = true;
         }
         if func_matcher.contains_key(&partial_token) {
-            token.set_typing_returns(func_matcher.get(&partial_token).unwrap().clone());
+            token.set_typing_returns(func_matcher.get(&partial_token).unwrap()[1].clone());
             if function_ref { token.set_type(FUNCTION(FunctionType::Reference))}
         }
     }
@@ -89,9 +89,8 @@ pub fn identify_caller_function_args(typed_tokens: &mut Vec<TypedToken>, left_bo
     right_bound-left_bound
 }
 
-pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, errors: &mut Vec<ErrorStub>) -> HashMap<PartialToken, Vec<LeBlancType>>{
-    let mut func_matcher: HashMap<PartialToken, Vec<LeBlancType>> = HashMap::new();
-    create_partial_functions().iter().for_each(|p| {func_matcher.insert(PartialToken::new(p.name.clone(), FUNCTION(FunctionType::Header)), p.args.iter().map(|a| a.typing).collect::<Vec<LeBlancType>>());});
+pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, func_matcher: &mut HashMap<PartialToken, Vec<Vec<LeBlancType>>>, errors: &mut Vec<ErrorStub>) {
+
     let mut ndi = 0;
     let mut returns = false;
     let mut return_types = vec![];
@@ -105,7 +104,7 @@ pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, errors: &mut Vec<E
                 errors.append_item( InvalidSyntax(token.clone()));
             } else {
                 if ndi != 0 {
-                    func_matcher.insert(typed_tokens[ndi].as_partial(), vec![Class(0)]);
+                    func_matcher.insert(typed_tokens[ndi].as_partial(), vec![vec![Class(0)], vec![]]);
                     typed_tokens[ndi].set_typing_returns(vec![Class(0)]);
                 }
                 ndi = i + 1;
@@ -117,7 +116,7 @@ pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, errors: &mut Vec<E
         else if returns {
             if token.lang_type() == CompileVocab::BOUNDARY(BraceOpen) {
                 returns = false;
-                func_matcher.insert(typed_tokens[ndi].as_partial(), return_types.clone());
+                func_matcher.insert(typed_tokens[ndi].as_partial(), vec![arg_types.clone(), return_types.clone()]);
                 typed_tokens[ndi].set_typing_returns(return_types);
                 typed_tokens[ndi].set_typing_args(&mut arg_types);
                 return_types = vec![];
@@ -142,7 +141,6 @@ pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, errors: &mut Vec<E
 
 
     }
-    func_matcher
 }
 
 pub fn identify_unknown(typed_tokens: &mut Vec<TypedToken>, type_map: &mut HashMap<String, Vec<Vec<CompileVocab>>>) {
