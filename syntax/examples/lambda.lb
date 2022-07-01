@@ -3,15 +3,23 @@ using datelib;
 
 func main() {
 
+    double st = epoch();
     function f = || (0 to 10000000).list();
     List c = f();
-
-    double st = epoch();
-    iter_map(c);
+    print("List creation:");
     print(epoch() - st);
 }
 
 func iter_map(List c) returns List {
-    return c.iterate().map(|n| n + n).list();
+    return c.iterate().map(|n| n + n).filter(|n| n % 5 == 0).list();
+}
 
+func for_loop(List c) returns List {
+    List new_list = [];
+    for int item in c {
+        int new_item = item + item;
+        if new_item % 5 == 0 {
+            new_list.append(new_item);
+        }
+    }
 }

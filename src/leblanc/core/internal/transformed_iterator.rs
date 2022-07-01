@@ -2,6 +2,7 @@ use alloc::rc::Rc;
 use core::fmt::Debug;
 use std::cell::RefCell;
 use crate::leblanc::core::internal::transformed_iterator::IterMutation::{Filter, Map};
+use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, RustDataCast};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::derived::iterator_type::{LeblancIterable};
@@ -15,8 +16,8 @@ pub struct TransformedIterator {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum IterMutation {
-    Filter(Method),
-    Map(Method)
+    Filter(LeblancHandle),
+    Map(LeblancHandle)
 }
 
 impl TransformedIterator {
@@ -27,12 +28,12 @@ impl TransformedIterator {
         }
     }
 
-    pub fn filter(&mut self, method: Method) {
-        self.transformations.push(Filter(method))
+    pub fn filter(&mut self, handle: LeblancHandle) {
+        self.transformations.push(Filter(handle))
     }
 
-    pub fn map(&mut self, method: Method) {
-        self.transformations.push(Map(method))
+    pub fn map(&mut self, handle: LeblancHandle) {
+        self.transformations.push(Map(handle))
     }
 }
 
@@ -54,11 +55,11 @@ impl LeblancIterable for TransformedIterator {
 
         for transformation in &mut self.transformations {
             match transformation {
-                Filter(method) => {
-                    iterator = Box::new(iterator.filter(|i| *method.run(LeBlancObject::unsafe_null(), &mut [i.clone()]).borrow().data.ref_data().unwrap()));
+                Filter(handle) => {
+                    iterator = Box::new(iterator.filter(|i| *handle.execute_lambda(&mut [i.clone()]).borrow().data.ref_data().unwrap()));
                 }
-                Map(method) => {
-                    iterator = Box::new(iterator.map(|i| method.run(LeBlancObject::unsafe_null(), &mut [i])));
+                Map(handle) => {
+                    iterator = Box::new(iterator.map(|i| handle.execute_lambda(&mut [i])));
                 }
             }
         }

@@ -1,10 +1,12 @@
 use std::fmt;
+use smol_str::SmolStr;
+use crate::leblanc::rustblanc::copystring::CopyString;
 
-#[derive(Debug, Hash, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Copy)]
 pub struct VariableContext {
-    pub name: String,
+    pub name: CopyString,
     pub line_number: u32,
-    pub file: String,
+    pub file: CopyString,
     pub state: VariableState,
     pub relationship: u32
 }
@@ -12,9 +14,9 @@ pub struct VariableContext {
 impl VariableContext {
     pub fn empty() -> VariableContext {
         VariableContext {
-            name: "".to_string(),
+            name: CopyString::default(),
             line_number: 0,
-            file: "".to_string(),
+            file: CopyString::default(),
             state: VariableState::Stack,
             relationship: 0
         }
@@ -22,9 +24,9 @@ impl VariableContext {
 
     pub fn shell(name: String, relationship: u32) -> VariableContext {
         VariableContext {
-            name,
+            name: CopyString::new(name),
             line_number: 0,
-            file: "".to_string(),
+            file: CopyString::default(),
             state: VariableState::Local,
             relationship
         }

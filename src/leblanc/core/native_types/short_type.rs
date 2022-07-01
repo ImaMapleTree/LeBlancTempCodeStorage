@@ -3,6 +3,8 @@ use fxhash::{FxHashMap};
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
@@ -16,7 +18,7 @@ pub fn leblanc_object_short(integer: i16) -> LeBlancObject {
         LeBlancObjectData::Short(integer),
         LeBlancType::Short,
         base_methods,
-        FxHashMap::default(),
+        Arc::new(Mutex::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }

@@ -2,11 +2,12 @@ using random;
 using datelib;
 
 func main() {
-    for int i in 0 to 28 {
+    for int i in 0 to 30 {
         print(fib(i));
     }
 
 }
+
 
 func fib(int a) returns int {
     if a <= 1 -> return a;

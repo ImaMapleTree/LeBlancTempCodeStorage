@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use smol_str::SmolStr;
 
 
 use crate::leblanc::core::bytecode::LeblancBytecode;
@@ -9,8 +10,8 @@ use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
+use crate::leblanc::rustblanc::copystring::CopyString;
 use crate::leblanc::rustblanc::lib::get_core_modules;
-use crate::leblanc::rustblanc::strawberry::print_counts;
 
 pub mod instructions;
 pub mod interactive;
@@ -35,7 +36,7 @@ pub fn run(mut bytecode: LeblancBytecode) {
         let method_store = MethodStore::new(name.clone(), LeBlancArgument::from_positional(arguments));
         let method = Method::of_leblanc_handle(method_store, leblanc_handle, BTreeSet::new());
         let mut lbo = internal_method(method);
-        lbo.context.file = bytecode.file_header().get_file_name();
+        lbo.context.file = CopyString::new(bytecode.file_header().get_file_name());
         if name != "__GLOBAL__" {
             globals.push(lbo.to_mutex());
         }

@@ -4,6 +4,7 @@ use std::sync::{Arc};
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use fxhash::FxHashMap;
+use std::sync::Mutex;
 
 use crate::leblanc::core::internal::methods::internal_math::_internal_inplace_add_;
 use crate::leblanc::core::leblanc_argument::number_argset;
@@ -23,7 +24,7 @@ pub fn leblanc_object_int64(integer: i64) -> LeBlancObject {
         LeBlancObjectData::Int64(integer),
         LeBlancType::Int64,
         Arc::new(base_methods),
-        FxHashMap::default(),
+        Arc::new(Mutex::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }

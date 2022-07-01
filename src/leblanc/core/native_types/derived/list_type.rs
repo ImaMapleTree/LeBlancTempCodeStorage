@@ -7,6 +7,7 @@ use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
 use std::sync::Arc;
+use std::sync::Mutex;
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_list::{_internal_list_append_, _internal_list_iterate_};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
@@ -45,7 +46,7 @@ pub fn leblanc_object_list_empty() -> LeBlancObject {
         LeBlancObjectData::List(LeblancList::empty()),
         LeBlancType::Derived(DerivedType::List),
         base_methods,
-        FxHashMap::default(),
+        Arc::new(Mutex::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -87,7 +88,7 @@ pub fn leblanc_object_list(list: LeblancList) -> LeBlancObject {
         LeBlancObjectData::List(list),
         LeBlancType::Derived(DerivedType::List),
         base_methods,
-        FxHashMap::default(),
+        Arc::new(Mutex::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }

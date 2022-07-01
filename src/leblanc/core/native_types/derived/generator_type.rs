@@ -3,7 +3,9 @@ use core::borrow::BorrowMut;
 use core::fmt::{Display, Formatter};
 use core::slice::IterMut;
 use std::cell::RefCell;
+use std::sync::Arc;
 use fxhash::{FxHashMap};
+use std::sync::Mutex;
 use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
@@ -29,7 +31,7 @@ pub fn leblanc_object_generator(leblanc_handle: LeblancHandle) -> LeBlancObject 
         LeBlancObjectData::Iterator(LeblancIterator::new(Box::new(generator))),
         LeBlancType::Derived(DerivedType::Iterator),
         base_methods,
-        FxHashMap::default(),
+        Arc::new(Mutex::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }

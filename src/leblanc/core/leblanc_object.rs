@@ -8,6 +8,9 @@ use std::mem::{swap, take};
 
 use std::sync::{Arc};
 use fxhash::{FxHashMap, FxHashSet};
+use std::sync::Mutex;
+use regex::Error;
+use smol_str::SmolStr;
 
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -48,20 +51,19 @@ pub trait RustDataCast<T> {
     fn mut_data(&mut self) -> Option<&mut T>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct LeBlancObject {
     pub data: LeBlancObjectData,
     pub(crate) typing: LeBlancType,
     pub methods: Arc<FxHashSet<Method>>,
-    pub members: FxHashMap<String, LeBlancObject>,
+    pub members: Arc<Mutex<FxHashMap<String, LeBlancObject>>>,
     pub context: VariableContext
 }
 
 impl LeBlancObject {
-    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<FxHashSet<Method>>, members: FxHashMap<String, LeBlancObject>, context: VariableContext) -> LeBlancObject {
+    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<FxHashSet<Method>>, members: Arc<Mutex<FxHashMap<String, LeBlancObject>>>, context: VariableContext) -> LeBlancObject {
         LeBlancObject {data, typing, methods, members, context}
     }
-
 
     pub fn is_error(&self) -> bool { self.typing == LeBlancType::Exception }
 
@@ -70,7 +72,7 @@ impl LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Null,
             methods: Arc::new(FxHashSet::default()),
-            members: FxHashMap::default(),
+            members: Arc::new(Mutex::new(FxHashMap::default())),
             context: VariableContext::empty()
         }
     }
@@ -94,7 +96,7 @@ impl LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Marker,
             methods: Arc::new(FxHashSet::default()),
-            members: FxHashMap::default(),
+            members: Arc::new(Mutex::new(FxHashMap::default())),
             context: VariableContext::empty()
         }
     }
@@ -118,7 +120,7 @@ impl LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Exception,
             methods: Arc::new(FxHashSet::default()),
-            members: FxHashMap::default(),
+            members: Arc::new(Mutex::new(FxHashMap::default())),
             context: VariableContext::empty()
         }
     }
@@ -190,14 +192,14 @@ impl LeBlancObject {
             LeBlancType::Float => LeBlancObjectData::Float(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Double => LeBlancObjectData::Double(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Boolean => LeBlancObjectData::Boolean(unsafe {*self.reflect().downcast_ref_unchecked()}),
-            LeBlancType::String => LeBlancObjectData::String((unsafe {self.reflect().downcast_ref_unchecked::<String>()}).clone()),
+            LeBlancType::String => LeBlancObjectData::String((unsafe {self.reflect().downcast_ref_unchecked::<SmolStr>()}).clone()),
             _ => LeBlancObjectData::Null
         };
         LeBlancObject::new(
             object_data,
             cast,
             self.methods.clone(),
-            FxHashMap::default(),
+            Arc::new(Mutex::new(FxHashMap::default())),
             VariableContext::empty()
         )
     }
@@ -212,12 +214,20 @@ impl LeBlancObject {
             typing: self.typing,
             methods: self.methods.clone(),
             members: self.members.clone(),
-            context: self.context.clone()
+            context: self.context
         }
     }
 
     pub fn to_mutex(self) -> Rc<RefCell<LeBlancObject>> {
         Rc::new(RefCell::new(self))
+    }
+}
+
+impl PartialEq for LeBlancObject {
+    fn eq(&self, other: &Self) -> bool {
+        if self.data != other.data { return false }
+        if !self.members.lock().unwrap().eq(&other.members.lock().unwrap()) { return false }
+        return self.typing == other.typing
     }
 }
 
@@ -233,15 +243,15 @@ pub enum LeBlancObjectData {
     Float(f32), //"double32" -- internally f32
     Double(f64), // internally f64
     Boolean(bool),
-    String(String),
+    String(SmolStr),
     Block(NativeBlock),
-    Function(Method),
+    Function(Box<Method>),
     Module(Module),
-    Class(ClassMeta), // User defined class with ID
+    Class(Box<ClassMeta>), // User defined class with ID
     Dynamic(&'static LeBlancObjectData),
     List(LeblancList),
     Iterator(LeblancIterator),
-    Error(LeblancError),
+    Error(Box<LeblancError>),
     Null,
 }
 
@@ -399,11 +409,11 @@ impl LeBlancObjectData {
     }
 }
 
-impl PartialOrd for LeBlancObject {
+/*impl PartialOrd for LeBlancObject {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.data.partial_cmp(&other.data)
     }
-}
+}*/
 
 impl Clone for LeBlancObject {
     fn clone(&self) -> Self {

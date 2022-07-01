@@ -12,4 +12,4 @@ pub mod interpreter;
 pub mod bytecode;
 #[macro_use]
 pub mod leblanc_handle;
-pub mod exception;
+pub mod leblanc_default_data;

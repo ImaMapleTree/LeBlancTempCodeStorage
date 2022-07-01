@@ -2,6 +2,8 @@ use alloc::rc::Rc;
 use std::cell::RefCell;
 use fxhash::{FxHashMap, FxHashSet};
 use std::sync::{Arc};
+use std::sync::Mutex;
+use smol_str::SmolStr;
 
 
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
@@ -27,10 +29,10 @@ pub fn leblanc_object_string(string: String) -> LeBlancObject {
 
 
     LeBlancObject::new(
-        LeBlancObjectData::String(string),
+        LeBlancObjectData::String(SmolStr::new(string)),
         LeBlancType::String,
         Arc::new(hash_set),
-        FxHashMap::default(),
+        Arc::new(Mutex::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }

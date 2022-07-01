@@ -1,13 +1,14 @@
 use alloc::rc::Rc;
 use core::fmt::{Display, Formatter};
-use std::cell::{Ref, RefCell};
+use std::cell::{RefCell};
 use fxhash::{FxHashMap, FxHashSet};
 use std::sync::{Arc};
+use std::sync::Mutex;
 
 
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::interpreter::instructions::Instruction;
-use crate::leblanc::core::interpreter::instructions::InstructionBase::{CallFunction, LoadFunction};
+use crate::leblanc::core::interpreter::instructions::InstructionBase::{LoadFunction};
 use crate::leblanc::core::interpreter::leblanc_runner::get_globals;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
@@ -16,7 +17,7 @@ use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equa
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, ColorBright, colorize, ColorString};
 
-#[derive(Clone, PartialEq, Debug, PartialOrd, Hash)]
+#[derive(Clone, PartialEq, Eq, Debug, PartialOrd, Hash)]
 pub struct LeblancError {
     name: String,
     message: String,
@@ -34,10 +35,10 @@ pub fn leblanc_object_error(error: LeblancError) -> LeBlancObject {
 
 
     LeBlancObject::new(
-        LeBlancObjectData::Error(error),
+        LeBlancObjectData::Error(Box::new(error)),
         LeBlancType::Exception,
         Arc::new(hash_set),
-        FxHashMap::default(),
+        Arc::new(Mutex::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -107,7 +108,7 @@ impl Default for LeblancError {
 impl RustDataCast<LeblancError> for LeBlancObjectData {
     fn clone_data(&self) -> Option<LeblancError> {
         match self {
-            LeBlancObjectData::Error(error) => Some(error.clone()),
+            LeBlancObjectData::Error(error) => Some(*error.clone()),
             _ => None,
         }
     }
@@ -139,7 +140,7 @@ fn get_func_details(func_number: u32) -> FuncDetails {
         let inner_method = borrow.data.get_inner_method().unwrap();
         return FuncDetails {
             name: inner_method.context.name.clone(),
-            file: borrow.context.file.clone()
+            file: borrow.context.file.to_string()
         }
     }
 

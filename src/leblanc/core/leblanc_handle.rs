@@ -3,8 +3,10 @@ use fxhash::{FxHashMap};
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+
 use std::time::Instant;
 use arrayvec::ArrayVec;
+use smol_str::SmolStr;
 use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
 
 use crate::leblanc::core::interpreter::instruction_execution::execute_instruction;
@@ -22,6 +24,10 @@ static mut GLOBAL_SIGNAL: ExecutionSignal = ExecutionSignal::Normal;
 
 static mut TIMINGS: Timings = Timings { map: None};
 
+static mut LAMBDA_HANDLE: Option<LeblancHandle> = None;
+
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum ExecutionSignal {
     Normal,
@@ -31,7 +37,7 @@ pub enum ExecutionSignal {
 
 #[derive(Debug, PartialEq)]
 pub struct LeblancHandle {
-    pub name: String,
+    pub name: SmolStr,
     pub constants: Rc<Vec<Rc<RefCell<LeBlancObject>>>>,
     pub variable_context: Rc<FxHashMap<String, VariableContext>>,
     pub variables: Vec<Rc<RefCell<LeBlancObject>>>,
@@ -43,7 +49,7 @@ pub struct LeblancHandle {
 impl LeblancHandle {
     pub fn null() -> LeblancHandle {
         LeblancHandle {
-            name: "".to_string(),
+            name: SmolStr::default(),
             constants: Rc::new(vec![]),
             variable_context: Rc::new(FxHashMap::default()),
             variables: vec![],
@@ -59,7 +65,7 @@ impl LeblancHandle {
         let instructs = Rc::new(instructs);
         let constants: Vec<Rc<RefCell<LeBlancObject>>> = bytecode.constants().into_iter().map(|constant| Rc::new(RefCell::new(constant.to_leblanc_object()))).collect::<Vec<Rc<RefCell<LeBlancObject>>>>();
         let variable_context = bytecode.variables();
-        let name = bytecode.name();
+        let name = SmolStr::new(bytecode.name());
         let context_length = variable_context.len();
         LeblancHandle {
             name,
@@ -74,29 +80,27 @@ impl LeblancHandle {
 
     #[inline(always)]
     pub fn execute(&mut self, inputs: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
-        unsafe { TIMINGS.setup() }
         inputs.clone_into(&mut self.variables);
         self.current_instruct = 0;
         let mut instruction = Instruction::empty();
         let mut stack_trace = ArrayVec::<_, 50>::new();
         let mut stack = ArrayVec::<_, 80>::new();
-
         while self.current_instruct < self.instructions.len() as u64 {
             let last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
-            if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.clone(), Color::Blue), instruction);}
+            //if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.clone(), Color::Blue), instruction);}
             match instruction.instruct {
                 InstructionBase::Return => return stack.pop().unwrap(),
-                InstructionBase::CallFunction => {
+                /*InstructionBase::CallFunction => {
                     if last_instruct.instruct == InstructionBase::LoadFunction {
                         stack_trace.push(last_instruct)
                     }
-                }
+                }*/
                 _ => {}
             }
             unsafe {if GLOBAL_SIGNAL == ExecutionSignal::Exception { return dump_stack_trace(stack.pop().unwrap(), stack_trace.to_vec()); }}
             //if TIME_DEBUG { unsafe {TIMINGS.lock(instruction.instruct.to_string())} }
-            let internal_handle = execute_instruction(instruction.base());
+            let internal_handle = execute_instruction(instruction.instruct);
             //let now = Instant::now();
             match internal_handle(self, &instruction, &mut stack) {
                 Ok(_) => {},
@@ -110,7 +114,7 @@ impl LeblancHandle {
                     return err
                 }
             };
-            if STACK_DEBUG { println!("{} Stack: {}", colorize(self.name.clone(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
+            //if STACK_DEBUG { println!("{} Stack: {}", colorize(self.name.clone(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
             /*if TIME_DEBUG {
                 let duration = now.elapsed().as_secs_f64();
                 unsafe { TIMINGS.add_timing(instruction.instruct.to_string(), duration); }
@@ -127,10 +131,10 @@ impl LeblancHandle {
 
     pub fn execute_range(&mut self, left_bound: u64, right_bound: u64) -> Rc<RefCell<LeBlancObject>> {
         self.current_instruct = left_bound;
-        let mut stack = ArrayVec::<_, 80>::new();
         let mut last_instruct = Instruction::empty();
         let mut instruction = Instruction::empty();
         let mut stack_trace = ArrayVec::<_, 50>::new();
+        let mut stack = ArrayVec::<_, 80>::new();
         while self.current_instruct < right_bound {
             last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
@@ -186,6 +190,19 @@ impl LeblancHandle {
 
     pub fn execute_from_last_point(&mut self) -> LeBlancObject {
         Rc::unwrap_or_clone(self.execute_range(self.current_instruct, self.instructions.len() as u64)).into_inner()
+    }
+
+    pub fn execute_lambda(&mut self, inputs: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
+        inputs.clone_into(&mut self.variables);
+        let mut stack = ArrayVec::<_, 80>::new();
+        let length = self.instructions.len();
+        for i in 0..length {
+            let instruct = self.instructions[i];
+            if instruct.instruct == InstructionBase::Return { return stack.pop().unwrap() };
+            execute_instruction(instruct.instruct)(self, &instruct, &mut stack);
+        }
+        stack.pop().unwrap_or_else(LeBlancObject::unsafe_null)
+
     }
 }
 

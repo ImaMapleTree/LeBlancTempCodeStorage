@@ -1,5 +1,5 @@
 use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
-use std::sync::{Arc};
+use std::sync::{Arc, Mutex};
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
@@ -42,10 +42,10 @@ pub fn internal_method(method: Method) -> LeBlancObject {
     let mut methods = Arc::unwrap_or_clone( base_methods());
     methods.insert(method.clone());
     LeBlancObject {
-        data: LeBlancObjectData::Function(method),
+        data: LeBlancObjectData::Function(Box::new(method)),
         typing: Function,
         methods: Arc::new(methods),
-        members: FxHashMap::default(),
+        members: Arc::new(Mutex::new(FxHashMap::default())),
         context: VariableContext::empty()
     }
 }

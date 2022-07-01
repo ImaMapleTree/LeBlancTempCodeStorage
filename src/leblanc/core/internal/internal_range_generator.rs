@@ -40,12 +40,15 @@ impl LeblancIterable for LeblancInternalRangeGenerator {
 
     fn has_next(&self) -> bool {
         match self.step_type {
+            PositiveStep => self.next_value.data < self.boundary.data,
+            NegativeStep => self.boundary.data < self.next_value.data,
             ConditionalStep => *self.step.reflect().downcast_ref::<bool>().unwrap(),
-            PositiveStep | FunctionStep(_) => self.next_value.data < self.boundary.data,
-            NegativeStep => self.boundary.data < self.next_value.data
+            _ => self.next_value.data < self.boundary.data,
         }
         //return self.value.borrow().data < self.boundary.borrow().data || (self.step_type == ConditionalStep && *self.step.reflect().downcast_ref::<bool>().unwrap());
     }
+
+
 
     fn reverse(&mut self) {
         swap(&mut self.value, &mut self.boundary);
@@ -53,6 +56,7 @@ impl LeblancIterable for LeblancInternalRangeGenerator {
     }
 
     fn to_list(&mut self) -> LeblancList {
+        println!("Range generator to list");
         LeblancList::new(self.collect() )
     }
 
@@ -94,8 +98,20 @@ impl LeblancInternalRangeGenerator {
             boundary_type,
             reverse: false
         })).to_mutex())
-
     }
+
+    fn conditional_step_fn(&self) -> bool {
+        *self.step.reflect().downcast_ref::<bool>().unwrap()
+    }
+
+    fn positive_step_fn(&self) -> bool {
+        self.next_value.data < self.boundary.data
+    }
+
+    fn negative_step_fn(&self) -> bool {
+        self.boundary.data < self.next_value.data
+    }
+
 }
 
 #[derive(PartialEq, Clone, Debug)]

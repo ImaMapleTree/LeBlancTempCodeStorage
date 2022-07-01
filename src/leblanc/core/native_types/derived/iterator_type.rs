@@ -5,6 +5,7 @@ use std::collections::{BTreeSet};
 use std::mem::take;
 use std::sync::Arc;
 use fxhash::{FxHashMap, FxHashSet};
+use std::sync::Mutex;
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_iterator::{_internal_iterator_filter_, _internal_iterator_map_, _internal_iterator_next, _internal_iterator_to_list_};
 use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
@@ -60,7 +61,7 @@ pub fn leblanc_object_iterator(leblanc_iterable: Box<dyn LeblancIterable>) -> Le
         LeBlancObjectData::Iterator(LeblancIterator::new(leblanc_iterable)),
         LeBlancType::Derived(DerivedType::Iterator),
         base_methods,
-        FxHashMap::default(),
+        Arc::new(Mutex::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -143,26 +144,6 @@ pub fn iterator_map() -> Method {
         BTreeSet::new()
     )
 }
-
-
-impl LeblancIterable for Vec<Rc<RefCell<LeBlancObject>>> {
-    fn lb_next(&mut self) -> Rc<RefCell<LeBlancObject>> {
-        self.remove(0)
-    }
-
-    fn has_next(&self) -> bool {
-        !self.is_empty()
-    }
-
-    fn reverse(&mut self) { self.reverse(); }
-
-    fn to_list(&mut self) -> LeblancList { LeblancList::new(self.clone()) }
-
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Rc<RefCell<LeBlancObject>>>> { Box::new(self.clone().into_iter()) }
-
-    fn transformed(&mut self) -> Option<&mut TransformedIterator> { None }
-}
-
 
 impl Clone for Box<dyn LeblancIterable> {
     fn clone(&self) -> Box<dyn LeblancIterable> {

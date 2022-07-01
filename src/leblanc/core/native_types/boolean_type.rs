@@ -3,8 +3,11 @@ use fxhash::{FxHashMap};
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
+use crate::leblanc::core::leblanc_default_data::unsafe_empty_members;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
@@ -16,7 +19,7 @@ pub fn leblanc_object_boolean(boolean: bool) -> LeBlancObject {
         LeBlancObjectData::Boolean(boolean),
         LeBlancType::Boolean,
         base_methods,
-        FxHashMap::default(),
+        unsafe_empty_members(),
         VariableContext::empty(),
     )
 }
