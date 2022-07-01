@@ -1,0 +1,17 @@
+using random;
+using datelib;
+
+func main() {
+
+    function f = || (0 to 10000000).list();
+    List c = f();
+
+    double st = epoch();
+    iter_map(c);
+    print(epoch() - st);
+}
+
+func iter_map(List c) returns List {
+    return c.iterate().map(|n| n + n).list();
+
+}

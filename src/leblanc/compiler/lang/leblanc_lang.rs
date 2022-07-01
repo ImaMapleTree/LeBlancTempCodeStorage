@@ -1,8 +1,8 @@
 use std::fmt::{Display, Formatter};
-use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{BraceClosed, BraceOpen, BracketClosed, BracketOpen, Comma, DNE, ParenthesisClosed, ParenthesisOpen, Semicolon};
+use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{BraceClosed, BraceOpen, BracketClosed, BracketOpen, Comma, DNE, ParenthesisClosed, ParenthesisOpen, Semicolon, VerticalLine};
 use crate::leblanc::compiler::symbols::Symbol;
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
-use crate::leblanc::compiler::lang::leblanc_lang::Specials::{BlockCommentCloser, BlockCommentOpener, Dot, InlineComment, RangeMarker, StackAppend, TagCloser, TagOpener};
+use crate::leblanc::compiler::lang::leblanc_lang::Specials::{BlockCommentCloser, BlockCommentOpener, Dot, InlineComment, LambdaMarker, RangeMarker, SliceStart, StackAppend, TagCloser, TagOpener};
 use crate::leblanc::compiler::lang::leblanc_operators::LBOperator;
 use crate::leblanc::core::native_types::LeBlancType;
 
@@ -37,6 +37,7 @@ pub enum FunctionType {
     Header,
     Call,
     Reference,
+    ReferenceCall,
     DNE
 }
 
@@ -82,6 +83,7 @@ pub enum BoundaryType {
     ParenthesisOpen,
     ParenthesisClosed,
     Semicolon,
+    VerticalLine,
     Comma,
     DNE
 }
@@ -94,6 +96,7 @@ pub fn boundary_value(ch: &char) -> BoundaryType {
         '}' => BraceClosed,
         '(' => ParenthesisOpen,
         ')' => ParenthesisClosed,
+        '|' => VerticalLine,
         ',' => Comma,
         ';' =>  Semicolon,
         _ => DNE
@@ -131,15 +134,7 @@ impl CompileVocab {
     }
 
     pub fn stores_native_type(&self) -> bool {
-        match self {
-            CompileVocab::FUNCTION(_) => false,
-            CompileVocab::OPERATOR(_) => false,
-            CompileVocab::SPECIAL(..) => false,
-            CompileVocab::KEYWORD(_) => false,
-            CompileVocab::MODULE(_) => false,
-            CompileVocab::BOUNDARY(_) => false,
-            _ => true
-        }
+        !matches!(self, CompileVocab::FUNCTION(_) | CompileVocab::OPERATOR(_) | CompileVocab::SPECIAL(..) | CompileVocab::KEYWORD(_) | CompileVocab::MODULE(_) | CompileVocab::BOUNDARY(_))
     }
 
     pub fn priority(&self) -> u16 {
@@ -149,7 +144,9 @@ impl CompileVocab {
                 match *op {
                     LBOperator::Assign => 1,
                     LBOperator::AssignEach => 5,
+                    LBOperator::Index => 5,
                     LBOperator::QuickList => 9,
+                    LBOperator::Or | LBOperator::And => 5,
                     _ => 10
                 }
             },
@@ -204,6 +201,8 @@ pub enum Specials {
     RangeMarker,
     Dot,
     StackAppend,
+    SliceStart,
+    LambdaMarker,
     DNE
 }
 
@@ -216,9 +215,9 @@ pub fn special_value(string: &str) -> Specials {
         "*/" => BlockCommentCloser,
         "<|" => TagOpener,
         "|>" => TagCloser,
-        "aaato" => RangeMarker,
         "." => Dot,
         "->" => StackAppend,
+        "|" => LambdaMarker,
         _ => Specials::DNE
     }
 }
@@ -234,6 +233,8 @@ impl Display for Specials {
             Dot => ".",
             RangeMarker => "to",
             StackAppend => "->",
+            SliceStart => "[",
+            LambdaMarker => "|",
             Specials::DNE => "dne"
         };
         write!(f, "{}", s)
@@ -251,6 +252,7 @@ impl Display for BoundaryType {
             ParenthesisClosed => ")",
             Semicolon => ";",
             Comma => ",",
+            VerticalLine => "|",
             DNE => "dne"
         };
         write!(f, "{}", s)

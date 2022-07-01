@@ -28,7 +28,6 @@ impl DecompiledConstant {
     }
 
     pub fn to_leblanc_object(self) -> LeBlancObject {
-        println!("{:#?}", self);
         match self.constant_type {
             LeBlancType::Char => leblanc_object_char(char::from_hex(&self.constant_data)),
             LeBlancType::Short => leblanc_object_short(i16::from_hex(&self.constant_data)),

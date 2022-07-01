@@ -8,6 +8,7 @@
 #![feature(get_mut_unchecked)]
 #![feature(fn_traits)]
 #![feature(ptr_const_cast)]
+#![feature(cell_leak)]
 
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
@@ -26,8 +27,8 @@ clippy::slow_vector_initialization, clippy::to_string_in_format_args, clippy::un
 )]
 
 
-extern crate core;
 extern crate alloc;
+extern crate core;
 
 use std::io;
 

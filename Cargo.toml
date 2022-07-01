@@ -1,7 +1,10 @@
+cargo-features = ["profile-rustflags"]
+
 [package]
 name = "leblanc"
 version = "0.1.0"
 edition = "2021"
+
 
 
 
@@ -24,6 +27,10 @@ fxhash = "0.2.1"
 smallvec = "1.8.1"
 arrayvec = "0.7.2"
 rand_chacha = "0.3.1"
+num = "0.4.0"
+heapless = "0.7.14"
+
+
 
 [target.'cfg(target_env = "x86_64-unknown-linux-gnu")']
 linker = "/usr/bin/clang"
@@ -32,7 +39,8 @@ rustflags = ["-Clink-arg=-fuse-ld=lld", "-Clink-arg=-Wl,--no-rosegment"]
 [profile.dev]
 opt-level = 1
 
+
+
 [profile.release]
 lto = true
 panic = "abort"
-debug = true

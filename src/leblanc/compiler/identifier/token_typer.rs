@@ -7,7 +7,7 @@ use crate::leblanc::compiler::lang::leblanc_keywords::{is_keyword, keyword_value
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{ExtensionImport, Func, Of};
 use crate::leblanc::compiler::lang::leblanc_lang::{boundary_value, is_special, special_value, CompileVocab, FunctionType, Specials};
 use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab::{CLASS, CONSTANT, EXTENSION, FUNCTION, KEYWORD, MODULE, TYPE, UNKNOWN, VARIABLE};
-use crate::leblanc::compiler::lang::leblanc_operators::{is_operator, operator_type};
+use crate::leblanc::compiler::lang::leblanc_operators::{is_operator, LBOperator, operator_type};
 use crate::leblanc::compiler::fabric::Fabric;
 use crate::leblanc::compiler::syntax_rules::RuleAnalyzer;
 use crate::leblanc::compiler::identifier::token_typer::GlobalScopeMarker::*;
@@ -18,10 +18,13 @@ use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::{CompilationMode, compile, LeBlancType};
 use crate::leblanc::compiler::compile_types::partial_token::PartialToken;
 use crate::leblanc::compiler::import::{Import, ImportType};
+use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{BracketOpen, Comma, ParenthesisClosed, ParenthesisOpen, VerticalLine};
 use crate::leblanc::compiler::lang::leblanc_lang::ExtensionType::{ExtensionTypeParam, ExtensionTypeExport, ExtensionTypeImport};
+use crate::leblanc::compiler::lang::leblanc_lang::Specials::LambdaMarker;
 use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::lib::get_core_modules;
+use crate::LeBlancType::Dynamic;
 
 
 pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub>, mode: CompilationMode) -> Fabric {
@@ -49,7 +52,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
 
     //Code Analysis
     let mut analysis = RuleAnalyzer::new();
-
+    let mut last_vocab = UNKNOWN_VOCAB.clone();
 
     while !tokens.is_empty() || next_token != Token::empty() {
         token = next_token;
@@ -73,6 +76,8 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 if *next_token.first_symbol_or_empty().char() == '(' {
                     if let TYPE(temp_type) = type_scopes[scope_value][0] {
                         CompileVocab::CONSTRUCTOR(temp_type)
+                    } else if let VARIABLE(_) = type_scopes[scope_value][0] {
+                        FUNCTION(FunctionType::ReferenceCall)
                     } else {
                         FUNCTION(FunctionType::Call)
                     }
@@ -84,10 +89,16 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
             else if is_special(token_string.as_str()) {
                 match token_string.as_str() {
                     "->" => CompileVocab::SPECIAL(special_value(token_string.as_str()), 0),
+                    "." => CompileVocab::SPECIAL(special_value(token_string.as_str()), 5),
                     _ => CompileVocab::SPECIAL(special_value(token_string.as_str()), 120)
                 }
             } else if is_operator(token_string.as_str()) {
-                CompileVocab::OPERATOR(operator_type(token_string.as_str()))
+                if token_string == "-" && !(last_vocab.matches("variable") || last_vocab.matches("constant") || last_vocab == CompileVocab::BOUNDARY(ParenthesisClosed)) {
+                    next_token.insert_symbol(0, token.first_symbol_or_empty());
+                    CompileVocab::SPECIAL(Specials::DNE, 2000)
+                } else {
+                    CompileVocab::OPERATOR(operator_type(token_string.as_str()))
+                }
             } else if is_keyword(token_string.as_str()) {
                 let keyword = keyword_value(token_string.as_str());
                 if keyword == Func {
@@ -101,6 +112,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
             } else if is_constant(token_string.as_str()) {
                 CONSTANT(constant_type(token_string.as_str()))
             } else if first_symbol.is_boundary() {
+                let mut typing = CompileVocab::BOUNDARY(boundary_value(first_symbol.char()));
                 match first_symbol.char() {
                     '{' => brace_counter += 1,
                     '}' => {
@@ -109,10 +121,15 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                             class_scope = 0;
                         }
                     },
+                    '[' => {
+                        if !(first_symbol.post_whitespace || last_vocab == CompileVocab::BOUNDARY(ParenthesisOpen) || last_vocab == CompileVocab::BOUNDARY(Comma) || last_vocab == CompileVocab::BOUNDARY(BracketOpen)) {
+                            typing = CompileVocab::OPERATOR(LBOperator::Index);
+                        }
+                    }
                     ';' => analysis.evaluate_rule1(&mut errors),
                     _ => {}
                 }
-                CompileVocab::BOUNDARY(boundary_value(first_symbol.char()))
+                typing
             } else if !typed_tokens.is_empty() && typed_tokens[typed_tokens.len() - 1].lang_type() == KEYWORD(ExtensionImport){
                 let import = Import::new(&token_string, &token_string, ImportType::Extension);
                 let index = match imports.iter().cloned().position(|i| i == import) {
@@ -201,6 +218,8 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 } else if next_token.first_symbol_or_empty().is_boundary() {
                     if *next_token.first_symbol_or_empty().char() == '(' {
                         FUNCTION(FunctionType::Call)
+                    } else if last_vocab == CompileVocab::SPECIAL(LambdaMarker, 120){
+                        VARIABLE(Dynamic)
                     } else {
                         UNKNOWN(Class(0))
                     }
@@ -264,7 +283,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
 
         }
 
-        let class_member = !typed_tokens.is_empty() && typed_tokens[typed_tokens.len() - 1].lang_type() == CompileVocab::SPECIAL(Specials::Dot, 120);
+        let class_member = !typed_tokens.is_empty() && typed_tokens[typed_tokens.len() - 1].lang_type() == CompileVocab::SPECIAL(Specials::Dot, 5);
 
         if vocab.matches("type") && exists_in_scope(&type_map, next_token.as_string(), scope_value as i32) && !next_token.first_symbol_or_empty().is_boundary() {
             errors.push(ErrorStub::VariableAlreadyDefined(TypedToken::new(next_token.copy(), vocab, scope_value as i32, global_scope != NotGlobal, class_member)))
@@ -307,6 +326,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
             global_scope = NotGlobal;
             class_scope = type_map.get("Class").unwrap().len() as u32;
         }
+        last_vocab = vocab;
 
         //println!("typed token: {:?}", typed_token);
 

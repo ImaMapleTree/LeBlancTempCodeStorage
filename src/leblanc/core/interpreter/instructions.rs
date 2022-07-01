@@ -5,7 +5,7 @@ use crate::leblanc::rustblanc::utils::{decode_hex, encode_hex};
 use strum::{EnumIter, IntoEnumIterator};
 use crate::{CompileVocab, TypedToken};
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
-use crate::leblanc::compiler::lang::leblanc_lang::{FunctionType, Specials};
+use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, FunctionType, Specials};
 use crate::leblanc::compiler::lang::leblanc_operators::LBOperator;
 use crate::leblanc::core::interpreter::instructions::InstructionBase::*;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
@@ -17,6 +17,7 @@ pub enum InstructionBase {
     Zero,
     NotImplemented,
     Dummy(u32),
+    InstructionMarker,
     InPlaceAdd,
     BinaryAdd,
     BinarySubtract,
@@ -54,8 +55,11 @@ pub enum InstructionBase {
     Cast,
     AttributeAccess,
     AttributeStore,
+    ElementAccess,
 
-    QuickList(u16),
+    IteratorSetup(u16),
+    ListSetup,
+    MakeSlice,
 
 
     UseModule,
@@ -107,6 +111,8 @@ impl InstructionBase {
                     LBOperator::Divide => BinaryDivide,
                     LBOperator::Power => BinaryPower,
                     LBOperator::Modulo => BinaryModulo,
+                    LBOperator::Or => BinaryOr,
+                    LBOperator::And => BinaryAnd,
                     LBOperator::Not => BinaryNot,
                     LBOperator::Assign => StoreUndefined,
                     LBOperator::Inverse => BinaryInverse,
@@ -121,7 +127,9 @@ impl InstructionBase {
                     LBOperator::Match => MapMatch,
                     LBOperator::Increment => Dummy(1),
                     LBOperator::Cast => Cast,
-                    LBOperator::QuickList => QuickList(0),
+                    LBOperator::QuickList => IteratorSetup(0),
+                    LBOperator::Slice => MakeSlice,
+                    LBOperator::Index => ElementAccess,
                     LBOperator::AssignEach => Zero,
                     LBOperator::NULL => Zero,
                 }
@@ -141,12 +149,19 @@ impl InstructionBase {
             }
             CompileVocab::SPECIAL(special, val) => {
                 match special {
-                    Specials::RangeMarker => QuickList(val),
+                    Specials::RangeMarker => IteratorSetup(val),
                     _ => Zero
                 }
             },
             CompileVocab::CONSTRUCTOR(_) => NotImplemented,
             CompileVocab::CLASS(_) => NotImplemented,
+            CompileVocab::BOUNDARY(bound) => {
+                match bound {
+                    BoundaryType::BracketClosed => ListSetup,
+                    BoundaryType::BracketOpen => InstructionMarker,
+                    _ => Zero
+                }
+            }
             _ => Zero
         }
     }
@@ -174,7 +189,7 @@ impl Instruction {
 
     pub fn empty() -> Instruction {
         Instruction {
-            instruct: InstructionBase::Zero,
+            instruct: Zero,
             arg: 0,
             line_number: 0
         }

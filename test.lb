@@ -1,12 +1,15 @@
 using random;
+using datelib;
 
 func main() {
-    disassemble(test, true);
-    test();
-}
-
-func test() returns int {
-    print("hello", "moose", "man", 4, 5);
+    for int i in 0 to 28 {
+        print(fib(i));
+    }
 
 }
 
+func fib(int a) returns int {
+    if a <= 1 -> return a;
+    else -> return fib(a-1) + fib(a-2);
+
+}

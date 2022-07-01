@@ -16,13 +16,14 @@ use crate::LeBlancType;
 fn _BUILTIN_PRINT_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
     let arg_length = args.len();
     for i in 0..arg_length {
-        let sep = if i == arg_length-1 { "\n" } else { " " };
+        let sep = if i == arg_length-1 { "" } else { " " };
         let arg = &mut args[i];
         let result = match arg.call_name("to_string") {
             Ok(r) => r.to_string() + sep,
             Err(err) => return err
         };
-        io::stdout().write(result.as_bytes()).unwrap();
+        writeln!(io::stdout().lock(), "{}", result).unwrap();
+        //io::stdout().write(result.as_bytes()).unwrap();
     }
 
 

@@ -1,8 +1,9 @@
 use alloc::rc::Rc;
 use std::any::Any;
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use std::cmp::Ordering;
 use std::fmt::{Debug, Display, Formatter};
+use std::mem::{swap, take};
 
 
 use std::sync::{Arc};
@@ -27,6 +28,8 @@ use crate::leblanc::rustblanc::Appendable;
 static mut NULL: Option<Rc<RefCell<LeBlancObject>>> = None;
 
 static mut ERROR: Option<Rc<RefCell<LeBlancObject>>> = None;
+
+static mut MARKER: Option<Rc<RefCell<LeBlancObject>>> = None;
 
 static mut NO_ARGS: [Rc<RefCell<LeBlancObject>>; 0] = [];
 
@@ -86,6 +89,30 @@ impl LeBlancObject {
         }
     }
 
+    pub fn marker() -> LeBlancObject {
+        LeBlancObject {
+            data: LeBlancObjectData::Null,
+            typing: LeBlancType::Marker,
+            methods: Arc::new(FxHashSet::default()),
+            members: FxHashMap::default(),
+            context: VariableContext::empty()
+        }
+    }
+
+    pub fn unsafe_marker() -> Rc<RefCell<LeBlancObject>> {
+        return unsafe {
+            match MARKER.as_ref() {
+                None => {
+                    MARKER = Some(LeBlancObject::marker().to_mutex());
+                    MARKER.as_ref().unwrap().clone()
+                }
+                Some(marker) => {
+                    marker.clone()
+                }
+            }
+        }
+    }
+
     pub fn error() -> LeBlancObject {
         LeBlancObject {
             data: LeBlancObjectData::Null,
@@ -137,11 +164,11 @@ impl LeBlancObject {
         self.data = other.data.clone();
     }
 
-    pub fn move_data(&mut self, other: Self) {
-        self.members = other.members;
-        self.methods = other.methods;
+    pub fn swap_rc(&mut self, other: &mut RefMut<LeBlancObject>) {
+        swap(&mut self.members, &mut other.members);
+        swap(&mut self.methods, &mut other.methods);
+        swap(&mut self.data, &mut other.data);
         self.typing = other.typing;
-        self.data = other.data;
     }
 
     pub fn copy_rc(&mut self, other: &mut Rc<RefCell<LeBlancObject>>) {
@@ -325,6 +352,8 @@ pub trait ArcType {
 }
 
 impl LeBlancObjectData {
+
+
     pub fn get_mut_inner_method(&mut self) -> Option<&mut Method> {
         match self {
             LeBlancObjectData::Function(function) => Some(function),
@@ -387,4 +416,10 @@ pub enum LBODOperation {
     BinarySubtraction,
     BinaryMultiplication,
     BinaryDivision
+}
+
+impl Default for LeBlancObjectData {
+    fn default() -> Self {
+        LeBlancObjectData::Null
+    }
 }

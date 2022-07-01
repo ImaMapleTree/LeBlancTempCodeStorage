@@ -1,11 +1,14 @@
 use alloc::rc::Rc;
+use core::borrow::BorrowMut;
 use core::fmt::{Debug, Formatter};
 use std::cell::RefCell;
 use std::mem::swap;
-use crate::leblanc::core::internal::internal_range_generator::RangeGeneratorStepType::{ConditionalStep, FunctionStep, NormalStep};
+use crate::leblanc::core::internal::internal_range_generator::RangeGeneratorStepType::{ConditionalStep, FunctionStep, NegativeStep, PositiveStep};
+use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
 use crate::leblanc::core::leblanc_object::{LBODOperation, LeBlancObject, Reflect, Stringify};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::derived::iterator_type::{leblanc_object_iterator, LeblancIterable};
+use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::LeBlancType;
 
 #[derive(Clone, PartialEq)]
@@ -15,32 +18,47 @@ pub struct LeblancInternalRangeGenerator {
     boundary: LeBlancObject,
     step: LeBlancObject,
     step_type: RangeGeneratorStepType,
-    boundary_type: LeBlancType
+    boundary_type: LeBlancType,
+    reverse: bool
 }
 
 impl LeblancIterable for LeblancInternalRangeGenerator {
-    fn next(&mut self) -> LeBlancObject {
+    fn lb_next(&mut self) -> Rc<RefCell<LeBlancObject>> {
         match &mut self.step_type {
-            NormalStep => {
+            PositiveStep | NegativeStep => {
                 swap(&mut self.value, &mut self.next_value);
-                let data = self.value.data.simple_operation(&self.step.data, LBODOperation::BinaryAddition);
-                self.next_value.data = data;
-
+                self.next_value.data = self.value.data.simple_operation(&self.step.data, LBODOperation::BinaryAddition);
             }
-            FunctionStep(method) => {self.value = method.run(self.step.clone().to_mutex(), &mut [self.value.clone().to_mutex()]).borrow().cast(self.boundary_type)}
+            FunctionStep(method) => {
+                swap(&mut self.value, &mut self.next_value);
+                self.next_value.data = method.run(self.step.clone().to_mutex(), &mut [self.value.clone().to_mutex()]).borrow().cast(self.boundary_type).data}
             ConditionalStep => { }
         }
         //println!("{}", self.value.to_string());
-        self.value._clone()
+        self.value._clone().to_mutex()
     }
 
     fn has_next(&self) -> bool {
         match self.step_type {
             ConditionalStep => *self.step.reflect().downcast_ref::<bool>().unwrap(),
-            _ => { self.next_value.data < self.boundary.data}
+            PositiveStep | FunctionStep(_) => self.next_value.data < self.boundary.data,
+            NegativeStep => self.boundary.data < self.next_value.data
         }
         //return self.value.borrow().data < self.boundary.borrow().data || (self.step_type == ConditionalStep && *self.step.reflect().downcast_ref::<bool>().unwrap());
     }
+
+    fn reverse(&mut self) {
+        swap(&mut self.value, &mut self.boundary);
+        self.reverse = !self.reverse;
+    }
+
+    fn to_list(&mut self) -> LeblancList {
+        LeblancList::new(self.collect() )
+    }
+
+    fn transformed(&mut self) -> Option<&mut TransformedIterator> { None }
+
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Rc<RefCell<LeBlancObject>>>> { Box::new(self.clone()) }
 }
 
 impl LeblancInternalRangeGenerator {
@@ -49,14 +67,9 @@ impl LeblancInternalRangeGenerator {
         let boundary = boundary.borrow().clone();
         let mut step = step.borrow().clone();
         let step_type = match step.typing {
-            LeBlancType::Int => NormalStep,
-            LeBlancType::Int64 => NormalStep,
-            LeBlancType::Int128 => NormalStep,
-            LeBlancType::Short => NormalStep,
-            LeBlancType::Float => NormalStep,
-            LeBlancType::Double => NormalStep,
-            LeBlancType::Arch => NormalStep,
-            LeBlancType::String => NormalStep,
+            LeBlancType::Int | LeBlancType::Int64 | LeBlancType::Int128 | LeBlancType::Short | LeBlancType::Float |
+            LeBlancType::Double | LeBlancType::Arch => if step.data.as_i128() >= 0 { PositiveStep } else { NegativeStep },
+            LeBlancType::String => PositiveStep,
             LeBlancType::Boolean => ConditionalStep,
             LeBlancType::Function => FunctionStep(step.data.get_mut_inner_method().unwrap().clone()),
             LeBlancType::Class(_) => { let matched_method = step.methods.iter().filter(|m| {
@@ -78,7 +91,8 @@ impl LeblancInternalRangeGenerator {
             boundary,
             step,
             step_type,
-            boundary_type
+            boundary_type,
+            reverse: false
         })).to_mutex())
 
     }
@@ -86,7 +100,8 @@ impl LeblancInternalRangeGenerator {
 
 #[derive(PartialEq, Clone, Debug)]
 enum RangeGeneratorStepType {
-    NormalStep,
+    PositiveStep,
+    NegativeStep,
     FunctionStep(Method),
     ConditionalStep,
 }
@@ -98,5 +113,17 @@ impl Debug for LeblancInternalRangeGenerator {
             .field("boundary", &self.boundary.data.to_string())
             .field("step", &self.step.data.to_string())
             .finish()
+    }
+}
+
+impl Iterator for LeblancInternalRangeGenerator {
+    type Item = Rc<RefCell<LeBlancObject>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.has_next() {
+            true => Some(self.lb_next()),
+            false => None
+        }
+
     }
 }

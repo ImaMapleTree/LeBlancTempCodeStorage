@@ -72,19 +72,19 @@ impl LeblancHandle {
         }
     }
 
+    #[inline(always)]
     pub fn execute(&mut self, inputs: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
         unsafe { TIMINGS.setup() }
         inputs.clone_into(&mut self.variables);
         self.current_instruct = 0;
-        let mut last_instruct = Instruction::empty();
         let mut instruction = Instruction::empty();
         let mut stack_trace = ArrayVec::<_, 50>::new();
         let mut stack = ArrayVec::<_, 80>::new();
 
         while self.current_instruct < self.instructions.len() as u64 {
-            last_instruct = instruction;
+            let last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
-            //if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.clone(), Color::Blue), instruction);}
+            if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.clone(), Color::Blue), instruction);}
             match instruction.instruct {
                 InstructionBase::Return => return stack.pop().unwrap(),
                 InstructionBase::CallFunction => {
@@ -110,7 +110,7 @@ impl LeblancHandle {
                     return err
                 }
             };
-            //if STACK_DEBUG { println!("{} Stack: {}", colorize(self.name.clone(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
+            if STACK_DEBUG { println!("{} Stack: {}", colorize(self.name.clone(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
             /*if TIME_DEBUG {
                 let duration = now.elapsed().as_secs_f64();
                 unsafe { TIMINGS.add_timing(instruction.instruct.to_string(), duration); }
@@ -134,7 +134,7 @@ impl LeblancHandle {
         while self.current_instruct < right_bound {
             last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
-            //if DEBUG {println!("Range Instruction: {:?}", instruction);}
+            //if DEBUG {println!("{} Range Instruction: {:?}", colorize(self.name.clone(), Color::Blue), instruction);}
             match instruction.instruct {
                 InstructionBase::Return => return stack.pop().unwrap(),
                 InstructionBase::CallFunction => {
@@ -160,8 +160,8 @@ impl LeblancHandle {
                     return err
                 }
             };
-            /*if STACK_DEBUG { println!("Stack: {}", if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
-            if TIME_DEBUG {
+            //if STACK_DEBUG { println!("{} Range Stack: {}", colorize(self.name.clone(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
+            /*if TIME_DEBUG {
                 let duration = now.elapsed().as_secs_f64();
                 unsafe { TIMINGS.add_timing(instruction.instruct.to_string(), duration); }
             }*/
@@ -169,6 +169,19 @@ impl LeblancHandle {
         }
         stack.pop().unwrap_or_else(LeBlancObject::unsafe_null)
 
+    }
+
+    pub fn execute_instructions(&mut self, instructs: &Vec<Instruction>, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Rc<RefCell<LeBlancObject>> {
+        for instruct in instructs {
+            if instruct.instruct == InstructionBase::Return { return stack.pop().unwrap() };
+            let internal_handle = execute_instruction(instruct.base());
+            match internal_handle(self, &instruct, stack) {
+                Ok(_) => {},
+                Err(err) => {
+                }
+            };
+        }
+        stack.pop().unwrap_or_else(LeBlancObject::unsafe_null)
     }
 
     pub fn execute_from_last_point(&mut self) -> LeBlancObject {

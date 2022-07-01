@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use crate::leblanc::compiler::compile_types::partial_token::PartialToken;
 use crate::leblanc::compiler::identifier::token::Token;
-use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab;
+use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, CompileVocab};
 use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Debug, PartialEq, Hash, Eq)]
@@ -34,6 +34,17 @@ impl TypedToken {
         TypedToken {
             base: Token::empty(),
             lang_type: CompileVocab::UNKNOWN(LeBlancType::Class(0)),
+            scope: -1,
+            a_typing: vec![vec![], vec![]],
+            global: false,
+            class_member: false
+        }
+    }
+
+    pub fn boundary(boundary: BoundaryType) -> TypedToken {
+        TypedToken {
+            base: Token::empty(),
+            lang_type: CompileVocab::BOUNDARY(boundary),
             scope: -1,
             a_typing: vec![vec![], vec![]],
             global: false,

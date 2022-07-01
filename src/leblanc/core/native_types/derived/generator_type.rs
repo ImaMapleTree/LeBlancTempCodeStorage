@@ -1,13 +1,17 @@
 use alloc::rc::Rc;
+use core::borrow::BorrowMut;
 use core::fmt::{Display, Formatter};
+use core::slice::IterMut;
 use std::cell::RefCell;
 use fxhash::{FxHashMap};
+use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
 
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::derived::iterator_type::{iterator_methods, LeblancIterable, LeblancIterator};
+use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::LeBlancType;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -37,12 +41,39 @@ impl Display for LeblancGenerator {
 }
 
 impl LeblancIterable for LeblancGenerator {
-    fn next(&mut self) -> LeBlancObject {
-        self.leblanc_handle.execute_from_last_point()
+    fn lb_next(&mut self) -> Rc<RefCell<LeBlancObject>> {
+        self.leblanc_handle.execute_from_last_point().to_mutex()
     }
     fn has_next(&self) -> bool {
         self.leblanc_handle.current_instruct < self.leblanc_handle.instructions.len() as u64
     }
+
+    fn reverse(&mut self) {
+        todo!()
+    }
+
+    fn to_list(&mut self) -> LeblancList {
+        let mut vec = vec![];
+        while self.has_next() {
+            vec.push(self.lb_next());
+        }
+        LeblancList::new(vec, )
+    }
+
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Rc<RefCell<LeBlancObject>>>> {
+        Box::new(self.clone())
+    }
+
+    fn transformed(&mut self) -> Option<&mut TransformedIterator> { None }
 }
 
+impl Iterator for LeblancGenerator {
+    type Item = Rc<RefCell<LeBlancObject>>;
 
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.has_next() {
+            true => Some(self.leblanc_handle.execute_from_last_point().to_mutex()),
+            false => None
+        }
+    }
+}

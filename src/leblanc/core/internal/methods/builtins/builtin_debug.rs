@@ -1,1 +1,47 @@
+use alloc::rc::Rc;
+use std::cell::RefCell;
+use std::collections::BTreeSet;
+use std::io;
+use std::io::Write;
+use crate::leblanc::core::leblanc_argument::LeBlancArgument;
+use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject};
+use crate::leblanc::core::method::Method;
+use crate::leblanc::core::method_store::MethodStore;
+use crate::leblanc::core::native_types::base_type::internal_method;
+use crate::LeBlancType;
+
 pub mod builtin_disassemble;
+
+fn _BUILTIN_DEBUG_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
+    let arg_length = args.len();
+    println!("--------------------------------------------------------");
+    println!("----------------------DEBUGGING-------------------------");
+    println!("--------------------------------------------------------");
+    for i in 0..arg_length {
+        let sep = if i == arg_length-1 { "\n" } else { " " };
+        let arg = &mut args[i];
+        dbg!(arg);
+    }
+    println!("--------------------------------------------------------");
+    println!("--------------------------------------------------------");
+
+
+
+    //io::copy(&mut result.as_bytes(), &mut STDOUT.as_mut().unwrap()).unwrap();
+    LeBlancObject::unsafe_null()
+}
+
+pub fn _BUILTIN_DEBUG_METHOD_() -> Method {
+    Method::new(
+        MethodStore::new(
+            "debug".to_string(),
+            vec![LeBlancArgument::variable(LeBlancType::Flex, 0)]
+        ),
+        _BUILTIN_DEBUG_,
+        BTreeSet::new()
+    )
+}
+
+pub fn _BUILTIN_DEBUG_OBJECT_() -> LeBlancObject {
+    internal_method(_BUILTIN_DEBUG_METHOD_())
+}

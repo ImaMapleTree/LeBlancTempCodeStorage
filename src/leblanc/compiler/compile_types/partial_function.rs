@@ -56,8 +56,6 @@ impl PartialEq for PartialFunction {
 
         let mut main_iter = self.args.clone();
         let mut other_iter = other.args.clone();
-        println!("Main Iter: {:#?}", main_iter);
-        println!("Other Iter: {:#?}", other_iter);
         let (max, main_iter, other_iter) = if max_self_args > max_other_args {
             for _ in 0..(max_self_args-max_other_args) as usize { other_iter.push(LeBlancArgument::null((other_iter.len()) as u32))}
             (max_self_args, self.args.clone(), other_iter)

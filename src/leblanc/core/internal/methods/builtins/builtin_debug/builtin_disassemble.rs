@@ -80,7 +80,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCel
 pub fn _BUILTIN_DISASSEMBLE_METHOD_() -> Method {
     Method::new(
         MethodStore::new(
-            "disassemble".to_string(),
+            "dis".to_string(),
             vec![LeBlancArgument::default(LeBlancType::Function, 0), LeBlancArgument::optional(LeBlancType::Boolean, 1)]
         ),
         _BUILTIN_DISASSEMBLE,

@@ -6,7 +6,7 @@ use crate::leblanc::core::native_types::derived::DerivedType;
 
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
-use crate::LeBlancType::{Arch, Block, Boolean, Char, Class, Derived, Double, Dynamic, Exception, Flex, Float, Function, Int, Int128, Int64, Module, Null, SelfType, Short};
+use crate::LeBlancType::{Arch, Block, Boolean, Char, Class, Derived, Double, Dynamic, Exception, Flex, Float, Function, Int, Int128, Int64, Module, Null, SelfType, Short, Marker};
 
 pub mod NULL;
 pub mod string_type;
@@ -26,7 +26,7 @@ pub mod error_type;
 pub mod attributes;
 pub mod derived;
 
-static VARIANTS: [&str; 18] = ["flex", "Self", "char", "short", "int", "int64", "in128", "arch", "float", "double", "boolean", "string", "block", "function", "module", "class", "dynamic", "null"];
+static VARIANTS: [&str; 20] = ["flex", "Self", "char", "short", "int", "int64", "in128", "arch", "float", "double", "boolean", "string", "block", "function", "module", "class", "dynamic", "exception", "marker", "null"];
 
 #[derive(Eq, Clone, Copy, Debug, Ord, PartialOrd, Hash)]
 pub enum LeBlancType {
@@ -49,6 +49,7 @@ pub enum LeBlancType {
     Dynamic,
     Exception, // internal implementation of "dynamic
     Derived(DerivedType),
+    Marker,
     Null
 }
 
@@ -75,6 +76,8 @@ pub fn type_value(string: &str) -> LeBlancType {
         "exception" => Exception,
         "Self" => SelfType,
         "null" => Null,
+        "marker" => Marker,
+        "List" => Derived(DerivedType::List),
         Other => {
             if Other.starts_with("class.") {
                 let class_value = Other[6..].parse::<u32>().unwrap();
@@ -135,10 +138,12 @@ impl LeBlancType {
             Derived(Derive) => {
                 match Derive {
                     DerivedType::List => "list",
-                    DerivedType::Iterator => "iterator"
+                    DerivedType::Iterator => "iterator",
+                    DerivedType::Slice => "slice"
                 }
             }
-            Null => "null"
+            Marker => "marker",
+            Null => "null",
         }
     }
 

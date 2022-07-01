@@ -5,7 +5,7 @@ use alloc::rc::Rc;
 use std::cell::RefCell;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
+use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 
@@ -42,4 +42,27 @@ impl ToLeblanc for f64 {
         leblanc_object_double(*self)
     }
     fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
+}
+
+impl RustDataCast<f64> for LeBlancObjectData {
+    fn clone_data(&self) -> Option<f64> {
+        match self {
+            LeBlancObjectData::Double(fp) => Some(*fp),
+            _ => None,
+        }
+    }
+
+    fn ref_data(&self) -> Option<&f64> {
+        match self {
+            LeBlancObjectData::Double(fp) => Some(fp),
+            _ => None,
+        }
+    }
+
+    fn mut_data(&mut self) -> Option<&mut f64> {
+        match self {
+            LeBlancObjectData::Double(fp) => Some(fp),
+            _ => None,
+        }
+    }
 }

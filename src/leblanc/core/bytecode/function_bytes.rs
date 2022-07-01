@@ -98,7 +98,6 @@ impl FunctionBytecode {
         for _ in 0..constant_length {
             let constant_value = self.constant_value.remove(0).unwrap();
             let constant_type = self.constant_type.remove(0).unwrap();
-            println!("Constant type: {:#?}", constant_type);
             constants.push(DecompiledConstant::new(constant_value, LeBlancType::from_enum_id(constant_type.to_hexable::<u16>())))
         }
         constants
@@ -116,12 +115,10 @@ impl FunctionBytecode {
     }
 
     pub fn arguments(&mut self) -> Vec<LeBlancType> {
-        println!("arguments: {:#?}", self.arguments);
         self.arguments.iter().unwrap().map(|hex| LeBlancType::from_enum_id(hex.to_hexable::<u16>())).collect()
     }
 
     pub fn from(hex: &mut Hexadecimal) -> FunctionBytecode {
-        println!("Hex: {:?}", hex);
         let mut fb = FunctionBytecode::new();
         let name_length = hex.scrape(fb.name_length.unpack().unwrap() as usize);
         let name_length_u32 = name_length.to_hexable::<u32>();

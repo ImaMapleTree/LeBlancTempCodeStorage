@@ -14,7 +14,7 @@ pub fn constant_type(string: &str) -> LeBlancType {
         last_char = string.chars().last().unwrap();
         number_string = &number_string[0..number_string.len() - 1];
     }
-    if number_string.chars().all(|c| c.is_numeric() || c == '.') {
+    if number_string.chars().all(|c| c.is_numeric() || c == '.' || c == '-') {
         match last_char.to_ascii_uppercase() {
             'L' => return LeBlancType::Int64,
             'F' => return LeBlancType::Float,

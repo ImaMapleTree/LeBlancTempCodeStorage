@@ -71,3 +71,21 @@ pub fn flatmap_node_tokens(tokens: &mut Vec<Node<TypedToken>>) -> Vec<TypedToken
     }
     flatmap
 }
+
+pub struct  SimpleCounter {
+    value: i64
+}
+
+impl SimpleCounter {
+    pub fn new() -> SimpleCounter {
+        SimpleCounter {
+            value: 0
+        }
+    }
+    pub fn inc(&mut self) {
+        self.value += 1;
+    }
+    pub fn dec(&mut self) {
+        self.value -= 1;
+    }
+}

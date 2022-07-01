@@ -1,5 +1,6 @@
 use std::fs::File;
-use crate::{BraceOpen, CompileVocab, create_stack, create_tokens, Fabric, Semicolon, TypedToken};
+use crate::{BOUNDARY, CompileVocab, create_stack, create_tokens, Fabric, TypedToken};
+use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::*;
 use crate::leblanc::compiler::char_reader::CharReader;
 use crate::leblanc::compiler::compile_error_reporter::error_report;
 use crate::leblanc::compiler::compile_types::CompilationMode;
@@ -7,7 +8,6 @@ use crate::leblanc::compiler::compile_types::full_compiler::write_bytecode;
 use crate::leblanc::compiler::compile_types::stub_compiler::read_from_stub_dump;
 use crate::leblanc::compiler::compiler_util::flatmap_node_tokens;
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
-use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::BraceClosed;
 use crate::leblanc::rustblanc::Appendable;
 
 static DEBUG: bool = false;
@@ -82,10 +82,16 @@ pub fn partial_spin(cr: &mut CharReader, mode: CompilationMode) -> Fabric {
 
 pub fn create_execution_stack(fabric: &mut Fabric) -> Vec<TypedToken> {
     let mut stack: Vec<TypedToken> = Vec::new();
+    for token in fabric.tokens() {
+        println!("Token: {:?}", token.value);
+    }
     let token_length = fabric.tokens().len();
-    let mut boundary_index = fabric.tokens().iter().enumerate().filter(|(_, r)| r.value.lang_type() == CompileVocab::BOUNDARY(Semicolon) ||
-        r.value.lang_type() == CompileVocab::BOUNDARY(BraceOpen) || r.value.lang_type() == CompileVocab::BOUNDARY(BraceClosed))
-        .map(|(index, _)| {
+    let mut boundary_index = fabric.tokens().iter().enumerate().filter(|(_, r)| {
+        if let BOUNDARY(boundary_type) = r.value.lang_type() {
+            matches!(boundary_type, Semicolon | BraceOpen | BraceClosed)
+        } else { false }
+    })
+        .map(|(index, i)| {
             if index+1 >= token_length {
                 index
             } else {
@@ -109,7 +115,7 @@ pub fn create_execution_stack(fabric: &mut Fabric) -> Vec<TypedToken> {
         }
         if stack_print {
             for token in &mini_stack {
-                if token.lang_type().matches("boundary") { /*println!("{:?}", token);*/ } else {
+                if token.lang_type().matches("boundary") { println!("{:?}", token); } else {
                    println!("{:?}", token);
                 }
             }

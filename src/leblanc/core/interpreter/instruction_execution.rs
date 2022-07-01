@@ -11,7 +11,7 @@ use crate::leblanc::core::internal::internal_range_generator::LeblancInternalRan
 use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
 use crate::leblanc::core::interpreter::instructions::InstructionBase::{Comparator_Else, Comparator_ElseIf, Comparator_If};
 use crate::leblanc::core::interpreter::leblanc_runner::get_globals;
-use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Reflect, RustDataCast};
+use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, LeBlancObjectData, Reflect, RustDataCast};
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 
 use crate::leblanc::core::method_tag::MethodTag;
@@ -19,19 +19,25 @@ use crate::leblanc::core::native_types::attributes::can_add_self;
 use crate::leblanc::core::native_types::base_type::ToLeblanc;
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::derived::iterator_type::LeblancIterator;
+use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::error_type::LeblancError;
 use crate::leblanc::core::native_types::int128_type::leblanc_object_int128;
 use crate::leblanc::core::native_types::int_type::leblanc_object_int;
 
 
-use crate::LeBlancType;
-
+use crate::{CompileVocab, LeBlancType};
+use crate::leblanc::core::native_types::double_type::leblanc_object_double;
+use crate::leblanc::core::native_types::float_type::leblanc_object_float;
 
 
 pub fn execute_instruction(instruct: InstructionBase) -> fn(&mut LeblancHandle, &Instruction, &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
     match instruct {
+        InstructionBase::InstructionMarker => _INSTRUCT_MARKER_,
         InstructionBase::BinaryAdd => _INSTRUCT_BINARY_ADD_,
         InstructionBase::BinarySubtract => _INSTRUCT_BINARY_SUBTRACT_,
+        InstructionBase::BinaryModulo => _INSTRUCT_BINARY_MODULO_,
+        InstructionBase::BinaryAnd => _INSTRUCT_BINARY_AND_,
+        InstructionBase::BinaryOr => _INSTRUCT_BINARY_OR_,
         InstructionBase::InPlaceAdd => _INSTRUCT_INPLACE_ADD_,
         InstructionBase::LoadLocal => _INSTRUCT_LOAD_LOCAL_,
         InstructionBase::LoadConstant => _INSTRUCT_LOAD_CONSTANT_,
@@ -39,12 +45,15 @@ pub fn execute_instruction(instruct: InstructionBase) -> fn(&mut LeblancHandle, 
         InstructionBase::StoreLocal => _INSTRUCT_STORE_LOCAL_,
         InstructionBase::CallFunction => _CALL_FUNCTION_,
         InstructionBase::CallClassMethod => _INSTRUCT_CALL_CLASS_METHOD_,
-        InstructionBase::QuickList(_) => _INSTRUCT_CREATE_RANGE_,
+        InstructionBase::IteratorSetup(_) => _INSTRUCT_CREATE_RANGE_,
         InstructionBase::ForLoop => _INSTRUCT_FOR_LOOP_,
+        InstructionBase::WhileLoop => _INSTRUCT_WHILE_LOOP,
         InstructionBase::Equality(_) => _INSTRUCT_EQUALITY_,
         Comparator_If => _INSTRUCT_COMPARATOR_,
         Comparator_ElseIf => _INSTRUCT_COMPARATOR_,
         Comparator_Else => _INSTRUCT_COMPARATOR_,
+        InstructionBase::ListSetup => _INSTRUCT_LIST_SETUP_,
+        InstructionBase::ElementAccess => _INSTRUCT_ELEMENT_ACCESS_,
         _ => _INSTRUCT_BASE_
     }
 }
@@ -71,7 +80,12 @@ fn safe_stack_pop(stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Resul
 }
 
 fn _INSTRUCT_BASE_(_handle: &mut LeblancHandle, _arg: &Instruction, _stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
-    Err(LeBlancObject::unsafe_error())
+    Err(LeblancError::new("Instruction Doesn't Exist".to_string(), "".to_string(), vec![]).create_mutex())
+}
+
+fn _INSTRUCT_MARKER_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+    stack.push(LeBlancObject::unsafe_marker());
+    Ok(())
 }
 
 fn _INSTRUCT_INPLACE_ADD_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
@@ -139,36 +153,68 @@ fn _INSTRUCT_BINARY_SUBTRACT_(_handle: &mut LeblancHandle, _arg: &Instruction, s
     let ntargeter = targeter.borrow();
     let ntarget = target.borrow();
 
-
     if can_add_self(&ntargeter.typing) && can_add_self(&ntarget.typing) {
         stack.push(leblanc_object_int((ntarget.data.as_i128() - ntargeter.data.as_i128()) as i32).to_mutex());
         return Ok(());
-    }
-
-    let arguments = vec![ntargeter.to_leblanc_arg(0)];
-    let matched_method = ntarget.methods.iter().filter(|m| {
-        m.matches("_".to_string(), &arguments)
-    }).next().cloned();
-    match matched_method {
-        None => {
-            let arguments = vec![ntarget.to_leblanc_arg(0)];
-            let matched_method = ntargeter.methods.iter().filter(|m| {
-                m.matches("_".to_string(), &arguments)
-            }).next().cloned();
-            if matched_method.is_none() {
-                return Err(LeBlancObject::unsafe_error());
+    } else {
+        match ntarget.typing {
+            LeBlancType::Float | LeBlancType::Double => {
+                let double1: &f64 = ntarget.data.ref_data().unwrap();
+                let double2: &f64 = ntargeter.data.ref_data().unwrap();
+                if ntarget.typing == LeBlancType::Float {
+                    stack.push(leblanc_object_float((double1 - double2) as f32).to_mutex());
+                } else {
+                    stack.push(leblanc_object_double(double1 - double2).to_mutex());
+                }
+                return Ok(());
             }
-            drop(ntargeter);
-            drop(ntarget);
-            stack.push(matched_method.unwrap().run(targeter, &mut [target]));
-        }
-        Some(mut method) => {
-            drop(ntargeter);
-            drop(ntarget);
-            stack.push(method.run(target, &mut [targeter]));
+            _ => {}
         }
     }
+    Ok(())
+}
 
+fn _INSTRUCT_BINARY_MODULO_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+    let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+
+    let ntargeter = targeter.borrow();
+    let ntarget = target.borrow();
+
+    if can_add_self(&ntargeter.typing) && can_add_self(&ntarget.typing) {
+        stack.push(leblanc_object_int((ntarget.data.as_i128() % ntargeter.data.as_i128()) as i32).to_mutex());
+        return Ok(());
+    } else {
+        match ntarget.typing {
+            LeBlancType::Float | LeBlancType::Double => {
+                let double1: &f64 = ntarget.data.ref_data().unwrap();
+                let double2: &f64 = ntargeter.data.ref_data().unwrap();
+                if ntarget.typing == LeBlancType::Float {
+                    stack.push(leblanc_object_float((double1 % double2) as f32).to_mutex());
+                } else {
+                    stack.push(leblanc_object_double(double1 % double2).to_mutex());
+                }
+                return Ok(());
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
+fn _INSTRUCT_BINARY_AND_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+    let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+
+    stack.push((*target.borrow().data.ref_data().unwrap() && *targeter.borrow().data.ref_data().unwrap()).create_mutex());
+    Ok(())
+}
+
+fn _INSTRUCT_BINARY_OR_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+    let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+
+    stack.push((*target.borrow().data.ref_data().unwrap() || *targeter.borrow().data.ref_data().unwrap()).create_mutex());
     Ok(())
 }
 
@@ -196,6 +242,7 @@ fn _INSTRUCT_LOAD_CONSTANT_(handle: &mut LeblancHandle, arg: &Instruction, stack
 #[inline(always)]
 fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
     let result= handle.variables.get(arg.arg as usize);
+    //println!("{:#?}", result);
     match result {
         None => {
             let null = LeBlancObject::null().to_mutex();
@@ -308,34 +355,71 @@ fn _INSTRUCT_CREATE_RANGE_(_handle: &mut LeblancHandle, _arg: &Instruction, stac
     Ok(())
 }
 
+fn _INSTRUCT_LIST_SETUP_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+    let mut item = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let mut typing = item.borrow().typing;
+    let mut item_list = vec![];
+    while typing != LeBlancType::Marker {
+        item_list.push(item);
+        item = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+        typing = item.borrow().typing;
+    }
+    item_list.reverse();
+    stack.push(LeblancList::new(item_list, ).create_mutex());
+    Ok(())
+}
+
+fn _INSTRUCT_WHILE_LOOP(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+    let mut instructs = vec![];
+    let mut instruct = *handle.instructions.get((handle.current_instruct+1) as usize).unwrap();
+    let mut i = 1;
+    let loop_start = handle.current_instruct;
+    while instruct.instruct != InstructionBase::InstructionMarker {
+        instructs.push(instruct);
+        i += 1;
+        instruct = *handle.instructions.get((handle.current_instruct+i) as usize).unwrap();
+    }
+    let jump = arg.arg - ((instructs.len()-1) as u16);
+
+    let truth = handle.execute_instructions(&instructs, stack);
+    let mut boolean: bool = *truth.borrow().data.ref_data().unwrap();
+    while boolean {
+        let _loop_result = handle.execute_range(loop_start+1, loop_start+1 + arg.arg as u64 );
+        let truth = handle.execute_instructions(&instructs, stack);
+        boolean = *truth.borrow().data.ref_data().unwrap();
+
+    }
+
+    handle.current_instruct = loop_start;
+    handle.current_instruct += jump as u64;
+
+    Ok(())
+
+}
+
 fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
     let iter_variable = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let mut iterable = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
     let loop_start = handle.current_instruct;
 
-    // make into an iterator eventually, right now we'll just grab the internal list
     if iterable.borrow().typing != LeBlancType::Derived(DerivedType::Iterator) {
-        iterable = match iterable.call_name("iterator") {
+        iterable = match iterable.call_name("iterate") {
             Ok(iter) => iter,
             Err(err) => return Err(err)
         }
     }
 
-    /*let mut reflection = iterable.reflect();
-    let inner_iterator = reflection.downcast_mut::<LeblancIterator>().unwrap();*/
     let mut borrowed_iterable = iterable.borrow_mut();
     let inner_iterator: &mut LeblancIterator = borrowed_iterable.data.mut_data().unwrap();
 
-
     while inner_iterator.has_next() {
-        iter_variable.borrow_mut().move_data(inner_iterator.next());
+        let variable = inner_iterator.next();
+        iter_variable.borrow_mut().swap_rc(&mut variable.borrow_mut());
         let _loop_result = handle.execute_range(loop_start+1, loop_start+1 + arg.arg as u64 );
+        variable.borrow_mut().swap_rc(&mut iter_variable.borrow_mut());
     }
 
-    //TODO: Create iterator instead of an array, list comprehension
-
-    //println!("Done with loop");
     handle.current_instruct = loop_start;
     handle.current_instruct += arg.arg as u64;
 
@@ -351,7 +435,7 @@ fn _INSTRUCT_EQUALITY_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &m
     let tos1 = tos1.borrow();
     let tos2_borrow = tos2.borrow();
 
-    let result = match arg.arg {
+    stack.push(match arg.arg {
         0 => (tos1.data == tos2_borrow.data),
         1 => (tos1.data != tos2_borrow.data),
         2 => (tos1.data > tos2_borrow.data),
@@ -359,10 +443,7 @@ fn _INSTRUCT_EQUALITY_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &m
         4 => (tos1.data >= tos2_borrow.data),
         5 => (tos1.data <= tos2_borrow.data),
         _ => { return Err(LeBlancObject::unsafe_error()); }
-    };
-
-    //println!("result {}", result.loan().inquire().either().data);
-    stack.push(result.create_mutex());
+    }.create_mutex());
 
     Ok(())
 }
@@ -401,6 +482,27 @@ fn _INSTRUCT_COMPARATOR_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
         handle.current_instruct += arg.arg as u64;
     }
 
+    Ok(())
+
+}
+
+fn _INSTRUCT_ELEMENT_ACCESS_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+    let list_like = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let accessor = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+
+    let mut borrowed = list_like.borrow_mut();
+    let list: &mut LeblancList = borrowed.data.mut_data().unwrap();
+
+    let accessor_type = accessor.borrow().typing;
+    if accessor_type == LeBlancType::Derived(DerivedType::Slice) {
+
+    } else {
+        let index = accessor.borrow().data.as_i128() as usize;
+        stack.push(match list.internal_vec.get(index) {
+            None => return Err(LeblancError::new("IndexOutOfBoundsException".to_string(), format!("Cannot access an element at index: {} when object length is: {}", index, list.internal_vec.len()), vec![]).create_mutex()),
+            Some(e) => e.clone(),
+        });
+    }
     Ok(())
 
 }

@@ -92,8 +92,6 @@ impl Hash for LeBlancArgument {
 
 impl PartialEq for LeBlancArgument {
     fn eq(&self, other: &Self) -> bool {
-        println!("SELF: {:?}", self);
-        println!("OTHER: {:?}", other);
         if self.variable || other.variable {
             if self.typing == Null || other.typing == Null { return true }
             return self.typing == other.typing;

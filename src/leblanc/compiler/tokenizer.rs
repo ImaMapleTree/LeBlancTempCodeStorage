@@ -74,7 +74,6 @@ pub fn create_tokens(char_reader: &mut CharReader, mode: CompilationMode) -> Fab
             }
         }
         else if is_special((current_symbol.as_string() + &next_symbol.as_string()).as_str()) {
-            println!("Token: {}", (current_symbol.as_string() + &next_symbol.as_string()).as_str());
             add_token(&mut tokens, token);
             token = Token::from(current_symbol);
             let csymbol = next_symbol;
@@ -88,7 +87,6 @@ pub fn create_tokens(char_reader: &mut CharReader, mode: CompilationMode) -> Fab
         }
         // Check if the symbol is a character that counts as an individual token or operator
         else if current_symbol.is_boundary() || is_operator(current_symbol.as_string().as_str()) || *current_symbol.char() == '.' {
-            println!("Current symbol: {:?}", current_symbol);
             // If the last token is only an operator then we can add the new operator to it
             if *current_symbol.char() == '.' {
                 if constant_type(&(token.as_string() + &current_symbol.as_string())).is_numeric() {
@@ -188,7 +186,6 @@ fn check_end_quote(ch: char, quote_marker: char) -> bool {
 }
 
 fn add_token(tokens: &mut Vec<Token>, token: Token) {
-    println!("Adding token: {}", token.as_string());
     if !(token.as_string().starts_with("//") || token.as_string().starts_with("/*")) && token.borrow().len() > 0 {
         tokens.push(token);
     }

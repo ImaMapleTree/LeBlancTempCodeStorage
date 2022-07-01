@@ -39,8 +39,8 @@ pub fn _random_one_arg_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCel
 }
 
 pub fn _random_two_arg_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
-    let borrowed1 = args[1].borrow();
-    let borrowed2 = args[0].borrow();
+    let borrowed1 = args[0].borrow();
+    let borrowed2 = args[1].borrow();
     let lower_bound = borrowed1.data.as_i128();
     let upper_bound = borrowed2.data.as_i128();
 

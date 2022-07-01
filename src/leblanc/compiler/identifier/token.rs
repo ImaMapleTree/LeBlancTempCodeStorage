@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use crate::leblanc::compiler::symbols::Symbol;
+use crate::leblanc::compiler::symbols::{Symbol, SymbolType};
 use crate::leblanc::rustblanc::exception::leblanc_base_exception::LeblancBaseException;
 
 #[derive(Debug, Clone, Hash)]
@@ -14,6 +14,14 @@ impl Token {
             symbols: Vec::new(),
             line_number: 0
         }
+    }
+
+    pub fn from_string(string: String) -> Token {
+        let mut symbols = vec![];
+        for c in string.chars() {
+            symbols.push(Symbol::new(c, false, false, false, false, SymbolType::of(c), 0, 0))
+        }
+        return Token::new(symbols, 0);
     }
 
     pub fn from(symbol: Symbol) -> Token {
@@ -37,6 +45,10 @@ impl Token {
     pub fn add_symbol(&mut self, symbol: Symbol) {
         self.line_number = symbol.line_number();
         self.symbols.push(symbol);
+    }
+
+    pub fn insert_symbol(&mut self, index: usize, symbol: Symbol) {
+        self.symbols.insert(index, symbol);
     }
 
     pub fn len(&self) -> usize {
@@ -98,6 +110,10 @@ impl Token {
     pub fn symbols(&self) -> &Vec<Symbol> { &self.symbols }
 
     pub fn line_number(&self) -> u32 { self.line_number }
+
+    pub fn set_line_number(&mut self, line_number: u32) {
+        self.line_number = line_number;
+    }
 }
 impl Eq for Token {}
 

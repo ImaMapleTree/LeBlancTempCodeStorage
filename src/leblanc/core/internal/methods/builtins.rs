@@ -11,6 +11,7 @@ use strum::VariantNames;
 use crate::leblanc::core::internal::methods::builtins::builtin_print::{_BUILTIN_PRINT_METHOD_, _BUILTIN_PRINT_OBJECT_};
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
+use crate::leblanc::core::internal::methods::builtins::builtin_debug::{_BUILTIN_DEBUG_METHOD_, _BUILTIN_DEBUG_OBJECT_};
 use crate::leblanc::core::internal::methods::builtins::builtin_debug::builtin_disassemble::{_BUILTIN_DISASSEMBLE_METHOD_, _BUILTIN_DISASSEMBLE_OBJECT_};
 use crate::LeBlancType;
 
@@ -24,11 +25,15 @@ pub enum BuiltinFunctions {
 }
 
 pub fn create_partial_functions() -> Vec<PartialFunction> {
-    vec![PartialFunction::from_method(_BUILTIN_PRINT_METHOD_(), vec![LeBlancType::Null]), PartialFunction::from_method(_BUILTIN_DISASSEMBLE_METHOD_(), vec![LeBlancType::Null])]
+    vec![
+        PartialFunction::from_method(_BUILTIN_PRINT_METHOD_(), vec![LeBlancType::Null]),
+         PartialFunction::from_method(_BUILTIN_DISASSEMBLE_METHOD_(), vec![LeBlancType::Null]),
+        PartialFunction::from_method(_BUILTIN_DEBUG_METHOD_(), vec![LeBlancType::Null])
+    ]
 }
 
 pub fn create_builtin_function_objects() -> Vec<Rc<RefCell<LeBlancObject>>> {
-    vec![_BUILTIN_PRINT_OBJECT_().to_mutex(), _BUILTIN_DISASSEMBLE_OBJECT_().to_mutex()]
+    vec![_BUILTIN_PRINT_OBJECT_().to_mutex(), _BUILTIN_DISASSEMBLE_OBJECT_().to_mutex(), _BUILTIN_DEBUG_OBJECT_().to_mutex()]
 }
 
 impl Hexable for BuiltinFunctions {

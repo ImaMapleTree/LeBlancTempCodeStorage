@@ -2,16 +2,20 @@ use alloc::rc::Rc;
 use core::fmt::{Display, Formatter};
 use std::cell::RefCell;
 use std::collections::{BTreeSet};
+use std::mem::take;
 use std::sync::Arc;
 use fxhash::{FxHashMap, FxHashSet};
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
-use crate::leblanc::core::internal::methods::internal_iterator::{_internal_iterator_next, _internal_iterator_to_list_};
+use crate::leblanc::core::internal::methods::internal_iterator::{_internal_iterator_filter_, _internal_iterator_map_, _internal_iterator_next, _internal_iterator_to_list_};
+use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
+use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method};
 use crate::leblanc::core::native_types::derived::DerivedType;
+use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::LeBlancType;
 
 pub trait IteratorUtils {
@@ -27,7 +31,6 @@ where
     T: 'static + LeblancIterable + Clone + std::fmt::Debug,
 {
    fn leblanc_iterator_clone(&self) -> Box<dyn LeblancIterable> {
-        println!("Iterator clone");
        Box::new(self.clone())
     }
 
@@ -37,13 +40,17 @@ where
 }
 
 pub trait LeblancIterable: IteratorUtils {
-    fn next(&mut self) -> LeBlancObject;
+    fn lb_next(&mut self) -> Rc<RefCell<LeBlancObject>>;
     fn has_next(&self) -> bool;
+    fn reverse(&mut self);
+    fn to_list(&mut self) -> LeblancList;
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Rc<RefCell<LeBlancObject>>>>;
+    fn transformed(&mut self) -> Option<&mut TransformedIterator>;
 }
 
 #[derive(Clone, Debug, PartialOrd)]
 pub struct LeblancIterator {
-    iterator: Box<dyn LeblancIterable>
+    pub iterator: Box<dyn LeblancIterable>
 }
 
 pub fn leblanc_object_iterator(leblanc_iterable: Box<dyn LeblancIterable>) -> LeBlancObject {
@@ -66,11 +73,19 @@ impl LeblancIterator {
         }
     }
 
-    pub fn next(&mut self) -> LeBlancObject { self.iterator.next() }
+    pub fn next(&mut self) -> Rc<RefCell<LeBlancObject>> { self.iterator.lb_next() }
 
     pub fn has_next(&self) -> bool {
         self.iterator.has_next()
     }
+
+    pub fn reverse(&mut self) { self.iterator.reverse() }
+
+    pub fn to_list(&mut self) -> LeblancList { self.iterator.to_list() }
+
+    pub fn transformed(&mut self) -> Option<&mut TransformedIterator> { self.iterator.transformed() }
+
+    pub fn to_rust_iterator(&mut self) -> Box<dyn Iterator<Item=Rc<RefCell<LeBlancObject>>>> { self.iterator.to_rust_iter() }
 }
 
 impl Display for LeblancIterator {
@@ -88,6 +103,8 @@ pub fn iterator_methods() -> Arc<FxHashSet<Method>> {
     hash_set.insert(Method::default(base_field_method(), _internal_field_));
     hash_set.insert( iterator_next_method());
     hash_set.insert(iterator_to_list());
+    hash_set.insert(iterator_filter());
+    hash_set.insert(iterator_map());
     Arc::new(hash_set)
 }
 
@@ -107,6 +124,43 @@ pub fn iterator_to_list() -> Method {
         _internal_iterator_to_list_,
         BTreeSet::new()
     )
+}
+
+pub fn iterator_filter() -> Method {
+    let method_store = MethodStore::new("filter".to_string(), vec![LeBlancArgument::default(LeBlancType::Function, 0)]);
+    Method::new(
+        method_store,
+        _internal_iterator_filter_,
+        BTreeSet::new()
+    )
+}
+
+pub fn iterator_map() -> Method {
+    let method_store = MethodStore::new("map".to_string(), vec![LeBlancArgument::default(LeBlancType::Function, 0)]);
+    Method::new(
+        method_store,
+        _internal_iterator_map_,
+        BTreeSet::new()
+    )
+}
+
+
+impl LeblancIterable for Vec<Rc<RefCell<LeBlancObject>>> {
+    fn lb_next(&mut self) -> Rc<RefCell<LeBlancObject>> {
+        self.remove(0)
+    }
+
+    fn has_next(&self) -> bool {
+        !self.is_empty()
+    }
+
+    fn reverse(&mut self) { self.reverse(); }
+
+    fn to_list(&mut self) -> LeblancList { LeblancList::new(self.clone()) }
+
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Rc<RefCell<LeBlancObject>>>> { Box::new(self.clone().into_iter()) }
+
+    fn transformed(&mut self) -> Option<&mut TransformedIterator> { None }
 }
 
 

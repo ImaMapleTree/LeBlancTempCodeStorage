@@ -1,14 +1,21 @@
 use core::fmt::{Display, Formatter};
 use std::cmp::Ordering;
-use fxhash::{FxHashMap};
+use fxhash::{FxHashMap, FxHashSet};
 
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use std::collections::BTreeSet;
+use std::sync::Arc;
+use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
+use crate::leblanc::core::internal::methods::internal_list::{_internal_list_append_, _internal_list_iterate_};
+use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, LeBlancObjectData};
-use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
+use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, LeBlancObjectData, RustDataCast};
+use crate::leblanc::core::method::Method;
+use crate::leblanc::core::method_store::MethodStore;
+use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_methods, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::LeBlancType;
 
@@ -32,7 +39,7 @@ impl LeblancList {
 }
 
 pub fn leblanc_object_list_empty() -> LeBlancObject {
-    let base_methods = base_methods();
+    let base_methods = list_methods();
 
     LeBlancObject::new(
         LeBlancObjectData::List(LeblancList::empty()),
@@ -43,8 +50,38 @@ pub fn leblanc_object_list_empty() -> LeBlancObject {
     )
 }
 
+pub fn list_methods() -> Arc<FxHashSet<Method>> {
+    let mut hash_set = FxHashSet::default();
+    hash_set.insert(Method::default(base_to_string_method(), _internal_to_string_));
+    hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
+    hash_set.insert(Method::default(base_equals_method(), _internal_to_string_));
+    hash_set.insert(Method::default(base_clone_method(), _internal_to_string_));
+    hash_set.insert(Method::default(base_field_method(), _internal_field_));
+    hash_set.insert(list_iterate_method());
+    hash_set.insert(list_append_method());
+    Arc::new(hash_set)
+}
+
+pub fn list_iterate_method() -> Method {
+    let method_store = MethodStore::new("iterate".to_string(), vec![]);
+    Method::new(
+        method_store,
+        _internal_list_iterate_,
+        BTreeSet::new()
+    )
+}
+
+pub fn list_append_method() -> Method {
+    let method_store = MethodStore::new("append".to_string(), vec![LeBlancArgument::default(LeBlancType::Flex, 0)]);
+    Method::new(
+        method_store,
+        _internal_list_append_,
+        BTreeSet::new()
+    )
+}
+
 pub fn leblanc_object_list(list: LeblancList) -> LeBlancObject {
-    let base_methods = base_methods();
+    let base_methods = list_methods();
 
     LeBlancObject::new(
         LeBlancObjectData::List(list),
@@ -92,6 +129,29 @@ impl PartialOrd for LeblancList {
             Some(Ordering::Less)
         } else {
             None
+        }
+    }
+}
+
+impl RustDataCast<LeblancList> for LeBlancObjectData {
+    fn clone_data(&self) -> Option<LeblancList> {
+        match self {
+            LeBlancObjectData::List(list) => Some(list.clone()),
+            _ => None
+        }
+    }
+
+    fn ref_data(&self) -> Option<&LeblancList> {
+        match self {
+            LeBlancObjectData::List(list) => Some(list),
+            _ => None
+        }
+    }
+
+    fn mut_data(&mut self) -> Option<&mut LeblancList> {
+        match self {
+            LeBlancObjectData::List(list) => Some(list),
+            _ => None
         }
     }
 }
