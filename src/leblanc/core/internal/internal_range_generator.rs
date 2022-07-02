@@ -1,5 +1,5 @@
 use alloc::rc::Rc;
-use core::borrow::BorrowMut;
+
 use core::fmt::{Debug, Formatter};
 use std::cell::RefCell;
 use std::mem::swap;
@@ -35,7 +35,7 @@ impl LeblancIterable for LeblancInternalRangeGenerator {
             ConditionalStep => { }
         }
         //println!("{}", self.value.to_string());
-        self.value._clone().to_mutex()
+        self.value.clone().to_mutex()
     }
 
     fn has_next(&self) -> bool {

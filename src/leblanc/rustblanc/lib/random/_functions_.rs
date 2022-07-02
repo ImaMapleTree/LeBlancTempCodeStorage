@@ -1,9 +1,9 @@
 use alloc::rc::Rc;
 use std::cell::RefCell;
-use std::ops::{Add, Div, Mul, Sub};
-use std::time::Instant;
+use std::ops::{Add, Div, Mul};
+
 use chrono::Local;
-use rand_chacha::{ChaCha12Rng, ChaCha8Rng};
+use rand_chacha::{ChaCha8Rng};
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::native_types::base_type::ToLeblanc;
@@ -23,7 +23,7 @@ fn random_number() -> f64 {
     (generator.next_u64() as f64).div(u64::MAX as f64)
 }
 
-pub fn _random_no_arg_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
+pub fn _random_no_arg_(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
     random_number().create_mutex()
 }
 

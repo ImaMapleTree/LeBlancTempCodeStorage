@@ -72,7 +72,7 @@ pub fn partial_spin(cr: &mut CharReader, mode: CompilationMode) -> Fabric {
     println!("Errors: {:?}", fabric.errors());
 
     if !fabric.errors().is_empty() {
-        error_report(cr, &fabric.tokens().iter().cloned().map(|t| t.value.clone()).collect(), fabric.errors());
+        //error_report(cr, &fabric.tokens().iter().cloned().map(|t| t.value.clone()).collect(), fabric.errors());
     }
 
     fabric
@@ -91,7 +91,7 @@ pub fn create_execution_stack(fabric: &mut Fabric) -> Vec<TypedToken> {
             matches!(boundary_type, Semicolon | BraceOpen | BraceClosed)
         } else { false }
     })
-        .map(|(index, i)| {
+        .map(|(index, _i)| {
             if index+1 >= token_length {
                 index
             } else {

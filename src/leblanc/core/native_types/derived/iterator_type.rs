@@ -2,7 +2,7 @@ use alloc::rc::Rc;
 use core::fmt::{Display, Formatter};
 use std::cell::RefCell;
 use std::collections::{BTreeSet};
-use std::mem::take;
+
 use std::sync::Arc;
 use fxhash::{FxHashMap, FxHashSet};
 use std::sync::Mutex;
@@ -82,7 +82,9 @@ impl LeblancIterator {
 
     pub fn reverse(&mut self) { self.iterator.reverse() }
 
-    pub fn to_list(&mut self) -> LeblancList { self.iterator.to_list() }
+    pub fn to_list(&mut self) -> LeblancList {
+        println!("LeblancIterator to list");
+        self.iterator.to_list() }
 
     pub fn transformed(&mut self) -> Option<&mut TransformedIterator> { self.iterator.transformed() }
 

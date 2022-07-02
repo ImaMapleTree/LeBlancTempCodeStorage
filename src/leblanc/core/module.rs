@@ -2,7 +2,7 @@ use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
-use crate::leblanc::compiler::compile_types::partial_token::PartialToken;
+
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::base_type::internal_method;
@@ -19,7 +19,7 @@ impl Display for Module {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CoreModule {
     pub name: String,
     pub methods: Vec<ModuleMethod>
@@ -45,7 +45,7 @@ impl CoreModule {
 
 impl Default for CoreModule {
     fn default() -> Self {
-        return CoreModule::new("".to_string(), vec![]);
+        CoreModule::new("".to_string(), vec![])
     }
 }
 

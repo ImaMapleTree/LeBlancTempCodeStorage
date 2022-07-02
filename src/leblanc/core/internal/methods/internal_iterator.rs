@@ -2,11 +2,11 @@ use alloc::rc::Rc;
 use std::cell::RefCell;
 use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
 
-use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, Reflect, RustDataCast};
-use crate::leblanc::core::native_types::base_type::ToLeblanc;
+use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
+
 use crate::leblanc::core::native_types::derived::iterator_type::{leblanc_object_iterator, LeblancIterator};
-use crate::leblanc::core::native_types::derived::list_type::{leblanc_object_list, LeblancList};
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::derived::list_type::{leblanc_object_list};
+
 
 pub fn _internal_iterator_next(_self: Rc<RefCell<LeBlancObject>>, _arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
     let mut borrowed = _self.borrow_mut();
@@ -26,12 +26,12 @@ pub fn _internal_iterator_filter_(_self: Rc<RefCell<LeBlancObject>>, _arguments:
         Some(trans_iter) => {
             trans_iter.filter(_arguments[0].borrow().data.get_inner_method().unwrap().leblanc_handle.borrow().clone());
             drop(borrowed);
-            return _self;
+            _self
         },
         None => {
             let mut new_iter = TransformedIterator::new(iterator.iterator.clone());
             new_iter.filter(_arguments[0].borrow().data.get_inner_method().unwrap().leblanc_handle.borrow().clone());
-            return leblanc_object_iterator(Box::new(new_iter)).to_mutex()
+            leblanc_object_iterator(Box::new(new_iter)).to_mutex()
         }
     }
 }

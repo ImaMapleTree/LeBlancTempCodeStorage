@@ -26,6 +26,7 @@ pub enum LBOperator {
     Match,
     QuickList,
     Increment,
+    Groupment,
     Index,
     Cast,
     NULL
@@ -95,7 +96,8 @@ impl Display for LBOperator {
             LBOperator::QuickList => "to",
             LBOperator::Cast => "as",
             LBOperator::Index => "[",
-            LBOperator::NULL => "null"
+            LBOperator::NULL => "null",
+            LBOperator::Groupment => "->"
         };
         write!(f, "{}", s)
     }

@@ -1,10 +1,10 @@
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
-use std::io;
-use std::io::Write;
+
+
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
-use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject};
+use crate::leblanc::core::leblanc_object::{LeBlancObject};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
@@ -18,7 +18,7 @@ fn _BUILTIN_DEBUG_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeB
     println!("----------------------DEBUGGING-------------------------");
     println!("--------------------------------------------------------");
     for i in 0..arg_length {
-        let sep = if i == arg_length-1 { "\n" } else { " " };
+        let _sep = if i == arg_length-1 { "\n" } else { " " };
         let arg = &mut args[i];
         dbg!(arg);
     }

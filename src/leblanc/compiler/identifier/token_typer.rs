@@ -18,7 +18,7 @@ use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::{CompilationMode, compile, LeBlancType};
 use crate::leblanc::compiler::compile_types::partial_token::PartialToken;
 use crate::leblanc::compiler::import::{Import, ImportType};
-use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{BracketOpen, Comma, ParenthesisClosed, ParenthesisOpen, VerticalLine};
+use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{BracketOpen, Comma, ParenthesisClosed, ParenthesisOpen};
 use crate::leblanc::compiler::lang::leblanc_lang::ExtensionType::{ExtensionTypeParam, ExtensionTypeExport, ExtensionTypeImport};
 use crate::leblanc::compiler::lang::leblanc_lang::Specials::LambdaMarker;
 use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
@@ -52,7 +52,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
 
     //Code Analysis
     let mut analysis = RuleAnalyzer::new();
-    let mut last_vocab = UNKNOWN_VOCAB.clone();
+    let mut last_vocab = UNKNOWN_VOCAB;
 
     while !tokens.is_empty() || next_token != Token::empty() {
         token = next_token;
@@ -88,7 +88,14 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
 
             else if is_special(token_string.as_str()) {
                 match token_string.as_str() {
-                    "->" => CompileVocab::SPECIAL(special_value(token_string.as_str()), 0),
+                    "->" => {
+                        let scopes = type_map.get(&next_token.as_string());
+                        if scopes.is_some() && scopes.unwrap()[scope_value][0].stores_native_type() && *scopes.unwrap()[scope_value][0].extract_native_type() == LeBlancType::Group {
+                            CompileVocab::OPERATOR(LBOperator::Groupment)
+                        } else {
+                            CompileVocab::SPECIAL(special_value(token_string.as_str()), 0)
+                        }
+                    },
                     "." => CompileVocab::SPECIAL(special_value(token_string.as_str()), 5),
                     _ => CompileVocab::SPECIAL(special_value(token_string.as_str()), 120)
                 }

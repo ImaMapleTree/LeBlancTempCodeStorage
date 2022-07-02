@@ -5,12 +5,13 @@ use crate::CompileVocab::{CONSTANT, FUNCTION, TYPE, UNKNOWN, VARIABLE};
 use crate::leblanc::compiler::compile_types::partial_token::PartialToken;
 use crate::leblanc::compiler::identifier::token::Token;
 use crate::leblanc::compiler::identifier::token_identifier::LambdaCloser::{BraceCloser, SemiColonCloser};
-use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{Func, Return, Returns, SelfRT};
+use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword::{Func, Returns, SelfRT};
 use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, FunctionType};
 use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{BraceClosed, BracketClosed, BracketOpen, Comma, ParenthesisClosed, ParenthesisOpen};
 use crate::leblanc::compiler::lang::leblanc_lang::Specials::LambdaMarker;
-use crate::leblanc::compiler::symbols::Symbol;
-use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
+use crate::leblanc::compiler::lang::leblanc_operators::LBOperator::Index;
+
+
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub::InvalidSyntax;
@@ -215,7 +216,7 @@ pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, func_matcher: &mut
     }
 }
 
-pub fn create_anno_functions(typed_tokens: &mut Vec<TypedToken>, errors: &mut Vec<ErrorStub>) {
+pub fn create_anno_functions(typed_tokens: &mut Vec<TypedToken>, _errors: &mut Vec<ErrorStub>) {
     let mut i = 0;
     let mut final_appends = vec![];
     while i < typed_tokens.len() {
@@ -338,8 +339,9 @@ pub fn create_ownership(typed_tokens: Vec<TypedToken>, mode: CompilationMode) ->
             node_tokens.append_item(Node::new(typed_token));
         }
 
-        else if lang_type == CompileVocab::BOUNDARY(ParenthesisOpen) || lang_type == CompileVocab::BOUNDARY(BracketOpen) {
+        else if lang_type == CompileVocab::BOUNDARY(ParenthesisOpen) || lang_type == CompileVocab::BOUNDARY(BracketOpen) || lang_type == CompileVocab::OPERATOR(Index) {
             if let CompileVocab::BOUNDARY(boundary_type) = typed_token.lang_type() { parent_type = boundary_type }
+            else { parent_type = BracketOpen }
             if parents.is_empty() {
                 parents.push(Node::new(typed_token));
             } else {

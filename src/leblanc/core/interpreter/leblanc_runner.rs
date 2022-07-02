@@ -3,8 +3,8 @@
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::time::Instant;
-use crate::leblanc::core::interpreter::instructions::Instruction;
-use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Reflect, RustDataCast, Stringify};
+
+use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Reflect, RustDataCast};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::error_type::LeblancError;
 use crate::LeBlancType;

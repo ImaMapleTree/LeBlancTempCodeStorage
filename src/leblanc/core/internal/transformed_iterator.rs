@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use crate::leblanc::core::internal::transformed_iterator::IterMutation::{Filter, Map};
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, RustDataCast};
-use crate::leblanc::core::method::Method;
+
 use crate::leblanc::core::native_types::derived::iterator_type::{LeblancIterable};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 
@@ -72,6 +72,6 @@ impl LeblancIterable for TransformedIterator {
     }
 
     fn transformed(&mut self) -> Option<&mut TransformedIterator> {
-        return Some(self);
+        Some(self)
     }
 }

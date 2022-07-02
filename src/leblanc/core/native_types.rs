@@ -6,7 +6,7 @@ use crate::leblanc::core::native_types::derived::DerivedType;
 
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
-use crate::LeBlancType::{Arch, Block, Boolean, Char, Class, Derived, Double, Dynamic, Exception, Flex, Float, Function, Int, Int128, Int64, Module, Null, SelfType, Short, Marker};
+use crate::LeBlancType::{Arch, Group, Boolean, Char, Class, Derived, Double, Dynamic, Exception, Flex, Float, Function, Int, Int128, Int64, Module, Null, SelfType, Short, Marker, Promise};
 
 pub mod NULL;
 pub mod string_type;
@@ -25,10 +25,12 @@ pub mod char_type;
 pub mod error_type;
 pub mod attributes;
 pub mod derived;
+pub mod group_type;
+pub mod promise_type;
 
-static VARIANTS: [&str; 20] = ["flex", "Self", "char", "short", "int", "int64", "in128", "arch", "float", "double", "boolean", "string", "block", "function", "module", "class", "dynamic", "exception", "marker", "null"];
+static VARIANTS: [&str; 23] = ["flex", "Self", "char", "short", "int", "int64", "int128", "arch", "float", "double", "boolean", "string", "group", "function", "module", "promise", "class", "dynamic", "exception", "marker", "null", "list", "iterator"];
 
-#[derive(Eq, Clone, Copy, Debug, Ord, PartialOrd, Hash)]
+#[derive(Eq, Clone, Copy, Debug, Ord, PartialOrd, Hash, Default)]
 pub enum LeBlancType {
     Class(u32), // User defined class with ID
     Flex,
@@ -43,13 +45,15 @@ pub enum LeBlancType {
     Double, // internally f64
     Boolean,
     String,
-    Block,
+    Group,
     Function,
     Module,
     Dynamic,
     Exception, // internal implementation of "dynamic
     Derived(DerivedType),
+    Promise,
     Marker,
+    #[default]
     Null
 }
 
@@ -69,7 +73,7 @@ pub fn type_value(string: &str) -> LeBlancType {
         "double" => Double,
         "boolean" => Boolean,
         "string" => LeBlancType::String,
-        "block" => Block,
+        "group" => Group,
         "function" => Function,
         "module" => Module,
         "dynamic" => Dynamic,
@@ -77,6 +81,7 @@ pub fn type_value(string: &str) -> LeBlancType {
         "Self" => SelfType,
         "null" => Null,
         "marker" => Marker,
+        "promise" => Promise,
         "List" => Derived(DerivedType::List),
         Other => {
             if Other.starts_with("class.") {
@@ -123,9 +128,10 @@ impl LeBlancType {
             Double => "double",
             Boolean => "boolean",
             LeBlancType::String => "string",
-            Block => "block",
+            Group => "group",
             Function => "function",
             Module => "module",
+            Promise => "promise",
             Class(v) => {
                 if *v == 0 {
                     "Undefined"

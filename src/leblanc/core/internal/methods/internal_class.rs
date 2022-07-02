@@ -21,7 +21,7 @@ pub fn _internal_field_(_self: Rc<RefCell<LeBlancObject>>, arguments: &mut [Rc<R
 
 pub fn _internal_expose_(_self: Rc<RefCell<LeBlancObject>>, _arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
     let class_meta = ClassMeta::default("ExposedObject".to_string(), 0);
-    let mut expose_object = LeBlancObject::new(
+    let expose_object = LeBlancObject::new(
         LeBlancObjectData::Class(Box::new(class_meta.clone())),
         LeBlancType::Class(class_meta.parse_id),
         base_methods(),
@@ -32,7 +32,7 @@ pub fn _internal_expose_(_self: Rc<RefCell<LeBlancObject>>, _arguments: &mut [Rc
     expose_object.members.lock().unwrap().insert("name".to_string(), leblanc_object_string(_self.borrow().name_of()));
 
     let variable_class_meta = ClassMeta::default("VariableContext".to_string(), 1);
-    let mut variable_state = LeBlancObject::new(
+    let variable_state = LeBlancObject::new(
         LeBlancObjectData::Class(Box::new(variable_class_meta.clone())),
         LeBlancType::Class(variable_class_meta.parse_id),
         base_methods(),

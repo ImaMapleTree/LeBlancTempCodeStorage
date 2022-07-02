@@ -1,8 +1,8 @@
 use std::fmt;
-use smol_str::SmolStr;
+
 use crate::leblanc::rustblanc::copystring::CopyString;
 
-#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Copy)]
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Copy, Default)]
 pub struct VariableContext {
     pub name: CopyString,
     pub line_number: u32,
@@ -36,19 +36,20 @@ impl VariableContext {
 impl Clone for VariableContext {
     fn clone(&self) -> Self {
         VariableContext {
-            name: self.name.clone(),
+            name: self.name,
             line_number: self.line_number,
-            file: self.file.clone(),
+            file: self.file,
             state: self.state,
             relationship: self.relationship
         }
     }
 }
 
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Default)]
 pub enum VariableState {
     Global,
     Local,
+    #[default]
     Stack
 }
 

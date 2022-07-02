@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 
 
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
-use crate::leblanc::core::leblanc_object::LeBlancObject;
+use crate::leblanc::core::leblanc_object::{ArcToRc, LeBlancObject, RcToArc};
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
@@ -14,10 +14,12 @@ use crate::leblanc::core::method_tag::MethodTag;
 use alloc::rc::Rc;
 
 use std::cell::{RefCell};
+use std::sync::{Arc, Mutex};
 
 pub struct Method {
     pub context: MethodStore,
     pub leblanc_handle: Rc<RefCell<LeblancHandle>>,
+    pub arc_handle: Option<LeblancHandle>,
     pub handle: fn(Rc<RefCell<LeBlancObject>>, &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>,
     pub tags: BTreeSet<MethodTag>,
     pub method_type: MethodType,
@@ -30,6 +32,7 @@ impl Method {
         Method {
             context,
             leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
+            arc_handle: None,
             handle,
             tags,
             method_type: MethodType::InternalMethod
@@ -41,6 +44,7 @@ impl Method {
         Method {
             context: MethodStore::no_args("null".to_string()),
             leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
+            arc_handle: None,
             handle: null_func,
             tags: BTreeSet::new(),
             method_type: MethodType::InternalMethod
@@ -51,6 +55,7 @@ impl Method {
         Method {
             context: MethodStore::no_args("null".to_string()),
             leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
+            arc_handle: None,
             handle: error_func,
             tags: BTreeSet::new(),
             method_type: MethodType::InternalMethod
@@ -68,6 +73,7 @@ impl Method {
         Method {
             context,
             leblanc_handle,
+            arc_handle: None,
             handle: null_func,
             tags,
             method_type: MethodType::DefinedMethod
@@ -91,6 +97,19 @@ impl Method {
         }
     }
 
+    /*pub async fn run_async(&mut self, _self: Arc<Mutex<LeBlancObject>>, mut vec_arcs: Vec<Arc<Mutex<LeBlancObject>>>) -> Arc<Mutex<LeBlancObject>> {
+        let args = &mut vec_arcs;
+        let mut handle = Rc::unwrap_or_clone(self.leblanc_handle.clone()).into_inner();
+        let internal_method = self.is_internal_method();
+        match internal_method {
+            false => {
+                handle.execute_async(args).await
+            }
+            //true => async { (self.handle)(_self.to_rc(), args) }.await.to_arc()
+            true => handle.execute_async(args).await
+        }
+    }
+*/
     /*#[inline(always)]
     pub fn run_with_vec(&mut self, _self: Rc<RefCell<LeBlancObject>>, args: &mut Vec<Strawberry<LeBlancObject>>) -> Rc<RefCell<LeBlancObject>> {
         let mut leblanc_handle = match self.leblanc_handle.acquire() {
@@ -171,7 +190,8 @@ impl Clone for Method {
             handle: self.handle,
             leblanc_handle: self.leblanc_handle.clone(),
             tags: self.tags.clone(),
-            method_type: self.method_type
+            method_type: self.method_type,
+            arc_handle: None
         }
         //Method::new(self.context.clone(), self.handle, self.tags.clone())
     }

@@ -6,8 +6,9 @@ use crate::leblanc::compiler::lang::leblanc_operators::LBOperator;
 use crate::leblanc::rustblanc::relationship::{Node, to_node_vec};
 
 pub fn create_stack<'a>(tokens: &mut Vec<Node<TypedToken>>, stack: &'a mut Vec<TypedToken>) -> &'a mut Vec<TypedToken> {
-    println!("Tokens: {:?}", tokens.iter().map(|i| i.value.to_string()).collect::<Vec<String>>());
+    println!("Recursively called");
     while !tokens.is_empty() {
+        println!("Tokens: {:?}", tokens.iter().map(|i| i.value.to_string()).collect::<Vec<String>>());
         let peek_token = &tokens.last().unwrap().value;
         let mut prime_token = peek_token;
         let mut marker = tokens.len()-1;
@@ -49,15 +50,24 @@ pub fn create_stack<'a>(tokens: &mut Vec<Node<TypedToken>>, stack: &'a mut Vec<T
                 if consumed.value.lang_type().priority() <= 5 {
                     create_stack(&mut tokens.drain(0..marker).into_iter().collect(), stack);
                     create_stack(tokens, stack);
-                } else if consumed.value.lang_type() == CompileVocab::OPERATOR(LBOperator::Increment) {
-                    //println!("Tokens: {:?}", tokens.iter().map(|i| i.value.to_string()).collect::<Vec<String>>());
-                    let mut other_token_stack: Vec<Node<TypedToken>> = tokens.drain(0..marker).into_iter().collect();
+                } else if consumed.value.lang_type() == CompileVocab::OPERATOR(LBOperator::QuickList) {
+                    /*println!("Increment Tokens: {:?}", tokens.iter().map(|i| i.value.to_string()).collect::<Vec<String>>());
                     if tokens[tokens.len()-1].value.lang_type().matches("boundary") {
                         other_token_stack.push(tokens.pop().unwrap());
-                    }
+                    }*/
+                    let mut other_token_stack: Vec<Node<TypedToken>> = tokens.drain(0..marker).into_iter().collect();
                     create_stack(tokens, stack);
                     create_stack(&mut other_token_stack, stack);
-                } else if consumed.value.lang_type() != CompileVocab::OPERATOR(LBOperator::QuickList) {
+                    //println!("Token at current length: {:?}", stack[length+1]);
+                    //let iterator_setup = stack.pop().unwrap();
+                } else if consumed.value.lang_type() == CompileVocab::OPERATOR(LBOperator::Index) {
+                    create_stack(&mut tokens.drain(0..marker).into_iter().collect(), stack);
+                    create_stack(tokens, stack);
+                    create_stack(&mut to_node_vec(&consumed.children), stack);
+                } else if consumed.value.lang_type() == CompileVocab::OPERATOR(LBOperator::Increment) {
+
+                }
+                else {
                     create_stack(&mut tokens.drain(0..marker).into_iter().collect(), stack);
                     create_stack(tokens, stack);
                 }
@@ -78,6 +88,7 @@ pub fn create_stack<'a>(tokens: &mut Vec<Node<TypedToken>>, stack: &'a mut Vec<T
 
 
     }
+    println!("Recursively exited");
     stack
 
 

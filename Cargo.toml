@@ -28,6 +28,9 @@ rand_chacha = "0.3.1"
 num = "0.4.0"
 smol_str = "0.1.23"
 lazy_static = "1.4.0"
+futures = "0.3.21"
+tokio = { version = "1.19.2", features=["full"] }
+async-std = "1.12.0"
 
 
 

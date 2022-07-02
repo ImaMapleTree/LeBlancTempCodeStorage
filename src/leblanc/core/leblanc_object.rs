@@ -1,15 +1,18 @@
 use alloc::rc::Rc;
 use std::any::Any;
 use std::cell::{RefCell, RefMut};
-use std::cmp::Ordering;
+
 use std::fmt::{Debug, Display, Formatter};
-use std::mem::{swap, take};
+use std::future::Future;
+use std::mem::{swap};
+use std::pin::Pin;
 
 
 use std::sync::{Arc};
 use fxhash::{FxHashMap, FxHashSet};
 use std::sync::Mutex;
-use regex::Error;
+use std::task::{Context, Poll};
+
 use smol_str::SmolStr;
 
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
@@ -20,11 +23,13 @@ use crate::leblanc::core::native_types::base_type::ToLeblanc;
 use crate::leblanc::core::native_types::block_type::NativeBlock;
 use crate::leblanc::core::native_types::class_type::ClassMeta;
 
-use crate::leblanc::core::native_types::derived::iterator_type::{LeblancIterable, LeblancIterator};
+use crate::leblanc::core::native_types::derived::iterator_type::{LeblancIterator};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::error_type::{leblanc_object_error, LeblancError};
+use crate::leblanc::core::native_types::group_type::LeblancGroup;
 
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::core::native_types::promise_type::{ArcLeblancPromise, LeblancPromise};
 use crate::leblanc::rustblanc::Appendable;
 
 
@@ -51,7 +56,7 @@ pub trait RustDataCast<T> {
     fn mut_data(&mut self) -> Option<&mut T>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct LeBlancObject {
     pub data: LeBlancObjectData,
     pub(crate) typing: LeBlancType,
@@ -166,6 +171,14 @@ impl LeBlancObject {
         self.data = other.data.clone();
     }
 
+    pub fn move_data(&mut self, other: Self) {
+        self.members = other.members;
+        self.methods = other.methods;
+        self.typing = other.typing;
+        self.data = other.data;
+    }
+
+
     pub fn swap_rc(&mut self, other: &mut RefMut<LeBlancObject>) {
         swap(&mut self.members, &mut other.members);
         swap(&mut self.methods, &mut other.methods);
@@ -227,9 +240,10 @@ impl PartialEq for LeBlancObject {
     fn eq(&self, other: &Self) -> bool {
         if self.data != other.data { return false }
         if !self.members.lock().unwrap().eq(&other.members.lock().unwrap()) { return false }
-        return self.typing == other.typing
+        self.typing == other.typing
     }
 }
+
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum LeBlancObjectData {
@@ -249,6 +263,10 @@ pub enum LeBlancObjectData {
     Module(Module),
     Class(Box<ClassMeta>), // User defined class with ID
     Dynamic(&'static LeBlancObjectData),
+
+    Promise(ArcLeblancPromise),
+    Group(LeblancGroup),
+
     List(LeblancList),
     Iterator(LeblancIterator),
     Error(Box<LeblancError>),
@@ -312,6 +330,8 @@ impl Display for LeBlancObjectData {
             LeBlancObjectData::Class(data) => data.to_string(),
             LeBlancObjectData::Dynamic(data) => data.to_string(),
             LeBlancObjectData::List(data) => data.to_string(),
+            LeBlancObjectData::Promise(data) => data.to_string(),
+            LeBlancObjectData::Group(data) => data.to_string(),
             LeBlancObjectData::Iterator(data) => data.to_string(),
             LeBlancObjectData::Error(data) => data.to_string(),
             LeBlancObjectData::Null => "null".to_string()
@@ -431,5 +451,28 @@ pub enum LBODOperation {
 impl Default for LeBlancObjectData {
     fn default() -> Self {
         LeBlancObjectData::Null
+    }
+}
+
+pub trait RcToArc<T: Clone> {
+    fn to_arc(self) -> Arc<Mutex<T>>;
+}
+
+pub trait ArcToRc<T: Clone> {
+    fn to_rc(self) -> Rc<RefCell<T>>;
+}
+
+impl RcToArc<LeBlancObject> for Rc<RefCell<LeBlancObject>>  {
+    fn to_arc(self) -> Arc<Mutex<LeBlancObject>> {
+        Arc::new(Mutex::new(Rc::unwrap_or_clone(self).into_inner()))
+    }
+}
+
+impl ArcToRc<LeBlancObject> for Arc<Mutex<LeBlancObject>> {
+    fn to_rc(self) -> Rc<RefCell<LeBlancObject>> {
+        match Arc::try_unwrap(self) {
+            Ok(mutex) => mutex.into_inner().unwrap().to_mutex(),
+            Err(arc) => arc.lock().unwrap().clone().to_mutex()
+        }
     }
 }

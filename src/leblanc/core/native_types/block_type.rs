@@ -22,7 +22,7 @@ pub fn leblanc_object_block(block: NativeBlock) -> LeBlancObject {
 
     LeBlancObject::new(
         LeBlancObjectData::Block(block),
-        LeBlancType::Block,
+        LeBlancType::Group,
         base_methods,
         Arc::new(Mutex::new(FxHashMap::default())),
         VariableContext::empty(),

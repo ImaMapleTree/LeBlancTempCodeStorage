@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use std::hash::{Hash, Hasher};
+use std::hash::{Hash};
 use crate::leblanc::compiler::compile_types::partial_token::PartialToken;
 use crate::leblanc::compiler::identifier::token::Token;
 use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, CompileVocab};

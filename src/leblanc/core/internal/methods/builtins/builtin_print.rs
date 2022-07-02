@@ -10,19 +10,19 @@ use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Stringify};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
-use crate::leblanc::rustblanc::utils::Timings;
+
 use crate::LeBlancType;
 
 fn _BUILTIN_PRINT_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
     let arg_length = args.len();
     for i in 0..arg_length {
-        let sep = if i == arg_length-1 { "" } else { " " };
+        let sep = if i == arg_length-1 { "\n" } else { " " };
         let arg = &mut args[i];
         let result = match arg.call_name("to_string") {
             Ok(r) => r.to_string() + sep,
             Err(err) => return err
         };
-        writeln!(io::stdout().lock(), "{}", result).unwrap();
+        write!(io::stdout().lock(), "{}", result).unwrap();
         //io::stdout().write(result.as_bytes()).unwrap();
     }
 

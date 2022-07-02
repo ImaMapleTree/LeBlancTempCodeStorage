@@ -9,14 +9,14 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 use std::sync::Mutex;
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
-use crate::leblanc::core::internal::methods::internal_list::{_internal_list_append_, _internal_list_iterate_};
+use crate::leblanc::core::internal::methods::internal_list::{_internal_list_append_, _internal_list_iterate_, _internal_list_length_};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
-use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_methods, base_to_string_method, ToLeblanc};
+use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::LeBlancType;
 
@@ -60,6 +60,7 @@ pub fn list_methods() -> Arc<FxHashSet<Method>> {
     hash_set.insert(Method::default(base_field_method(), _internal_field_));
     hash_set.insert(list_iterate_method());
     hash_set.insert(list_append_method());
+    hash_set.insert(list_length_method());
     Arc::new(hash_set)
 }
 
@@ -77,6 +78,15 @@ pub fn list_append_method() -> Method {
     Method::new(
         method_store,
         _internal_list_append_,
+        BTreeSet::new()
+    )
+}
+
+pub fn list_length_method() -> Method {
+    let method_store = MethodStore::new("length".to_string(), vec![]);
+    Method::new(
+        method_store,
+        _internal_list_length_,
         BTreeSet::new()
     )
 }

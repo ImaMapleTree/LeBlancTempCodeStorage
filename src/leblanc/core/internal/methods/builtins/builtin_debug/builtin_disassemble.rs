@@ -50,7 +50,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCel
             } else {line_number_format = grow_to_size("", 8)}
 
             let arg_string = match instruction.instruct {
-                InstructionBase::LoadLocal => format!("({})", leblanc_handle.borrow().variable_context.values().find(|context| context.relationship == instruction.arg as u32).unwrap().name.to_string()),
+                InstructionBase::LoadLocal => format!("({})", leblanc_handle.borrow().variable_context.values().find(|context| context.relationship == instruction.arg as u32).unwrap().name),
                 InstructionBase::LoadConstant => format!("({})", leblanc_handle.borrow().constants[instruction.arg as usize].borrow().data),
                 InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].borrow().data.get_inner_method().unwrap().context.name.clone()}),
                 InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),

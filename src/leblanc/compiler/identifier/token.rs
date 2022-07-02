@@ -21,7 +21,7 @@ impl Token {
         for c in string.chars() {
             symbols.push(Symbol::new(c, false, false, false, false, SymbolType::of(c), 0, 0))
         }
-        return Token::new(symbols, 0);
+        Token::new(symbols, 0)
     }
 
     pub fn from(symbol: Symbol) -> Token {

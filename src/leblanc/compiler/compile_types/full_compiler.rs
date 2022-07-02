@@ -90,7 +90,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
                             Dummy(_) => {}
                             Zero => {}
                             NotImplemented => {}
-                            StoreUndefined | StoreLocal | StoreGlobal => {},
+                            StoreUndefined | StoreLocal | StoreGlobal | ElementAccess => {},
                             IteratorSetup(_) => instruction_count += 2,
                             CallFunction => instruction_count += 2,
                             _ => instruction_count += 1
@@ -121,6 +121,7 @@ pub fn write_bytecode(mut stack: Vec<TypedToken>, fabric: &mut Fabric, mode: Com
             if instruction == StoreUndefined {
                 instruction = match last_instruction {
                     LoadGlobal => StoreGlobal,
+                    ElementAccess => ElementStore,
                     _ => StoreLocal
                 };
                 arg_byte = instruction_bytes.remove().1;

@@ -1,0 +1,43 @@
+using random;
+using datelib;
+
+func main() {
+    dis(test1);
+    test1(0, 0, 0, 0);
+}
+
+func test1(int f, int b, int max, int input) returns int {
+    // Quick declaration of a function, this is equivalent to: func a(int f) { return f == 100;}
+    function number_equals_100 = |f| f == 100;
+    // Now we define a "group"
+    group func_group;
+    // Put a copy of our function into the group and get a promise in return
+    promise result = number_equals_100 -> func_group;
+
+    // Pipe in 90 to all functions in our group
+    func_group.pipe(90);
+    print(result);
+
+    // Pipe in 100 to all functions in our group
+    func_group.pipe(100);
+    print(result);
+
+    // Pipe in 95 to all functions in our group
+    func_group.pipe(95);
+    // Consume the result, this means that our promise is now fully completed and can no longer be changed.
+    int i = result.consume();
+    print(result);
+    print("Consumed result:", i);
+
+    // What is the point of all of this?
+    // Good question! You see there's a couple things this functionality enables.
+    // Mainly, the ability to "stuff" (probably functions) into other functions, run them, and get the updated result outside of that scope
+    // For example, if I had passed the "func_group" into a function, THEN piped in a number my promise would reflect the new piped in number
+    //
+    // tl;dr promises CAN BE a way of "saving" the returned data of a function
+    // Additionally, functions in groups will be async-able once I stop being lazy and implement async into LeBlanc
+    // This means that you can very quickly push things into a group meant for async, call the async group function (group.run_async())
+    // And then consume all the promises you generated beforehand
+}
+
+

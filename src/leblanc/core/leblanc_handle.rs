@@ -3,8 +3,10 @@ use fxhash::{FxHashMap};
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use std::future::Future;
+use std::sync::{Arc, Mutex};
 
-use std::time::Instant;
+
 use arrayvec::ArrayVec;
 use smol_str::SmolStr;
 use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
@@ -12,14 +14,15 @@ use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
 use crate::leblanc::core::interpreter::instruction_execution::execute_instruction;
 use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_object::{LeBlancObject, RustDataCast, Stringify};
+use crate::leblanc::core::leblanc_object::{ArcToRc, LeBlancObject, RcToArc, RustDataCast, Stringify};
 use crate::leblanc::core::native_types::error_type::LeblancError;
 use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, colorize};
+
 use crate::leblanc::rustblanc::utils::{Timings};
 
-static DEBUG: bool = false;
+static DEBUG: bool = true;
 static TIME_DEBUG: bool = false;
-static STACK_DEBUG: bool = false;
+static STACK_DEBUG: bool = true;
 static mut GLOBAL_SIGNAL: ExecutionSignal = ExecutionSignal::Normal;
 
 static mut TIMINGS: Timings = Timings { map: None};
@@ -83,12 +86,12 @@ impl LeblancHandle {
         inputs.clone_into(&mut self.variables);
         self.current_instruct = 0;
         let mut instruction = Instruction::empty();
-        let mut stack_trace = ArrayVec::<_, 50>::new();
+        let stack_trace = ArrayVec::<_, 50>::new();
         let mut stack = ArrayVec::<_, 80>::new();
         while self.current_instruct < self.instructions.len() as u64 {
-            let last_instruct = instruction;
+            let _last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
-            //if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.clone(), Color::Blue), instruction);}
+            //if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
             match instruction.instruct {
                 InstructionBase::Return => return stack.pop().unwrap(),
                 /*InstructionBase::CallFunction => {
@@ -114,7 +117,7 @@ impl LeblancHandle {
                     return err
                 }
             };
-            //if STACK_DEBUG { println!("{} Stack: {}", colorize(self.name.clone(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
+            //if STACK_DEBUG { println!("{} Stack: {}", colorize(self.name.to_string(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
             /*if TIME_DEBUG {
                 let duration = now.elapsed().as_secs_f64();
                 unsafe { TIMINGS.add_timing(instruction.instruct.to_string(), duration); }
@@ -138,7 +141,7 @@ impl LeblancHandle {
         while self.current_instruct < right_bound {
             last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
-            //if DEBUG {println!("{} Range Instruction: {:?}", colorize(self.name.clone(), Color::Blue), instruction);}
+            //if DEBUG {println!("{} Range Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
             match instruction.instruct {
                 InstructionBase::Return => return stack.pop().unwrap(),
                 InstructionBase::CallFunction => {
@@ -164,7 +167,7 @@ impl LeblancHandle {
                     return err
                 }
             };
-            //if STACK_DEBUG { println!("{} Range Stack: {}", colorize(self.name.clone(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
+            //if STACK_DEBUG { println!("{} Range Stack: {}", colorize(self.name.to_string(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
             /*if TIME_DEBUG {
                 let duration = now.elapsed().as_secs_f64();
                 unsafe { TIMINGS.add_timing(instruction.instruct.to_string(), duration); }
@@ -179,9 +182,9 @@ impl LeblancHandle {
         for instruct in instructs {
             if instruct.instruct == InstructionBase::Return { return stack.pop().unwrap() };
             let internal_handle = execute_instruction(instruct.base());
-            match internal_handle(self, &instruct, stack) {
+            match internal_handle(self, instruct, stack) {
                 Ok(_) => {},
-                Err(err) => {
+                Err(_err) => {
                 }
             };
         }
@@ -204,6 +207,69 @@ impl LeblancHandle {
         stack.pop().unwrap_or_else(LeBlancObject::unsafe_null)
 
     }
+
+    #[inline(always)]
+    pub async fn execute_async(&mut self, inputs: Vec<Arc<Mutex<LeBlancObject>>>) -> Arc<Mutex<LeBlancObject>> {
+        inputs.iter().cloned().map(|i| i.to_rc()).collect::<Vec<Rc<RefCell<LeBlancObject>>>>().clone_into(&mut self.variables);
+        self.current_instruct = 0;
+        let mut instruction = Instruction::empty();
+        let stack_trace = ArrayVec::<_, 50>::new();
+        let mut stack: ArrayVec<Rc<RefCell<LeBlancObject>>, 80> = ArrayVec::<_, 80>::new();
+        while self.current_instruct < self.instructions.len() as u64 {
+            let _last_instruct = instruction;
+            instruction = self.instructions[self.current_instruct as usize];
+            //if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
+            match instruction.instruct {
+                InstructionBase::Return => return stack.pop().unwrap().to_arc(),
+                /*InstructionBase::CallFunction => {
+                    if last_instruct.instruct == InstructionBase::LoadFunction {
+                        stack_trace.push(last_instruct)
+                    }
+                }*/
+                _ => {}
+            }
+            unsafe {if GLOBAL_SIGNAL == ExecutionSignal::Exception { return dump_stack_trace(stack.pop().unwrap(), stack_trace.to_vec()).to_arc(); }}
+            //if TIME_DEBUG { unsafe {TIMINGS.lock(instruction.instruct.to_string())} }
+            let internal_handle = execute_instruction(instruction.instruct);
+            //let now = Instant::now();
+            match internal_handle(self, &instruction, &mut stack) {
+                Ok(_) => {},
+                Err(err) => {
+                    println!("Errored");
+                    let mut borrowed_error = err.borrow_mut();
+                    let error: &mut LeblancError = borrowed_error.data.mut_data().unwrap();
+                    error.add_prior_trace(stack_trace.to_vec());
+                    drop(borrowed_error);
+                    unsafe { GLOBAL_SIGNAL = ExecutionSignal::Exception }
+                    return err.to_arc()
+                }
+            };
+            //if STACK_DEBUG { println!("{} Stack: {}", colorize(self.name.to_string(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
+            /*if TIME_DEBUG {
+                let duration = now.elapsed().as_secs_f64();
+                unsafe { TIMINGS.add_timing(instruction.instruct.to_string(), duration); }
+            }*/
+            self.current_instruct += 1;
+        }
+        /*if self.name == "main" && TIME_DEBUG {
+            unsafe { TIMINGS.print_timing(); }
+        }*/
+        unsafe {if GLOBAL_SIGNAL == ExecutionSignal::Exception { return dump_stack_trace(stack.pop().unwrap(), stack_trace.to_vec()).to_arc(); }}
+        stack.pop().unwrap_or_else(LeBlancObject::unsafe_null).to_arc()
+
+    }
+
+    pub fn full_clone(&self) -> LeblancHandle {
+        LeblancHandle {
+            name: self.name.clone(),
+            constants: Rc::new(self.constants.iter().map(|v| v.borrow()._clone().to_mutex()).collect()),
+            variable_context: self.variable_context.clone(),
+            variables: self.variables.iter().map(|v| v.borrow()._clone().to_mutex()).collect(),
+            instructions: self.instructions.clone(),
+            current_instruct: 0,
+            null: false
+        }
+    }
 }
 
 impl Clone for LeblancHandle {
@@ -221,10 +287,11 @@ impl Clone for LeblancHandle {
 }
 
 
-pub fn dump_stack_trace(mut error: Rc<RefCell<LeBlancObject>>, stack_trace: Vec<Instruction>) -> Rc<RefCell<LeBlancObject>> {
+pub fn dump_stack_trace(error: Rc<RefCell<LeBlancObject>>, stack_trace: Vec<Instruction>) -> Rc<RefCell<LeBlancObject>> {
     let mut borrowed =  error.borrow_mut();
     let lbe: &mut LeblancError = borrowed.data.mut_data().unwrap();
     lbe.add_prior_trace(stack_trace);
     drop(borrowed);
     error
 }
+

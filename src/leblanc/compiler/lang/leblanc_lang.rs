@@ -144,9 +144,10 @@ impl CompileVocab {
                 match *op {
                     LBOperator::Assign => 1,
                     LBOperator::AssignEach => 5,
-                    LBOperator::Index => 5,
-                    LBOperator::QuickList => 9,
+                    LBOperator::Increment => 9,
+                    LBOperator::QuickList => 8,
                     LBOperator::Or | LBOperator::And => 5,
+                    LBOperator::Index => 11,
                     _ => 10
                 }
             },

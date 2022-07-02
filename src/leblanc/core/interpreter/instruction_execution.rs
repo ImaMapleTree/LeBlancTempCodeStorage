@@ -11,7 +11,7 @@ use crate::leblanc::core::internal::internal_range_generator::LeblancInternalRan
 use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
 use crate::leblanc::core::interpreter::instructions::InstructionBase::{Comparator_Else, Comparator_ElseIf, Comparator_If};
 use crate::leblanc::core::interpreter::leblanc_runner::get_globals;
-use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, LeBlancObjectData, Reflect, RustDataCast};
+use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, RustDataCast};
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 
 use crate::leblanc::core::method_tag::MethodTag;
@@ -27,6 +27,7 @@ use crate::leblanc::core::native_types::int_type::leblanc_object_int;
 use crate::{LeBlancType};
 use crate::leblanc::core::native_types::double_type::leblanc_object_double;
 use crate::leblanc::core::native_types::float_type::leblanc_object_float;
+use crate::leblanc::core::native_types::group_type::{leblanc_object_group, LeblancGroup};
 
 
 pub fn execute_instruction(instruct: InstructionBase) -> fn(&mut LeblancHandle, &Instruction, &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
@@ -53,6 +54,8 @@ pub fn execute_instruction(instruct: InstructionBase) -> fn(&mut LeblancHandle, 
         Comparator_Else => _INSTRUCT_COMPARATOR_,
         InstructionBase::ListSetup => _INSTRUCT_LIST_SETUP_,
         InstructionBase::ElementAccess => _INSTRUCT_ELEMENT_ACCESS_,
+        InstructionBase::ElementStore => _INSTRUCT_ELEMENT_STORE_,
+        InstructionBase::Group => _INSTRUCT_GROUP_,
         _ => _INSTRUCT_BASE_
     }
 }
@@ -79,6 +82,7 @@ fn safe_stack_pop(stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Resul
 }
 
 fn _INSTRUCT_BASE_(_handle: &mut LeblancHandle, _arg: &Instruction, _stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+    println!("I don't exist :)");
     Err(LeblancError::new("Instruction Doesn't Exist".to_string(), "".to_string(), vec![]).create_mutex())
 }
 
@@ -292,7 +296,7 @@ fn _CALL_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &mut A
 
 
     let is_internal = func.borrow().data.get_inner_method().unwrap().is_internal_method();
-    let result = ( match is_internal {
+    let result = match is_internal {
         true => {
             let x = (func.clone().borrow().data.get_inner_method().unwrap().handle)(func, &mut arguments); x
         },
@@ -301,7 +305,7 @@ fn _CALL_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &mut A
                 Ok(mut refer) => refer.execute(&mut arguments),
                 Err(_err) => unsafe {&mut (*func.borrow().data.get_inner_method().unwrap().leblanc_handle.as_ptr())}.clone().execute(&mut arguments)
             }}
-        });
+        };
 
     let typing = result.borrow().typing;
     match typing {
@@ -344,7 +348,6 @@ fn _INSTRUCT_CREATE_RANGE_(_handle: &mut LeblancHandle, _arg: &Instruction, stac
     let increment = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let bound = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let operand = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
-
 
     match LeblancInternalRangeGenerator::new(operand, bound, increment) {
         Ok(value) => stack.push(value),
@@ -485,7 +488,7 @@ fn _INSTRUCT_COMPARATOR_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
 
 }
 
-fn _INSTRUCT_ELEMENT_ACCESS_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+fn _INSTRUCT_ELEMENT_ACCESS_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
     let list_like = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let accessor = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
@@ -504,4 +507,39 @@ fn _INSTRUCT_ELEMENT_ACCESS_(handle: &mut LeblancHandle, arg: &Instruction, stac
     }
     Ok(())
 
+}
+
+fn _INSTRUCT_ELEMENT_STORE_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+    let list_like = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let accessor = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let value = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+
+    let mut borrowed = list_like.borrow_mut();
+    let list: &mut LeblancList = borrowed.data.mut_data().unwrap();
+
+    let accessor_type = accessor.borrow().typing;
+    if accessor_type == LeBlancType::Derived(DerivedType::Slice) {
+
+    } else {
+        let index = accessor.borrow().data.as_i128() as usize;
+        list.internal_vec[index] = value;
+    }
+    Ok(())
+}
+
+fn _INSTRUCT_GROUP_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Rc<RefCell<LeBlancObject>>, 80>) -> Result<(), Rc<RefCell<LeBlancObject>>> {
+    let target =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let group = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let mut group_borrow = group.borrow_mut();
+
+    if group_borrow.typing == LeBlancType::Null {
+        let group = leblanc_object_group(LeblancGroup::default());
+        group_borrow.move_data(group);
+    }
+
+    let leblanc_group: &mut LeblancGroup = group_borrow.data.mut_data().unwrap();
+
+    stack.push(leblanc_group.promise(target).create_mutex());
+
+    Ok(())
 }

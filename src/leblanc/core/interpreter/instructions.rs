@@ -56,11 +56,13 @@ pub enum InstructionBase {
     AttributeAccess,
     AttributeStore,
     ElementAccess,
+    ElementStore,
 
     IteratorSetup(u16),
     ListSetup,
     MakeSlice,
 
+    Group,
 
     UseModule,
     MapMatch,
@@ -124,6 +126,7 @@ impl InstructionBase {
                     LBOperator::LessThanOrEqual => Equality(5),
                     LBOperator::LShift => BinaryLShift,
                     LBOperator::RShift => BinaryRShift,
+                    LBOperator::Groupment => Group,
                     LBOperator::Match => MapMatch,
                     LBOperator::Increment => Dummy(1),
                     LBOperator::Cast => Cast,
