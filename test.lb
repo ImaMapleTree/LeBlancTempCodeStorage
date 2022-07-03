@@ -2,38 +2,12 @@ using random;
 using datelib;
 
 func main() {
-    dis(test1);
-    test1();
-}
-
-func number_is_100(int number) returns boolean {
-    return number == 100;
-}
-
-func number_is_even(int number) returns boolean {
-    return number % 2 == 0;
-}
-
-func number_doubled(int number) returns int {
-    return number + number;
-}
-
-func test1() returns int {
-    group func_group; // Declare func_group as type "group"
-    List promises = [];
-    for int i in 0 to 15 {
-        promises.append(func_that_does_something -> func_group);
+    for int i in 0 to 30 {
+        print(fib(i));
     }
-    print(promises);
-    func_group.pipe_async(0);
-    print(promises);
-
-
-    return 0; // Return 0 because my compiler stinks and is buggy and won't work without this :(
 }
 
-func func_that_does_something(int i) returns int {
-    print("Running");
-    sleep(1);
-    return i;
+func fib(int a) returns int {
+    if a <= 1 -> return a;
+    return fib(a-1) + fib(a-2);
 }

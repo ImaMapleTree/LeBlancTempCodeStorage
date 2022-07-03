@@ -5,6 +5,7 @@ use std::io;
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::io::Write;
+use std::sync::{Arc, Mutex};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Stringify};
 use crate::leblanc::core::method::Method;
@@ -13,7 +14,7 @@ use crate::leblanc::core::native_types::base_type::internal_method;
 
 use crate::LeBlancType;
 
-fn _BUILTIN_PRINT_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
+fn _BUILTIN_PRINT_(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
     let arg_length = args.len();
     for i in 0..arg_length {
         let sep = if i == arg_length-1 { "\n" } else { " " };

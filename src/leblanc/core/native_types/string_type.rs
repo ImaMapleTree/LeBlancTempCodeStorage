@@ -41,7 +41,7 @@ impl ToLeblanc for String {
     fn create(&self) -> LeBlancObject {
         leblanc_object_string(self.clone())
     }
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
 }
 
 pub fn string_addition_method() -> Method {

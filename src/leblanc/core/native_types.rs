@@ -28,7 +28,7 @@ pub mod derived;
 pub mod group_type;
 pub mod promise_type;
 
-static VARIANTS: [&str; 23] = ["flex", "Self", "char", "short", "int", "int64", "int128", "arch", "float", "double", "boolean", "string", "group", "function", "module", "promise", "class", "dynamic", "exception", "marker", "null", "list", "iterator"];
+static VARIANTS: [&str; 24] = ["flex", "Self", "char", "short", "int", "int64", "int128", "arch", "float", "double", "boolean", "string", "group", "function", "module", "promise", "class", "dynamic", "exception", "marker", "null", "list", "iterator", "class.0"];
 
 #[derive(Eq, Clone, Copy, Debug, Ord, PartialOrd, Hash, Default)]
 pub enum LeBlancType {
@@ -154,6 +154,7 @@ impl LeBlancType {
     }
 
     pub fn enum_id(&self) -> u32 {
+        println!("{}", self);
         VARIANTS.iter().position(|&s| s == self.as_str()).unwrap() as u32
     }
 

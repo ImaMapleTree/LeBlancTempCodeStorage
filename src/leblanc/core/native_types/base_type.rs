@@ -19,7 +19,7 @@ static mut BASE_METHODS: Option<Arc<FxHashSet<Method>>> = None;
 
 pub trait ToLeblanc {
     fn create(&self) -> LeBlancObject;
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>>;
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>>;
 }
 
 pub fn base_methods() -> Arc<FxHashSet<Method>> {

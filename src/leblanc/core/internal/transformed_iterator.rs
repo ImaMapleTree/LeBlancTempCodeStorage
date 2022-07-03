@@ -1,6 +1,7 @@
 use alloc::rc::Rc;
 use core::fmt::Debug;
 use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 use crate::leblanc::core::internal::transformed_iterator::IterMutation::{Filter, Map};
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, RustDataCast};
@@ -38,7 +39,7 @@ impl TransformedIterator {
 }
 
 impl LeblancIterable for TransformedIterator {
-    fn lb_next(&mut self) -> Rc<RefCell<LeBlancObject>> {
+    fn lb_next(&mut self) -> Arc<Mutex<LeBlancObject>> {
         self.inner_iterator.lb_next()
     }
 
@@ -56,7 +57,7 @@ impl LeblancIterable for TransformedIterator {
         for transformation in &mut self.transformations {
             match transformation {
                 Filter(handle) => {
-                    iterator = Box::new(iterator.filter(|i| *handle.execute_lambda(&mut [i.clone()]).borrow().data.ref_data().unwrap()));
+                    iterator = Box::new(iterator.filter(|i| *handle.execute_lambda(&mut [i.clone()]).lock().unwrap().data.ref_data().unwrap()));
                 }
                 Map(handle) => {
                     iterator = Box::new(iterator.map(|i| handle.execute_lambda(&mut [i])));
@@ -64,10 +65,10 @@ impl LeblancIterable for TransformedIterator {
             }
         }
 
-        LeblancList::new(iterator.collect::<Vec<Rc<RefCell<LeBlancObject>>>>())
+        LeblancList::new(iterator.collect::<Vec<Arc<Mutex<LeBlancObject>>>>())
     }
 
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Rc<RefCell<LeBlancObject>>>> {
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Mutex<LeBlancObject>>>> {
         todo!()
     }
 

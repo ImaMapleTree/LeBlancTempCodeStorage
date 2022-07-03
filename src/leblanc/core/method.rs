@@ -20,7 +20,7 @@ pub struct Method {
     pub context: MethodStore,
     pub leblanc_handle: Rc<RefCell<LeblancHandle>>,
     pub arc_handle: Option<LeblancHandle>,
-    pub handle: fn(Rc<RefCell<LeBlancObject>>, &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>,
+    pub handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>,
     pub tags: BTreeSet<MethodTag>,
     pub method_type: MethodType,
 }
@@ -28,7 +28,7 @@ pub struct Method {
 
 
 impl Method {
-    pub fn new(context: MethodStore, handle: fn(Rc<RefCell<LeBlancObject>>, &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>, tags: BTreeSet<MethodTag>) -> Method {
+    pub fn new(context: MethodStore, handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>, tags: BTreeSet<MethodTag>) -> Method {
         Method {
             context,
             leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
@@ -80,12 +80,12 @@ impl Method {
         }
     }
 
-    pub fn default(context: MethodStore, handle: fn(Rc<RefCell<LeBlancObject>>, &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>>) -> Method {
+    pub fn default(context: MethodStore, handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>) -> Method {
         Method::new(context, handle, BTreeSet::new())
     }
 
     #[inline(always)]
-    pub fn run(&mut self, _self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
+    pub fn run(&mut self, _self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
         unsafe {
             return match self.is_internal_method() {
                 false => { match self.leblanc_handle.try_borrow_mut() {
@@ -111,7 +111,7 @@ impl Method {
     }
 */
     /*#[inline(always)]
-    pub fn run_with_vec(&mut self, _self: Rc<RefCell<LeBlancObject>>, args: &mut Vec<Strawberry<LeBlancObject>>) -> Rc<RefCell<LeBlancObject>> {
+    pub fn run_with_vec(&mut self, _self: Arc<Mutex<LeBlancObject>>, args: &mut Vec<Strawberry<LeBlancObject>>) -> Arc<Mutex<LeBlancObject>> {
         let mut leblanc_handle = match self.leblanc_handle.acquire() {
             Ok(lock) => lock.get(),
             Err(mut lock) => lock.get()
@@ -127,7 +127,7 @@ impl Method {
     }*/
 
     #[inline(always)]
-    pub fn run_uncloned(&self, _self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
+    pub fn run_uncloned(&self, _self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
         (self.handle)(_self, args)
     }
 
@@ -203,9 +203,9 @@ impl PartialOrd for Method {
     }
 }
 
-fn null_func(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {LeBlancObject::unsafe_null()}
+fn null_func(_self: Arc<Mutex<LeBlancObject>>, _args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {LeBlancObject::unsafe_null()}
 
-fn error_func(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {LeBlancObject::unsafe_error()}
+fn error_func(_self: Arc<Mutex<LeBlancObject>>, _args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {LeBlancObject::unsafe_error()}
 
 impl Display for Method {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

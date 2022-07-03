@@ -22,7 +22,7 @@ use crate::LeBlancType;
 
 #[derive(Clone, Debug)]
 pub struct LeblancList {
-    pub internal_vec: Vec<Rc<RefCell<LeBlancObject>>>
+    pub internal_vec: Vec<Arc<Mutex<LeBlancObject>>>
 }
 
 impl LeblancList {
@@ -32,7 +32,7 @@ impl LeblancList {
         }
     }
 
-    pub fn new(internal_vec: Vec<Rc<RefCell<LeBlancObject>>>) -> LeblancList {
+    pub fn new(internal_vec: Vec<Arc<Mutex<LeBlancObject>>>) -> LeblancList {
         LeblancList {
             internal_vec
         }
@@ -107,12 +107,12 @@ impl ToLeblanc for LeblancList {
     fn create(&self) -> LeBlancObject {
         leblanc_object_list(self.clone())
     }
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
 }
 
 impl Display for LeblancList {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().borrow_mut().data.to_string()).collect::<Vec<String>>().join(", "))
+        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().lock().unwrap().data.to_string()).collect::<Vec<String>>().join(", "))
     }
 }
 
@@ -120,7 +120,7 @@ impl PartialEq for LeblancList {
     fn eq(&self, other: &Self) -> bool {
         if self.internal_vec.len() != other.internal_vec.len() { return false }
         for i in 0..self.internal_vec.len() {
-            if self.internal_vec[i].borrow().data != other.internal_vec[i].borrow().data {
+            if self.internal_vec[i].lock().unwrap().data != other.internal_vec[i].lock().unwrap().data {
                 return false;
             }
         }

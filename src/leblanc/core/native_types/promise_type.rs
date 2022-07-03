@@ -63,7 +63,7 @@ impl PartialOrd for LeblancPromise {
 }
 
 impl LeblancPromise {
-    pub fn consume(&mut self) -> Result<Rc<RefCell<LeBlancObject>>, Rc<RefCell<LeBlancObject>>> {
+    pub fn consume(&mut self) -> Result<Arc<Mutex<LeBlancObject>>, Arc<Mutex<LeBlancObject>>> {
         match self.complete {
             false => Err(LeblancError::new("PromiseNotFulfilledException".to_string(), "Attempted to consume a non-complete promise.".to_string(), vec![]).create_mutex()),
             true => {
@@ -85,7 +85,7 @@ impl ToLeblanc for LeblancPromise {
         leblanc_object_promise(ArcLeblancPromise::from(Arc::new(Mutex::new(self.clone()))))
     }
 
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> {
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> {
         self.create().to_mutex()
     }
 }
@@ -95,7 +95,7 @@ impl ToLeblanc for Arc<Mutex<LeblancPromise>> {
         leblanc_object_promise(ArcLeblancPromise::from(self.clone()))
     }
 
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> {
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> {
         self.create().to_mutex()
     }
 }
@@ -105,7 +105,7 @@ impl ToLeblanc for ArcLeblancPromise {
         leblanc_object_promise(self.clone())
     }
 
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> {
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> {
         self.create().to_mutex()
     }
 }

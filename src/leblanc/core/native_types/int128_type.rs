@@ -27,5 +27,5 @@ impl ToLeblanc for i128 {
     fn create(&self) -> LeBlancObject {
         leblanc_object_int128(*self)
     }
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
 }

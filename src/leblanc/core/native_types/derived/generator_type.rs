@@ -43,7 +43,7 @@ impl Display for LeblancGenerator {
 }
 
 impl LeblancIterable for LeblancGenerator {
-    fn lb_next(&mut self) -> Rc<RefCell<LeBlancObject>> {
+    fn lb_next(&mut self) -> Arc<Mutex<LeBlancObject>> {
         self.leblanc_handle.execute_from_last_point().to_mutex()
     }
     fn has_next(&self) -> bool {
@@ -62,7 +62,7 @@ impl LeblancIterable for LeblancGenerator {
         LeblancList::new(vec, )
     }
 
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Rc<RefCell<LeBlancObject>>>> {
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Mutex<LeBlancObject>>>> {
         Box::new(self.clone())
     }
 
@@ -70,7 +70,7 @@ impl LeblancIterable for LeblancGenerator {
 }
 
 impl Iterator for LeblancGenerator {
-    type Item = Rc<RefCell<LeBlancObject>>;
+    type Item = Arc<Mutex<LeBlancObject>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.has_next() {

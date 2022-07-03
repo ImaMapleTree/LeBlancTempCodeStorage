@@ -6,6 +6,7 @@ use std::io;
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 
 use prettytable::{Cell, format, Row, Table};
 use crate::leblanc::core::interpreter::instructions::InstructionBase;
@@ -21,8 +22,8 @@ use crate::LeBlancType;
 
 static mut STDOUT: Option<io::Stdout> = None;
 
-fn _BUILTIN_DISASSEMBLE(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
-    let method = args[0].borrow().data.get_inner_method().unwrap().clone();
+fn _BUILTIN_DISASSEMBLE(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+    let method = args[0].lock().unwrap().data.get_inner_method().unwrap().clone();
     let dis_rust_func = if args.len() > 1 {
         *args[1].reflect().downcast_ref::<bool>().unwrap()
     } else {
@@ -51,8 +52,8 @@ fn _BUILTIN_DISASSEMBLE(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCel
 
             let arg_string = match instruction.instruct {
                 InstructionBase::LoadLocal => format!("({})", leblanc_handle.borrow().variable_context.values().find(|context| context.relationship == instruction.arg as u32).unwrap().name),
-                InstructionBase::LoadConstant => format!("({})", leblanc_handle.borrow().constants[instruction.arg as usize].borrow().data),
-                InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].borrow().data.get_inner_method().unwrap().context.name.clone()}),
+                InstructionBase::LoadConstant => format!("({})", leblanc_handle.borrow().constants[instruction.arg as usize].lock().unwrap().data),
+                InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].lock().unwrap().data.get_inner_method().unwrap().context.name.clone()}),
                 InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),
                 _ => "".to_string()
             };

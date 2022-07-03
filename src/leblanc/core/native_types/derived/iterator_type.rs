@@ -41,11 +41,11 @@ where
 }
 
 pub trait LeblancIterable: IteratorUtils {
-    fn lb_next(&mut self) -> Rc<RefCell<LeBlancObject>>;
+    fn lb_next(&mut self) -> Arc<Mutex<LeBlancObject>>;
     fn has_next(&self) -> bool;
     fn reverse(&mut self);
     fn to_list(&mut self) -> LeblancList;
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Rc<RefCell<LeBlancObject>>>>;
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Mutex<LeBlancObject>>>>;
     fn transformed(&mut self) -> Option<&mut TransformedIterator>;
 }
 
@@ -74,7 +74,7 @@ impl LeblancIterator {
         }
     }
 
-    pub fn next(&mut self) -> Rc<RefCell<LeBlancObject>> { self.iterator.lb_next() }
+    pub fn next(&mut self) -> Arc<Mutex<LeBlancObject>> { self.iterator.lb_next() }
 
     pub fn has_next(&self) -> bool {
         self.iterator.has_next()
@@ -88,7 +88,7 @@ impl LeblancIterator {
 
     pub fn transformed(&mut self) -> Option<&mut TransformedIterator> { self.iterator.transformed() }
 
-    pub fn to_rust_iterator(&mut self) -> Box<dyn Iterator<Item=Rc<RefCell<LeBlancObject>>>> { self.iterator.to_rust_iter() }
+    pub fn to_rust_iterator(&mut self) -> Box<dyn Iterator<Item=Arc<Mutex<LeBlancObject>>>> { self.iterator.to_rust_iter() }
 }
 
 impl Display for LeblancIterator {

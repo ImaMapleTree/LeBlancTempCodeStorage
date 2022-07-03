@@ -1,6 +1,7 @@
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::ops::{Add, Div, Mul};
+use std::sync::{Arc, Mutex};
 
 use chrono::Local;
 use rand_chacha::{ChaCha8Rng};
@@ -23,12 +24,12 @@ fn random_number() -> f64 {
     (generator.next_u64() as f64).div(u64::MAX as f64)
 }
 
-pub fn _random_no_arg_(_self: Rc<RefCell<LeBlancObject>>, _args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
+pub fn _random_no_arg_(_self: Arc<Mutex<LeBlancObject>>, _args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
     random_number().create_mutex()
 }
 
-pub fn _random_one_arg_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
-    let borrowed = args[0].borrow();
+pub fn _random_one_arg_(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+    let borrowed = args[0].lock().unwrap();
     let value = borrowed.data.as_i128();
 
     let random_value = random_number().mul(value as u64 as f64);
@@ -38,9 +39,9 @@ pub fn _random_one_arg_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCel
     }.to_mutex()
 }
 
-pub fn _random_two_arg_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
-    let borrowed1 = args[0].borrow();
-    let borrowed2 = args[1].borrow();
+pub fn _random_two_arg_(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+    let borrowed1 = args[0].lock().unwrap();
+    let borrowed2 = args[1].lock().unwrap();
     let lower_bound = borrowed1.data.as_i128();
     let upper_bound = borrowed2.data.as_i128();
 

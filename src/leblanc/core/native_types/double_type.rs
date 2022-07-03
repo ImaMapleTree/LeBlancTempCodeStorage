@@ -43,7 +43,7 @@ impl ToLeblanc for f64 {
     fn create(&self) -> LeBlancObject {
         leblanc_object_double(*self)
     }
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
 }
 
 impl RustDataCast<f64> for LeBlancObjectData {

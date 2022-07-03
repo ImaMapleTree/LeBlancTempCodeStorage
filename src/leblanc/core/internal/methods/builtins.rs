@@ -2,6 +2,7 @@
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
 use crate::leblanc::rustblanc::utils::{decode_hex, encode_hex};
@@ -35,7 +36,7 @@ pub fn create_partial_functions() -> Vec<PartialFunction> {
     ]
 }
 
-pub fn create_builtin_function_objects() -> Vec<Rc<RefCell<LeBlancObject>>> {
+pub fn create_builtin_function_objects() -> Vec<Arc<Mutex<LeBlancObject>>> {
     vec![_BUILTIN_PRINT_OBJECT_().to_mutex(),
          _BUILTIN_DISASSEMBLE_OBJECT_().to_mutex(),
          _BUILTIN_DEBUG_OBJECT_().to_mutex(),

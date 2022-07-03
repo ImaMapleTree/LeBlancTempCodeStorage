@@ -34,7 +34,7 @@ impl ToLeblanc for i64 {
     fn create(&self) -> LeBlancObject {
         leblanc_object_int64(*self)
     }
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
 }
 
 fn inplace_addition() -> Method {

@@ -8,7 +8,7 @@ use std::mem::{swap};
 use std::pin::Pin;
 
 
-use std::sync::{Arc};
+use std::sync::{Arc, MutexGuard, TryLockResult};
 use fxhash::{FxHashMap, FxHashSet};
 use std::sync::Mutex;
 use std::task::{Context, Poll};
@@ -33,17 +33,17 @@ use crate::leblanc::core::native_types::promise_type::{ArcLeblancPromise, Leblan
 use crate::leblanc::rustblanc::Appendable;
 
 
-static mut NULL: Option<Rc<RefCell<LeBlancObject>>> = None;
+static mut NULL: Option<Arc<Mutex<LeBlancObject>>> = None;
 
-static mut ERROR: Option<Rc<RefCell<LeBlancObject>>> = None;
+static mut ERROR: Option<Arc<Mutex<LeBlancObject>>> = None;
 
-static mut MARKER: Option<Rc<RefCell<LeBlancObject>>> = None;
+static mut MARKER: Option<Arc<Mutex<LeBlancObject>>> = None;
 
-static mut NO_ARGS: [Rc<RefCell<LeBlancObject>>; 0] = [];
+static mut NO_ARGS: [Arc<Mutex<LeBlancObject>>; 0] = [];
 
 pub trait Callable {
-    fn call(&mut self, method_name: &str, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Result<Rc<RefCell<LeBlancObject>>, Rc<RefCell<LeBlancObject>>>;
-    fn call_name(&mut self, method_name: &str) -> Result<Rc<RefCell<LeBlancObject>>, Rc<RefCell<LeBlancObject>>>;
+    fn call(&mut self, method_name: &str, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Result<Arc<Mutex<LeBlancObject>>, Arc<Mutex<LeBlancObject>>>;
+    fn call_name(&mut self, method_name: &str) -> Result<Arc<Mutex<LeBlancObject>>, Arc<Mutex<LeBlancObject>>>;
 }
 
 pub trait Reflect {
@@ -82,7 +82,7 @@ impl LeBlancObject {
         }
     }
 
-    pub fn unsafe_null() -> Rc<RefCell<LeBlancObject>> {
+    pub fn unsafe_null() -> Arc<Mutex<LeBlancObject>> {
         return unsafe {
             match NULL.as_ref() {
                 None => {
@@ -106,7 +106,7 @@ impl LeBlancObject {
         }
     }
 
-    pub fn unsafe_marker() -> Rc<RefCell<LeBlancObject>> {
+    pub fn unsafe_marker() -> Arc<Mutex<LeBlancObject>> {
         return unsafe {
             match MARKER.as_ref() {
                 None => {
@@ -130,7 +130,7 @@ impl LeBlancObject {
         }
     }
 
-    pub fn unsafe_error() -> Rc<RefCell<LeBlancObject>> {
+    pub fn unsafe_error() -> Arc<Mutex<LeBlancObject>> {
         return unsafe {
             match ERROR.as_ref() {
                 None => {
@@ -179,15 +179,15 @@ impl LeBlancObject {
     }
 
 
-    pub fn swap_rc(&mut self, other: &mut RefMut<LeBlancObject>) {
+    pub fn swap_rc(&mut self, other: &mut MutexGuard<LeBlancObject>) {
         swap(&mut self.members, &mut other.members);
         swap(&mut self.methods, &mut other.methods);
         swap(&mut self.data, &mut other.data);
         self.typing = other.typing;
     }
 
-    pub fn copy_rc(&mut self, other: &mut Rc<RefCell<LeBlancObject>>) {
-        let other = other.borrow_mut();
+    pub fn copy_rc(&mut self, other: &mut Arc<Mutex<LeBlancObject>>) {
+        let other = other.lock().unwrap();
         self.members = other.members.clone();
         self.methods.clone_from(&other.methods);
         self.data = other.data.clone();
@@ -231,8 +231,8 @@ impl LeBlancObject {
         }
     }
 
-    pub fn to_mutex(self) -> Rc<RefCell<LeBlancObject>> {
-        Rc::new(RefCell::new(self))
+    pub fn to_mutex(self) -> Arc<Mutex<LeBlancObject>> {
+        Arc::new(Mutex::new(self))
     }
 }
 
@@ -295,16 +295,16 @@ impl Reflect for LeBlancObject {
     }
 }
 
-impl Reflect for Rc<RefCell<LeBlancObject>> {
+impl Reflect for Arc<Mutex<LeBlancObject>> {
     fn reflect(&self) -> Box<dyn Any + 'static> {
-        return self.borrow().reflect();
+        return self.lock().unwrap().reflect();
     }
 }
 
-pub fn passed_args_to_types(args: &Vec<Rc<RefCell<LeBlancObject>>>) -> Vec<LeBlancArgument> {
+pub fn passed_args_to_types(args: &Vec<Arc<Mutex<LeBlancObject>>>) -> Vec<LeBlancArgument> {
     let mut arg_types = Vec::new();
     for i in 0..args.len() {
-        arg_types.append_item( args[i].borrow().to_leblanc_arg(i as u32));
+        arg_types.append_item( args[i].lock().unwrap().to_leblanc_arg(i as u32));
     }
     arg_types
 
@@ -340,26 +340,26 @@ impl Display for LeBlancObjectData {
     }
 }
 
-impl Callable for Rc<RefCell<LeBlancObject>> {
-    fn call(&mut self, method_name: &str, arguments: &mut [Rc<RefCell<LeBlancObject>>]) -> Result<Rc<RefCell<LeBlancObject>>, Rc<RefCell<LeBlancObject>>> {
+impl Callable for Arc<Mutex<LeBlancObject>> {
+    fn call(&mut self, method_name: &str, arguments: &mut [Arc<Mutex<LeBlancObject>>]) -> Result<Arc<Mutex<LeBlancObject>>, Arc<Mutex<LeBlancObject>>> {
         let argument_vec = arguments.to_vec();
         let args = passed_args_to_types(&argument_vec);
 
 
         //let self_clone = Arc::clone(self);
-        let method = self.borrow().methods.iter().filter(|m| {
+        let method = self.lock().unwrap().methods.iter().filter(|m| {
             m.matches(method_name.to_string(), &args)
         }).next().cloned();
         if method.is_none() {
-            return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.borrow().typing),vec![]).create_mutex());
+            return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.lock().unwrap().typing),vec![]).create_mutex());
         }
         Ok(method.unwrap().run( self.clone(), arguments))
     }
 
-    fn call_name(&mut self, method_name: &str) -> Result<Rc<RefCell<LeBlancObject>>, Rc<RefCell<LeBlancObject>>> {
-        if self.borrow().typing == LeBlancType::Null { return Err(LeblancError::new("OperationOnNullException".to_string(), "".to_string(), vec![]).create_mutex())}
-        let handle = match self.borrow().methods.iter().find(|m| m.context.name == method_name) {
-            None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.borrow().typing),vec![]).create_mutex()),
+    fn call_name(&mut self, method_name: &str) -> Result<Arc<Mutex<LeBlancObject>>, Arc<Mutex<LeBlancObject>>> {
+        if self.lock().unwrap().typing == LeBlancType::Null { return Err(LeblancError::new("OperationOnNullException".to_string(), "".to_string(), vec![]).create_mutex())}
+        let handle = match self.lock().unwrap().methods.iter().find(|m| m.context.name == method_name) {
+            None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.lock().unwrap().typing),vec![]).create_mutex()),
             Some(some) => some.handle
         };
         Ok(unsafe { handle(self.clone(), &mut NO_ARGS) })
@@ -371,9 +371,9 @@ pub trait Stringify {
     fn to_string(&self) -> String;
 }
 
-impl Stringify for Rc<RefCell<LeBlancObject>> {
+impl Stringify for Arc<Mutex<LeBlancObject>> {
     fn to_string(&self) -> String {
-        self.clone().borrow().data.to_string()
+        self.clone().lock().unwrap().data.to_string()
     }
 }
 
@@ -462,17 +462,25 @@ pub trait ArcToRc<T: Clone> {
     fn to_rc(self) -> Rc<RefCell<T>>;
 }
 
-impl RcToArc<LeBlancObject> for Rc<RefCell<LeBlancObject>>  {
-    fn to_arc(self) -> Arc<Mutex<LeBlancObject>> {
-        Arc::new(Mutex::new(Rc::unwrap_or_clone(self).into_inner()))
-    }
+pub trait QuickUnwrap<T: Clone> {
+    fn force_unwrap(self) -> T;
+    fn clone_if_locked(self) -> Arc<Mutex<T>>;
 }
 
-impl ArcToRc<LeBlancObject> for Arc<Mutex<LeBlancObject>> {
-    fn to_rc(self) -> Rc<RefCell<LeBlancObject>> {
+impl QuickUnwrap<LeBlancObject> for Arc<Mutex<LeBlancObject>> {
+    fn force_unwrap(self) -> LeBlancObject {
         match Arc::try_unwrap(self) {
-            Ok(mutex) => mutex.into_inner().unwrap().to_mutex(),
-            Err(arc) => arc.lock().unwrap().clone().to_mutex()
+            Ok(res) => res.into_inner().unwrap(),
+            Err(arc) => {
+                (*(*arc).lock().unwrap()).clone()
+            }
+        }
+    }
+
+    fn clone_if_locked(self) -> Arc<Mutex<LeBlancObject>> {
+        match self.clone().try_lock() {
+            Ok(_) => self,
+            Err(_) => self.force_unwrap().to_mutex()
         }
     }
 }

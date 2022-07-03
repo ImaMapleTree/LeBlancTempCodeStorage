@@ -1,6 +1,7 @@
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
+use std::sync::{Arc, Mutex};
 
 
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
@@ -12,7 +13,7 @@ use crate::LeBlancType;
 
 pub mod builtin_disassemble;
 
-fn _BUILTIN_DEBUG_(_self: Rc<RefCell<LeBlancObject>>, args: &mut [Rc<RefCell<LeBlancObject>>]) -> Rc<RefCell<LeBlancObject>> {
+fn _BUILTIN_DEBUG_(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
     let arg_length = args.len();
     println!("--------------------------------------------------------");
     println!("----------------------DEBUGGING-------------------------");

@@ -73,14 +73,14 @@ impl PartialOrd for LeblancGroup {
 }
 
 impl LeblancGroup {
-    pub fn promise(&mut self, returnable: Rc<RefCell<LeBlancObject>>) -> Arc<Mutex<LeblancPromise>> {
+    pub fn promise(&mut self, returnable: Arc<Mutex<LeBlancObject>>) -> Arc<Mutex<LeblancPromise>> {
         let promise = Arc::new(Mutex::new(LeblancPromise::default()));
-        let cell = PromiseCell::new(Rc::unwrap_or_clone(returnable).into_inner(), promise.clone());
+        let cell = PromiseCell::new((*returnable).lock().unwrap().clone(), promise.clone());
         self.promises.push(Arc::new(Mutex::new(cell)));
         promise
     }
 
-    pub fn apply(&mut self, function: Rc<RefCell<LeBlancObject>>, other_args: &mut [Rc<RefCell<LeBlancObject>>]) {
+    pub fn apply(&mut self, function: Arc<Mutex<LeBlancObject>>, other_args: &mut [Arc<Mutex<LeBlancObject>>]) {
         self.promises.iter_mut().for_each(|prom| {
             let mut mutex = prom.lock().unwrap();
             let consumed = mutex.promise.lock().unwrap().consumed;
@@ -88,15 +88,15 @@ impl LeblancGroup {
                 mutex.promise.lock().unwrap().result = {
                     let mut args = other_args.to_vec();
                     args.insert(0, take(&mut mutex.echo).to_mutex());
-                    let result = function.borrow_mut().data.get_mut_inner_method().unwrap().clone().run(function.clone(), &mut args);
-                    Some(Arc::new(Mutex::new(Rc::unwrap_or_clone(result).into_inner())))
+                    let result = function.lock().unwrap().data.get_mut_inner_method().unwrap().clone().run(function.clone(), &mut args);
+                    Some(result)
                 };
                 mutex.promise.lock().unwrap().complete = true
             }
         })
     }
 
-    pub fn pipe(&mut self, args: &mut [Rc<RefCell<LeBlancObject>>]) {
+    pub fn pipe(&mut self, args: &mut [Arc<Mutex<LeBlancObject>>]) {
         self.promises.iter_mut().for_each(|prom| {
             let mut mutex = prom.lock().unwrap();
             let consumed = mutex.promise.lock().unwrap().consumed;
@@ -104,14 +104,14 @@ impl LeblancGroup {
             if truth {
                 mutex.promise.lock().unwrap().result = {
                     let result = mutex.echo.data.get_mut_inner_method().unwrap().run(LeBlancObject::unsafe_null(), args);
-                    Some(Arc::new(Mutex::new(Rc::unwrap_or_clone(result).into_inner())))
+                    Some(result)
                 };
                 mutex.promise.lock().unwrap().complete = true
             }
         })
     }
 
-    pub fn pipe_async(&mut self, args: &mut [Rc<RefCell<LeBlancObject>>]) {
+    pub fn pipe_async(&mut self, args: &mut [Arc<Mutex<LeBlancObject>>]) {
         let mut consumers = vec![];
         let mut futures_functions = vec![];
         self.promises.iter_mut().for_each(|prom| {
@@ -124,7 +124,7 @@ impl LeblancGroup {
         });
         //let args = args.to_vec();
 
-        let mut nargs = args.iter().map(|arg| arg.clone().to_arc()).collect::<Vec<Arc<Mutex<LeBlancObject>>>>();
+        let mut nargs = args.to_vec();
         let real_futures: Vec<JoinHandle<Arc<Mutex<LeBlancObject>>>> = futures_functions.into_iter().map(|a| a.leblanc_handle.borrow().full_clone()).map(|mut f| {
             let nargs_clone = nargs.clone();
             async_std::task::spawn(async move {

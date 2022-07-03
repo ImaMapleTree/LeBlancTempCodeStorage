@@ -53,7 +53,7 @@ impl ToLeblanc for LeblancError {
     fn create(&self) -> LeBlancObject {
         leblanc_object_error(self.clone())
     }
-    fn create_mutex(&self) -> Rc<RefCell<LeBlancObject>> { Rc::new(RefCell::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
 }
 
 
@@ -135,8 +135,8 @@ struct FuncDetails {
 
 fn get_func_details(func_number: u32) -> FuncDetails {
     unsafe {
-        let function: Rc<RefCell<LeBlancObject>> = get_globals()[func_number as usize].clone();
-        let borrow = function.borrow();
+        let function: Arc<Mutex<LeBlancObject>> = get_globals()[func_number as usize].clone();
+        let borrow = function.lock().unwrap();
         let inner_method = borrow.data.get_inner_method().unwrap();
         FuncDetails {
             name: inner_method.context.name.clone(),

@@ -90,7 +90,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 match token_string.as_str() {
                     "->" => {
                         let scopes = type_map.get(&next_token.as_string());
-                        if scopes.is_some() && scopes.unwrap()[scope_value][0].stores_native_type() && *scopes.unwrap()[scope_value][0].extract_native_type() == LeBlancType::Group {
+                        if scopes.is_some() && scopes.unwrap().len() > scope_value && scopes.unwrap()[scope_value][0].stores_native_type() && *scopes.unwrap()[scope_value][0].extract_native_type() == LeBlancType::Group {
                             CompileVocab::OPERATOR(LBOperator::Groupment)
                         } else {
                             CompileVocab::SPECIAL(special_value(token_string.as_str()), 0)
