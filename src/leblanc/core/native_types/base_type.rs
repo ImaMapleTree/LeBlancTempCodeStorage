@@ -1,4 +1,5 @@
 use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 
 use alloc::rc::Rc;
@@ -19,7 +20,7 @@ static mut BASE_METHODS: Option<Arc<FxHashSet<Method>>> = None;
 
 pub trait ToLeblanc {
     fn create(&self) -> LeBlancObject;
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>>;
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>>;
 }
 
 pub fn base_methods() -> Arc<FxHashSet<Method>> {
@@ -45,7 +46,7 @@ pub fn internal_method(method: Method) -> LeBlancObject {
         data: LeBlancObjectData::Function(Box::new(method)),
         typing: Function,
         methods: Arc::new(methods),
-        members: Arc::new(Mutex::new(FxHashMap::default())),
+        members: Arc::new(Strawberry::new(FxHashMap::default())),
         context: VariableContext::empty()
     }
 }

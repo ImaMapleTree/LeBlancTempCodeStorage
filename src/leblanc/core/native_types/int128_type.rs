@@ -4,6 +4,7 @@ use fxhash::{FxHashMap};
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::sync::Arc;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -18,7 +19,7 @@ pub fn leblanc_object_int128(integer: i128) -> LeBlancObject {
         LeBlancObjectData::Int128(integer),
         LeBlancType::Int128,
         base_methods,
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -27,5 +28,5 @@ impl ToLeblanc for i128 {
     fn create(&self) -> LeBlancObject {
         leblanc_object_int128(*self)
     }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
 }

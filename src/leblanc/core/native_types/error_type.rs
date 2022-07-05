@@ -3,6 +3,7 @@ use core::fmt::{Display, Formatter};
 use std::cell::{RefCell};
 use fxhash::{FxHashMap, FxHashSet};
 use std::sync::{Arc};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
 
 
@@ -38,7 +39,7 @@ pub fn leblanc_object_error(error: LeblancError) -> LeBlancObject {
         LeBlancObjectData::Error(Box::new(error)),
         LeBlancType::Exception,
         Arc::new(hash_set),
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -53,7 +54,7 @@ impl ToLeblanc for LeblancError {
     fn create(&self) -> LeBlancObject {
         leblanc_object_error(self.clone())
     }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
 }
 
 
@@ -135,8 +136,8 @@ struct FuncDetails {
 
 fn get_func_details(func_number: u32) -> FuncDetails {
     unsafe {
-        let function: Arc<Mutex<LeBlancObject>> = get_globals()[func_number as usize].clone();
-        let borrow = function.lock().unwrap();
+        let function: Arc<Strawberry<LeBlancObject>> = get_globals()[func_number as usize].clone();
+        let borrow = function.lock();
         let inner_method = borrow.data.get_inner_method().unwrap();
         FuncDetails {
             name: inner_method.context.name.clone(),

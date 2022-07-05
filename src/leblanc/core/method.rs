@@ -6,7 +6,7 @@ use std::hash::{Hash, Hasher};
 
 
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
-use crate::leblanc::core::leblanc_object::{ArcToRc, LeBlancObject, RcToArc};
+use crate::leblanc::core::leblanc_object::{ArcToRc, LeBlancObject, QuickUnwrap};
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
@@ -14,13 +14,14 @@ use crate::leblanc::core::method_tag::MethodTag;
 use alloc::rc::Rc;
 
 use std::cell::{RefCell};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 
 pub struct Method {
     pub context: MethodStore,
-    pub leblanc_handle: Rc<RefCell<LeblancHandle>>,
+    pub leblanc_handle: Arc<Strawberry<LeblancHandle>>,
     pub arc_handle: Option<LeblancHandle>,
-    pub handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>,
+    pub handle: fn(Arc<Strawberry<LeBlancObject>>, &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>>,
     pub tags: BTreeSet<MethodTag>,
     pub method_type: MethodType,
 }
@@ -28,10 +29,10 @@ pub struct Method {
 
 
 impl Method {
-    pub fn new(context: MethodStore, handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>, tags: BTreeSet<MethodTag>) -> Method {
+    pub fn new(context: MethodStore, handle: fn(Arc<Strawberry<LeBlancObject>>, &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>>, tags: BTreeSet<MethodTag>) -> Method {
         Method {
             context,
-            leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
+            leblanc_handle: Arc::new(Strawberry::new(LeblancHandle::null())),
             arc_handle: None,
             handle,
             tags,
@@ -43,7 +44,7 @@ impl Method {
         let _t = String::new();
         Method {
             context: MethodStore::no_args("null".to_string()),
-            leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
+            leblanc_handle: Arc::new(Strawberry::new(LeblancHandle::null())),
             arc_handle: None,
             handle: null_func,
             tags: BTreeSet::new(),
@@ -54,7 +55,7 @@ impl Method {
     pub fn error() -> Method {
         Method {
             context: MethodStore::no_args("null".to_string()),
-            leblanc_handle: Rc::new(RefCell::new(LeblancHandle::null())),
+            leblanc_handle: Arc::new(Strawberry::new(LeblancHandle::null())),
             arc_handle: None,
             handle: error_func,
             tags: BTreeSet::new(),
@@ -69,7 +70,7 @@ impl Method {
     }
 
     pub fn of_leblanc_handle(context: MethodStore, leblanc_handle: LeblancHandle, tags: BTreeSet<MethodTag>) -> Method {
-        let leblanc_handle = Rc::new(RefCell::new(leblanc_handle));
+        let leblanc_handle = Arc::new(Strawberry::new(leblanc_handle));
         Method {
             context,
             leblanc_handle,
@@ -80,24 +81,21 @@ impl Method {
         }
     }
 
-    pub fn default(context: MethodStore, handle: fn(Arc<Mutex<LeBlancObject>>, &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>>) -> Method {
+    pub fn default(context: MethodStore, handle: fn(Arc<Strawberry<LeBlancObject>>, &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>>) -> Method {
         Method::new(context, handle, BTreeSet::new())
     }
 
     #[inline(always)]
-    pub fn run(&mut self, _self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+    pub fn run(&mut self, _self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
         unsafe {
             return match self.is_internal_method() {
-                false => { match self.leblanc_handle.try_borrow_mut() {
-                    Ok(mut refer) => refer.execute(args),
-                    Err(_err) => unsafe {&mut (*self.leblanc_handle.as_ptr())}.clone().execute(args)
-                }}
+                false => self.leblanc_handle.clone_if_locked().lock().execute(args),
                 true => (self.handle)(_self, args)
             }
         }
     }
 
-    /*pub async fn run_async(&mut self, _self: Arc<Mutex<LeBlancObject>>, mut vec_arcs: Vec<Arc<Mutex<LeBlancObject>>>) -> Arc<Mutex<LeBlancObject>> {
+    /*pub async fn run_async(&mut self, _self: Arc<Strawberry<LeBlancObject>>, mut vec_arcs: Vec<Arc<Strawberry<LeBlancObject>>>) -> Arc<Strawberry<LeBlancObject>> {
         let args = &mut vec_arcs;
         let mut handle = Rc::unwrap_or_clone(self.leblanc_handle.clone()).into_inner();
         let internal_method = self.is_internal_method();
@@ -111,23 +109,23 @@ impl Method {
     }
 */
     /*#[inline(always)]
-    pub fn run_with_vec(&mut self, _self: Arc<Mutex<LeBlancObject>>, args: &mut Vec<Strawberry<LeBlancObject>>) -> Arc<Mutex<LeBlancObject>> {
+    pub fn run_with_vec(&mut self, _self: Arc<Strawberry<LeBlancObject>>, args: &mut Vec<Strawberry<LeBlancObject>>) -> Arc<Strawberry<LeBlancObject>> {
         let mut leblanc_handle = match self.leblanc_handle.acquire() {
             Ok(lock) => lock.get(),
             Err(mut lock) => lock.get()
         };
-        let null_handle = leblanc_handle.lock().unwrap().null;
+        let null_handle = leblanc_handle.lock().null;
         return match null_handle {
             false => {
                 //self.leblanc_handle.variables = args.clone();
-                leblanc_handle.lock().unwrap().execute(args)
+                leblanc_handle.lock().execute(args)
             }
             true => (self.handle)(_self, args)
         }
     }*/
 
     #[inline(always)]
-    pub fn run_uncloned(&self, _self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+    pub fn run_uncloned(&self, _self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
         (self.handle)(_self, args)
     }
 
@@ -203,9 +201,9 @@ impl PartialOrd for Method {
     }
 }
 
-fn null_func(_self: Arc<Mutex<LeBlancObject>>, _args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {LeBlancObject::unsafe_null()}
+fn null_func(_self: Arc<Strawberry<LeBlancObject>>, _args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {LeBlancObject::unsafe_null()}
 
-fn error_func(_self: Arc<Mutex<LeBlancObject>>, _args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {LeBlancObject::unsafe_error()}
+fn error_func(_self: Arc<Strawberry<LeBlancObject>>, _args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {LeBlancObject::unsafe_error()}
 
 impl Display for Method {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

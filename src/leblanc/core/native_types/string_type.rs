@@ -2,6 +2,7 @@ use alloc::rc::Rc;
 use std::cell::RefCell;
 use fxhash::{FxHashMap, FxHashSet};
 use std::sync::{Arc};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
 use smol_str::SmolStr;
 
@@ -16,6 +17,7 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
+
 use crate::LeBlancType::Flex;
 
 pub fn leblanc_object_string(string: String) -> LeBlancObject {
@@ -32,7 +34,7 @@ pub fn leblanc_object_string(string: String) -> LeBlancObject {
         LeBlancObjectData::String(SmolStr::new(string)),
         LeBlancType::String,
         Arc::new(hash_set),
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -41,7 +43,7 @@ impl ToLeblanc for String {
     fn create(&self) -> LeBlancObject {
         leblanc_object_string(self.clone())
     }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
 }
 
 pub fn string_addition_method() -> Method {

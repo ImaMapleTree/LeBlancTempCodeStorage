@@ -4,6 +4,7 @@ use std::sync::{Arc};
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use fxhash::FxHashMap;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
 
 use crate::leblanc::core::internal::methods::internal_math::_internal_inplace_add_;
@@ -24,7 +25,7 @@ pub fn leblanc_object_int64(integer: i64) -> LeBlancObject {
         LeBlancObjectData::Int64(integer),
         LeBlancType::Int64,
         Arc::new(base_methods),
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -34,7 +35,7 @@ impl ToLeblanc for i64 {
     fn create(&self) -> LeBlancObject {
         leblanc_object_int64(*self)
     }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
 }
 
 fn inplace_addition() -> Method {

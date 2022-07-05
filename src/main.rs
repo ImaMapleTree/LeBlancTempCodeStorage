@@ -9,6 +9,7 @@
 #![feature(fn_traits)]
 #![feature(ptr_const_cast)]
 #![feature(cell_leak)]
+#![feature(ptr_as_uninit)]
 
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]

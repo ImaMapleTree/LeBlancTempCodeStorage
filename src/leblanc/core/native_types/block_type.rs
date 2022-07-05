@@ -5,6 +5,7 @@ use std::fmt::{Display, Formatter};
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::sync::Arc;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -24,7 +25,7 @@ pub fn leblanc_object_block(block: NativeBlock) -> LeBlancObject {
         LeBlancObjectData::Block(block),
         LeBlancType::Group,
         base_methods,
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -34,7 +35,7 @@ impl ToLeblanc for NativeBlock {
     fn create(&self) -> LeBlancObject {
         leblanc_object_block(*self)
     }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
 }
 
 impl Display for NativeBlock {

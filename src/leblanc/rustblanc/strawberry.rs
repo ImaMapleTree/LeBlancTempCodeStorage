@@ -1,159 +1,51 @@
-use alloc::rc::Rc;
-use core::fmt::Debug;
-
-use std::sync::{Arc};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::ptr::{addr_of, null, null_mut};
+use parking_lot::lock_api::MutexGuard;
+use parking_lot::{Mutex, RawMutex};
 
 #[derive(Debug)]
-pub struct Strawberry<T: Clone + Debug> {
-    ptr: *mut T,
-    data: Rc<T>,
-    loans: Arc<AtomicUsize>,
+pub struct Strawberry<T: Clone + Default> {
+    mutex: Mutex<T>,
 }
 
-impl<T: Clone + Debug> Strawberry<T> {
+impl<T: Clone + Default> Strawberry<T> {
     pub fn new(data: T) -> Strawberry<T> {
-        let mut data = Rc::new(data);
-        let ptr = Rc::get_mut(&mut data).unwrap() as *mut T;
+        let mutex = Mutex::new(data);
         Strawberry {
-            ptr,
-            data,
-            loans: Arc::new(AtomicUsize::new(0))
+            mutex,
         }
     }
 
-    pub fn from_arc(arc: Arc<T>) -> Strawberry<T> {
-        let obj = Arc::unwrap_or_clone(arc);
-        Strawberry::new(obj)
-
-        /*let ptr = Rc::make_mut(&mut arc) as *mut T;
-        return Strawberry {
-            ptr,
-            data: arc,
-            loans: Arc::new(AtomicUsize::new(0))
-        }*/
+    pub fn lock(&self) -> MutexGuard<'_, RawMutex, T> {
+        self.mutex.lock()
     }
 
-    pub fn loan(&self) -> StrawberryLoan<T> {
-        //println!("Loan");
-        unsafe {
-            let loan_amount = self.loans.fetch_add(1, Ordering::Relaxed);
-            return if loan_amount > 1 {
-                StrawberryLoan::immutable(&mut*self.ptr, self)
-            } else {
-                StrawberryLoan::mutable(&mut*self.ptr, self)
-            };
-        }
+    pub fn locked(&self) -> bool {
+        self.mutex.is_locked()
     }
 
-    pub fn bypass_loan(&self) -> &mut T {
-        unsafe { &mut (*self.ptr) }
+    pub fn force_unwrap(&self) -> T {
+        let cloned = match unsafe {self.mutex.data_ptr().as_ref()} {
+            Some(r) => r.clone(),
+            None => T::default(),
+        };
+        cloned
     }
 
-}
-
-impl<T: Clone + Debug> Clone for Strawberry<T> {
-    fn clone(&self) -> Self {
-        unsafe {COUNT4 += 1;}
-        Strawberry {
-            ptr: self.ptr,
-            data: self.data.clone(),
-            loans: self.loans.clone()
-        }
+    pub fn try_lock(&self) -> Option<MutexGuard<'_, RawMutex, T>> {
+        self.mutex.try_lock()
     }
 }
 
-#[derive(Debug)]
-pub struct StrawberryLoan<'a, T: Clone + Debug> {
-    reference: &'a mut T,
-    parent: *mut Strawberry<T>,
-    mutability: StrawberryMutability
-}
-
-impl<'a, T: Clone + Debug> StrawberryLoan<'_, T> {
-    pub fn mutable(reference: &'a mut T, parent: &'a Strawberry<T>) -> StrawberryLoan<'a, T> {
-        StrawberryLoan {
-            reference,
-            parent: (parent as *const Strawberry<T>).as_mut(),
-            mutability: StrawberryMutability::Mutable
-        }
-    }
-    pub fn immutable(reference: &'a mut T, parent: &'a Strawberry<T>) -> StrawberryLoan<'a, T> {
-        StrawberryLoan {
-            reference,
-            parent: (parent as *const Strawberry<T>).as_mut(),
-            mutability: StrawberryMutability::Immutable
-        }
-    }
-    pub fn inquire(&mut self) -> Result<&mut T, T> {
-        match unsafe {&mut *self.parent}.loans.load(Ordering::Relaxed) {
-            0 => self.mutability = StrawberryMutability::Mutable,
-            1 => self.mutability = StrawberryMutability::Mutable,
-            _ => self.mutability = StrawberryMutability::Immutable
-        }
-        unsafe {COUNT3 += 1;}
-        match self.mutability {
-            StrawberryMutability::Immutable | StrawberryMutability::ForcedImmutable => {
-                unsafe {COUNT += 1;}
-                Err(self.reference.clone())
-            }
-            StrawberryMutability::Mutable => {
-                unsafe {COUNT2 += 1;}
-                Ok(self.reference)
-            }
-        }
-    }
-
-    pub fn inquire_uncloned(&mut self) -> Result<&mut T, T> {
-        Ok(self.reference)
-        /*match self.mutability {
-            StrawberryMutability::ForcedImmutable => {
-                Err(self.reference.clone())
-            }
-            _ => Ok(self.reference)
-        }*/
-    }
+unsafe impl<T: Clone + Default> Sync for Strawberry<T> {
 
 }
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-enum StrawberryMutability {
-    ForcedImmutable,
-    Immutable,
-    Mutable
+unsafe impl<T: Clone + Default> Send for Strawberry<T> {
+
 }
 
-impl<'a, T: Clone + Debug> Drop for StrawberryLoan<'_, T> {
-    fn drop(&mut self) {
-        unsafe { (*self.parent).loans.fetch_sub(1, Ordering::Relaxed); }
+impl<T: Clone + Default> Default for Strawberry<T> {
+    fn default() -> Self {
+        Strawberry::new(T::default())
     }
-}
-
-pub trait Either<T> {
-    fn either(&mut self) -> Box<&mut T>;
-}
-
-impl<T: Clone + Debug> Either<T> for Result<&mut T, T> {
-    fn either(&mut self) -> Box<&mut T> {
-        match self {
-            Ok(res) => Box::new(res),
-            Err(res) =>  Box::new(res)
-        }
-    }
-}
-
-
-/// DEBUG
-/// DEBUG
-
-static mut COUNT: u64 = 0;
-static mut COUNT2: u64 = 0;
-static mut COUNT3: u64 = 0;
-static mut COUNT4: u64 = 0;
-
-pub unsafe fn print_counts() {
-    println!("C1: {}", COUNT);
-    println!("C2: {}", COUNT2);
-    println!("C3: {}", COUNT3);
-    println!("C4: {}", COUNT4);
 }

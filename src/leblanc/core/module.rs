@@ -1,6 +1,7 @@
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
 
@@ -39,7 +40,7 @@ impl CoreModule {
     pub fn methods_as_partials(&self) -> Vec<PartialFunction> {
         self.methods.iter().map(|method| PartialFunction::from_method(method.method.clone(), method.returns.clone())).collect()
     }
-    pub fn methods_as_objects(&self) -> Vec<Arc<Mutex<LeBlancObject>>> {
+    pub fn methods_as_objects(&self) -> Vec<Arc<Strawberry<LeBlancObject>>> {
         self.methods.iter().map(|method| internal_method(method.method.clone()).to_mutex()).collect()
     }
 }

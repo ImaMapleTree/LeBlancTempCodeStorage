@@ -3,6 +3,7 @@ use core::fmt::{Display, Formatter};
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 use fxhash::{FxHashMap, FxHashSet};
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
@@ -17,23 +18,23 @@ use crate::LeBlancType;
 
 #[derive(Debug, Clone, Default)]
 pub struct ArcLeblancPromise {
-    pub inner: Arc<Mutex<LeblancPromise>>
+    pub inner: Arc<Strawberry<LeblancPromise>>
 }
 
 impl PartialEq for ArcLeblancPromise {
     fn eq(&self, other: &Self) -> bool {
-        self.inner.lock().unwrap().eq(&other.inner.lock().unwrap())
+        self.inner.lock().eq(&other.inner.lock())
     }
 }
 
 impl PartialOrd for ArcLeblancPromise {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.inner.lock().unwrap().partial_cmp(&other.inner.lock().unwrap())
+        self.inner.lock().partial_cmp(&other.inner.lock())
     }
 }
 
 impl ArcLeblancPromise {
-    pub fn from(inner: Arc<Mutex<LeblancPromise>>) -> ArcLeblancPromise {
+    pub fn from(inner: Arc<Strawberry<LeblancPromise>>) -> ArcLeblancPromise {
         ArcLeblancPromise {
             inner
         }
@@ -42,14 +43,14 @@ impl ArcLeblancPromise {
 
 #[derive(Debug, Clone, Default)]
 pub struct LeblancPromise {
-    pub result: Option<Arc<Mutex<LeBlancObject>>>,
+    pub result: Option<Arc<Strawberry<LeBlancObject>>>,
     pub complete: bool,
     pub consumed: bool,
 }
 
 impl PartialEq for LeblancPromise {
     fn eq(&self, other: &Self) -> bool {
-        self.result.as_ref().unwrap().lock().unwrap().eq(&other.result.as_ref().unwrap().lock().unwrap())
+        self.result.as_ref().unwrap().lock().eq(&other.result.as_ref().unwrap().lock())
     }
 }
 
@@ -63,12 +64,12 @@ impl PartialOrd for LeblancPromise {
 }
 
 impl LeblancPromise {
-    pub fn consume(&mut self) -> Result<Arc<Mutex<LeBlancObject>>, Arc<Mutex<LeBlancObject>>> {
+    pub fn consume(&mut self) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>> {
         match self.complete {
             false => Err(LeblancError::new("PromiseNotFulfilledException".to_string(), "Attempted to consume a non-complete promise.".to_string(), vec![]).create_mutex()),
             true => {
                 self.consumed = true;
-                let res = Ok(self.result.as_ref().unwrap().lock().unwrap().clone().to_mutex());
+                let res = Ok(self.result.as_ref().unwrap().lock().clone().to_mutex());
                 self.result = None;
                 res
             }
@@ -76,26 +77,26 @@ impl LeblancPromise {
     }
 
     pub fn to_leblanc_object(self) -> LeBlancObject {
-        leblanc_object_promise(ArcLeblancPromise::from(Arc::new(Mutex::new(self))))
+        leblanc_object_promise(ArcLeblancPromise::from(Arc::new(Strawberry::new(self))))
     }
 }
 
 impl ToLeblanc for LeblancPromise {
     fn create(&self) -> LeBlancObject {
-        leblanc_object_promise(ArcLeblancPromise::from(Arc::new(Mutex::new(self.clone()))))
+        leblanc_object_promise(ArcLeblancPromise::from(Arc::new(Strawberry::new(self.clone()))))
     }
 
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> {
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> {
         self.create().to_mutex()
     }
 }
 
-impl ToLeblanc for Arc<Mutex<LeblancPromise>> {
+impl ToLeblanc for Arc<Strawberry<LeblancPromise>> {
     fn create(&self) -> LeBlancObject {
         leblanc_object_promise(ArcLeblancPromise::from(self.clone()))
     }
 
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> {
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> {
         self.create().to_mutex()
     }
 }
@@ -105,7 +106,7 @@ impl ToLeblanc for ArcLeblancPromise {
         leblanc_object_promise(self.clone())
     }
 
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> {
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> {
         self.create().to_mutex()
     }
 }
@@ -115,7 +116,7 @@ pub fn leblanc_object_promise(promise: ArcLeblancPromise) -> LeBlancObject {
         LeBlancObjectData::Promise(promise),
         LeBlancType::Promise,
         promise_methods(),
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -168,7 +169,7 @@ impl Display for LeblancPromise {
         let s = if self.consumed {
             String::from("ConsumedPromise")
         } else if self.complete {
-            format!("CompletedPromise({:#?})", self.result.as_ref().unwrap().lock().unwrap().data).replace('\n', "").replace("(    ", "(").replace(",)", ")")
+            format!("CompletedPromise({:#?})", self.result.as_ref().unwrap().lock().data).replace('\n', "").replace("(    ", "(").replace(",)", ")")
         } else {
             String::from("Promise")
         };
@@ -178,7 +179,7 @@ impl Display for LeblancPromise {
 
 impl Display for ArcLeblancPromise {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.inner.lock().unwrap())
+        write!(f, "{}", self.inner.lock())
     }
 }
 

@@ -1,5 +1,6 @@
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
@@ -8,12 +9,12 @@ use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 
 #[derive(Clone, Debug)]
 pub struct LeblancVecIterator {
-    vec: Vec<Arc<Mutex<LeBlancObject>>>,
+    vec: Vec<Arc<Strawberry<LeBlancObject>>>,
     index: usize,
 }
 
 impl LeblancVecIterator {
-    pub fn new(vec: Vec<Arc<Mutex<LeBlancObject>>>) -> LeblancVecIterator {
+    pub fn new(vec: Vec<Arc<Strawberry<LeBlancObject>>>) -> LeblancVecIterator {
         LeblancVecIterator {
             vec,
             index: 0
@@ -22,7 +23,7 @@ impl LeblancVecIterator {
 }
 
 impl LeblancIterable for LeblancVecIterator {
-    fn lb_next(&mut self) -> Arc<Mutex<LeBlancObject>> {
+    fn lb_next(&mut self) -> Arc<Strawberry<LeBlancObject>> {
         self.index += 1;
         self.vec[self.index - 1].clone()
     }
@@ -39,7 +40,7 @@ impl LeblancIterable for LeblancVecIterator {
         LeblancList::new(self.vec.clone())
     }
 
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Mutex<LeBlancObject>>>> {
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Strawberry<LeBlancObject>>>> {
         Box::new(self.vec.clone().into_iter())
     }
 

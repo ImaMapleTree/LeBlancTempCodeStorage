@@ -7,6 +7,7 @@ pub mod utils;
 pub mod hex;
 pub mod copystring;
 pub mod exception;
+pub mod strawberry;
 
 pub trait Appendable<T> {
     fn append_item(&mut self, item: T);

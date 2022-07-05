@@ -6,6 +6,7 @@ use std::io;
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 
 use prettytable::{Cell, format, Row, Table};
@@ -22,8 +23,8 @@ use crate::LeBlancType;
 
 static mut STDOUT: Option<io::Stdout> = None;
 
-fn _BUILTIN_DISASSEMBLE(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
-    let method = args[0].lock().unwrap().data.get_inner_method().unwrap().clone();
+fn _BUILTIN_DISASSEMBLE(_self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
+    let method = args[0].lock().data.get_inner_method().unwrap().clone();
     let dis_rust_func = if args.len() > 1 {
         *args[1].reflect().downcast_ref::<bool>().unwrap()
     } else {
@@ -37,7 +38,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<
         }
     } else {
         let leblanc_handle = method.leblanc_handle;
-        let instructions = leblanc_handle.borrow().instructions.clone();
+        let instructions = leblanc_handle.lock().instructions.clone();
         let mut prev_line_number = 0;
         let mut line_number_format = grow_to_size("", 8);
         let mut instruct_count = 0;
@@ -51,9 +52,9 @@ fn _BUILTIN_DISASSEMBLE(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<
             } else {line_number_format = grow_to_size("", 8)}
 
             let arg_string = match instruction.instruct {
-                InstructionBase::LoadLocal => format!("({})", leblanc_handle.borrow().variable_context.values().find(|context| context.relationship == instruction.arg as u32).unwrap().name),
-                InstructionBase::LoadConstant => format!("({})", leblanc_handle.borrow().constants[instruction.arg as usize].lock().unwrap().data),
-                InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].lock().unwrap().data.get_inner_method().unwrap().context.name.clone()}),
+                InstructionBase::LoadLocal => format!("({})", leblanc_handle.lock().variable_context.values().find(|context| context.relationship == instruction.arg as u32).unwrap().name),
+                InstructionBase::LoadConstant => format!("({})", leblanc_handle.lock().constants[instruction.arg as usize].lock().data),
+                InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].lock().data.get_inner_method().unwrap().context.name.clone()}),
                 InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),
                 _ => "".to_string()
             };

@@ -5,6 +5,7 @@ use std::collections::{BTreeSet};
 
 use std::sync::Arc;
 use fxhash::{FxHashMap, FxHashSet};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_iterator::{_internal_iterator_filter_, _internal_iterator_map_, _internal_iterator_next, _internal_iterator_to_list_};
@@ -41,11 +42,11 @@ where
 }
 
 pub trait LeblancIterable: IteratorUtils {
-    fn lb_next(&mut self) -> Arc<Mutex<LeBlancObject>>;
+    fn lb_next(&mut self) -> Arc<Strawberry<LeBlancObject>>;
     fn has_next(&self) -> bool;
     fn reverse(&mut self);
     fn to_list(&mut self) -> LeblancList;
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Mutex<LeBlancObject>>>>;
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Strawberry<LeBlancObject>>>>;
     fn transformed(&mut self) -> Option<&mut TransformedIterator>;
 }
 
@@ -61,7 +62,7 @@ pub fn leblanc_object_iterator(leblanc_iterable: Box<dyn LeblancIterable>) -> Le
         LeBlancObjectData::Iterator(LeblancIterator::new(leblanc_iterable)),
         LeBlancType::Derived(DerivedType::Iterator),
         base_methods,
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -74,7 +75,7 @@ impl LeblancIterator {
         }
     }
 
-    pub fn next(&mut self) -> Arc<Mutex<LeBlancObject>> { self.iterator.lb_next() }
+    pub fn next(&mut self) -> Arc<Strawberry<LeBlancObject>> { self.iterator.lb_next() }
 
     pub fn has_next(&self) -> bool {
         self.iterator.has_next()
@@ -88,7 +89,7 @@ impl LeblancIterator {
 
     pub fn transformed(&mut self) -> Option<&mut TransformedIterator> { self.iterator.transformed() }
 
-    pub fn to_rust_iterator(&mut self) -> Box<dyn Iterator<Item=Arc<Mutex<LeBlancObject>>>> { self.iterator.to_rust_iter() }
+    pub fn to_rust_iterator(&mut self) -> Box<dyn Iterator<Item=Arc<Strawberry<LeBlancObject>>>> { self.iterator.to_rust_iter() }
 }
 
 impl Display for LeblancIterator {

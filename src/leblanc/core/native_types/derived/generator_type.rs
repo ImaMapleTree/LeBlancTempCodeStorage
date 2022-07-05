@@ -5,6 +5,7 @@ use core::fmt::{Display, Formatter};
 use std::cell::RefCell;
 use std::sync::Arc;
 use fxhash::{FxHashMap};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
 use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -31,7 +32,7 @@ pub fn leblanc_object_generator(leblanc_handle: LeblancHandle) -> LeBlancObject 
         LeBlancObjectData::Iterator(LeblancIterator::new(Box::new(generator))),
         LeBlancType::Derived(DerivedType::Iterator),
         base_methods,
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -43,7 +44,7 @@ impl Display for LeblancGenerator {
 }
 
 impl LeblancIterable for LeblancGenerator {
-    fn lb_next(&mut self) -> Arc<Mutex<LeBlancObject>> {
+    fn lb_next(&mut self) -> Arc<Strawberry<LeBlancObject>> {
         self.leblanc_handle.execute_from_last_point().to_mutex()
     }
     fn has_next(&self) -> bool {
@@ -62,7 +63,7 @@ impl LeblancIterable for LeblancGenerator {
         LeblancList::new(vec, )
     }
 
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Mutex<LeBlancObject>>>> {
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Strawberry<LeBlancObject>>>> {
         Box::new(self.clone())
     }
 
@@ -70,7 +71,7 @@ impl LeblancIterable for LeblancGenerator {
 }
 
 impl Iterator for LeblancGenerator {
-    type Item = Arc<Mutex<LeBlancObject>>;
+    type Item = Arc<Strawberry<LeBlancObject>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.has_next() {

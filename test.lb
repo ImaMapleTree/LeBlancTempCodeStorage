@@ -2,12 +2,45 @@ using random;
 using datelib;
 
 func main() {
-    for int i in 0 to 30 {
-        print(fib(i));
-    }
+    List input = [];
+    double st = epoch();
+    runner();
+    print("Async:");
+    print(epoch() - st);
+    st = epoch();
+    test(input);
+    print("Test:");
+    print(epoch() - st);
+
+
 }
 
-func fib(int a) returns int {
-    if a <= 1 -> return a;
-    return fib(a-1) + fib(a-2);
+func runner() {
+    List new_list = [];
+    group async_group;
+
+    List promises = [];
+    for int i in 0 to 30 {
+        promises.append(a -> async_group);
+    }
+    print("Promise:");
+    print(promises);
+
+    async_group.pipe_async(new_list);
+
+    print(new_list.length());
+}
+
+func test(List input) returns int {
+    for int i in 0 to 300000 {
+        random(0, 100);
+    }
+    return 0;
+}
+
+func a(List input) returns int {
+    for int i in 0 to 10000 {
+        random(0, 100);
+    }
+    return 0;
 }

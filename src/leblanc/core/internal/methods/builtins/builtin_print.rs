@@ -5,6 +5,7 @@ use std::io;
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::io::Write;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Stringify};
@@ -14,7 +15,7 @@ use crate::leblanc::core::native_types::base_type::internal_method;
 
 use crate::LeBlancType;
 
-fn _BUILTIN_PRINT_(_self: Arc<Mutex<LeBlancObject>>, args: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+fn _BUILTIN_PRINT_(_self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
     let arg_length = args.len();
     for i in 0..arg_length {
         let sep = if i == arg_length-1 { "\n" } else { " " };

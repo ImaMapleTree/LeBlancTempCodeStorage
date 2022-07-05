@@ -7,6 +7,7 @@ use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::collections::BTreeSet;
 use std::sync::Arc;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_list::{_internal_list_append_, _internal_list_iterate_, _internal_list_length_};
@@ -22,7 +23,7 @@ use crate::LeBlancType;
 
 #[derive(Clone, Debug)]
 pub struct LeblancList {
-    pub internal_vec: Vec<Arc<Mutex<LeBlancObject>>>
+    pub internal_vec: Vec<Arc<Strawberry<LeBlancObject>>>
 }
 
 impl LeblancList {
@@ -32,7 +33,7 @@ impl LeblancList {
         }
     }
 
-    pub fn new(internal_vec: Vec<Arc<Mutex<LeBlancObject>>>) -> LeblancList {
+    pub fn new(internal_vec: Vec<Arc<Strawberry<LeBlancObject>>>) -> LeblancList {
         LeblancList {
             internal_vec
         }
@@ -46,7 +47,7 @@ pub fn leblanc_object_list_empty() -> LeBlancObject {
         LeBlancObjectData::List(LeblancList::empty()),
         LeBlancType::Derived(DerivedType::List),
         base_methods,
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -98,7 +99,7 @@ pub fn leblanc_object_list(list: LeblancList) -> LeBlancObject {
         LeBlancObjectData::List(list),
         LeBlancType::Derived(DerivedType::List),
         base_methods,
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
@@ -107,12 +108,12 @@ impl ToLeblanc for LeblancList {
     fn create(&self) -> LeBlancObject {
         leblanc_object_list(self.clone())
     }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
 }
 
 impl Display for LeblancList {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().lock().unwrap().data.to_string()).collect::<Vec<String>>().join(", "))
+        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().lock().data.to_string()).collect::<Vec<String>>().join(", "))
     }
 }
 
@@ -120,7 +121,7 @@ impl PartialEq for LeblancList {
     fn eq(&self, other: &Self) -> bool {
         if self.internal_vec.len() != other.internal_vec.len() { return false }
         for i in 0..self.internal_vec.len() {
-            if self.internal_vec[i].lock().unwrap().data != other.internal_vec[i].lock().unwrap().data {
+            if self.internal_vec[i].lock().data != other.internal_vec[i].lock().data {
                 return false;
             }
         }

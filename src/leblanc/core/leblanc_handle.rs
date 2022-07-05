@@ -4,6 +4,7 @@ use fxhash::{FxHashMap};
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::future::Future;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 
 
@@ -14,7 +15,7 @@ use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
 use crate::leblanc::core::interpreter::instruction_execution::execute_instruction;
 use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_object::{ArcToRc, LeBlancObject, QuickUnwrap, RcToArc, RustDataCast, Stringify};
+use crate::leblanc::core::leblanc_object::{ArcToRc, LeBlancObject, QuickUnwrap, RustDataCast, Stringify};
 use crate::leblanc::core::native_types::error_type::LeblancError;
 use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, colorize};
 
@@ -29,7 +30,7 @@ static mut TIMINGS: Timings = Timings { map: None};
 
 static mut LAMBDA_HANDLE: Option<LeblancHandle> = None;
 
-
+static mut COUNT: u32 = 0;
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub enum ExecutionSignal {
@@ -38,12 +39,12 @@ pub enum ExecutionSignal {
     Terminated
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct LeblancHandle {
     pub name: SmolStr,
-    pub constants: Arc<Vec<Arc<Mutex<LeBlancObject>>>>,
+    pub constants: Arc<Vec<Arc<Strawberry<LeBlancObject>>>>,
     pub variable_context: Arc<FxHashMap<String, VariableContext>>,
-    pub variables: Vec<Arc<Mutex<LeBlancObject>>>,
+    pub variables: Vec<Arc<Strawberry<LeBlancObject>>>,
     pub instructions: Arc<Vec<Instruction>>,
     pub current_instruct: u64,
     pub null: bool,
@@ -74,7 +75,7 @@ impl LeblancHandle {
         let mut instructs: Vec<Instruction> = vec![];
         bytecode.instruction_lines().into_iter().map(|line| line.to_instructions()).for_each(|mut l| instructs.append(&mut l));
         let instructs = Arc::new(instructs);
-        let constants: Vec<Arc<Mutex<LeBlancObject>>> = bytecode.constants().into_iter().map(|constant| Arc::new(Mutex::new(constant.to_leblanc_object()))).collect::<Vec<Arc<Mutex<LeBlancObject>>>>();
+        let constants: Vec<Arc<Strawberry<LeBlancObject>>> = bytecode.constants().into_iter().map(|constant| Arc::new(Strawberry::new(constant.to_leblanc_object()))).collect::<Vec<Arc<Strawberry<LeBlancObject>>>>();
         let variable_context = bytecode.variables();
         let name = SmolStr::new(bytecode.name());
         let context_length = variable_context.len();
@@ -90,7 +91,7 @@ impl LeblancHandle {
     }
 
     #[inline(always)]
-    pub fn execute(&mut self, inputs: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+    pub fn execute(&mut self, inputs: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
         inputs.clone_into(&mut self.variables);
         self.current_instruct = 0;
         let mut instruction = Instruction::empty();
@@ -99,7 +100,7 @@ impl LeblancHandle {
         while self.current_instruct < self.instructions.len() as u64 {
             let _last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
-            //if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
+            if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
             match instruction.instruct {
                 InstructionBase::Return => return stack.pop().unwrap(),
                 /*InstructionBase::CallFunction => {
@@ -117,7 +118,7 @@ impl LeblancHandle {
                 Ok(_) => {},
                 Err(err) => {
                     println!("Errored");
-                    let mut borrowed_error = err.lock().unwrap();
+                    let mut borrowed_error = err.lock();
                     let error: &mut LeblancError = borrowed_error.data.mut_data().unwrap();
                     error.add_prior_trace(stack_trace.to_vec());
                     drop(borrowed_error);
@@ -140,7 +141,7 @@ impl LeblancHandle {
 
     }
 
-    pub fn execute_range(&mut self, left_bound: u64, right_bound: u64) -> Arc<Mutex<LeBlancObject>> {
+    pub fn execute_range(&mut self, left_bound: u64, right_bound: u64) -> Arc<Strawberry<LeBlancObject>> {
         self.current_instruct = left_bound;
         let mut last_instruct = Instruction::empty();
         let mut instruction = Instruction::empty();
@@ -167,7 +168,7 @@ impl LeblancHandle {
                 Ok(_) => {},
                 Err(err) => {
                     println!("Exception");
-                    let mut borrowed_error = err.lock().unwrap();
+                    let mut borrowed_error = err.lock();
                     let error: &mut LeblancError = borrowed_error.data.mut_data().unwrap();
                     error.add_prior_trace(stack_trace.to_vec());
                     drop(borrowed_error);
@@ -186,7 +187,7 @@ impl LeblancHandle {
 
     }
 
-    pub fn execute_instructions(&mut self, instructs: &Vec<Instruction>, stack: &mut ArrayVec<Arc<Mutex<LeBlancObject>>, 80>) -> Arc<Mutex<LeBlancObject>> {
+    pub fn execute_instructions(&mut self, instructs: &Vec<Instruction>, stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Arc<Strawberry<LeBlancObject>> {
         for instruct in instructs {
             if instruct.instruct == InstructionBase::Return { return stack.pop().unwrap() };
             let internal_handle = execute_instruction(instruct.base());
@@ -200,10 +201,10 @@ impl LeblancHandle {
     }
 
     pub fn execute_from_last_point(&mut self) -> LeBlancObject {
-        self.execute_range(self.current_instruct, self.instructions.len() as u64).force_unwrap()
+        self.execute_range(self.current_instruct, self.instructions.len() as u64).arc_unwrap()
     }
 
-    pub fn execute_lambda(&mut self, inputs: &mut [Arc<Mutex<LeBlancObject>>]) -> Arc<Mutex<LeBlancObject>> {
+    pub fn execute_lambda(&mut self, inputs: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
         inputs.clone_into(&mut self.variables);
         let mut stack = ArrayVec::<_, 80>::new();
         let length = self.instructions.len();
@@ -217,19 +218,21 @@ impl LeblancHandle {
     }
 
     #[inline(always)]
-    pub async fn execute_async(&mut self, inputs: Vec<Arc<Mutex<LeBlancObject>>>) -> Arc<Mutex<LeBlancObject>> {
+    pub async fn execute_async(&mut self, inputs: Vec<Arc<Strawberry<LeBlancObject>>>) -> Arc<Strawberry<LeBlancObject>> {
         inputs.clone_into(&mut self.variables);
-        println!("Executing async");
         self.current_instruct = 0;
         let mut instruction = Instruction::empty();
         let stack_trace = ArrayVec::<_, 50>::new();
-        let mut stack: ArrayVec<Arc<Mutex<LeBlancObject>>, 80> = ArrayVec::<_, 80>::new();
+        let mut stack: ArrayVec<Arc<Strawberry<LeBlancObject>>, 80> = ArrayVec::<_, 80>::new();
         while self.current_instruct < self.instructions.len() as u64 {
             let _last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
-            if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
+            //if DEBUG {println!("{} Async Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
             match instruction.instruct {
-                InstructionBase::Return => return stack.pop().unwrap(),
+                InstructionBase::Return => {
+                    //println!("Exiting Async: {:?}", stack.last().unwrap());
+                    return stack.pop().unwrap()
+                },
                 /*InstructionBase::CallFunction => {
                     if last_instruct.instruct == InstructionBase::LoadFunction {
                         stack_trace.push(last_instruct)
@@ -244,8 +247,8 @@ impl LeblancHandle {
             match internal_handle(self, &instruction, &mut stack) {
                 Ok(_) => {},
                 Err(err) => {
-                    println!("Errored");
-                    let mut borrowed_error = err.lock().unwrap();
+                    println!("Errored: {:#?}", err);
+                    let mut borrowed_error = err.lock();
                     let error: &mut LeblancError = borrowed_error.data.mut_data().unwrap();
                     error.add_prior_trace(stack_trace.to_vec());
                     drop(borrowed_error);
@@ -271,9 +274,9 @@ impl LeblancHandle {
     pub fn full_clone(&self) -> LeblancHandle {
         LeblancHandle {
             name: self.name.clone(),
-            constants: Arc::new(self.constants.iter().map(|v| v.clone().force_unwrap().clone().to_mutex()).collect()),
+            constants: Arc::new(self.constants.iter().map(|v| v.clone().arc_unwrap().clone().to_mutex()).collect()),
             variable_context: self.variable_context.clone(),
-            variables: self.variables.iter().map(|v| v.clone().force_unwrap()._clone().to_mutex()).collect(),
+            variables: self.variables.iter().map(|v| v.clone().arc_unwrap()._clone().to_mutex()).collect(),
             instructions: self.instructions.clone(),
             current_instruct: 0,
             null: false
@@ -296,11 +299,26 @@ impl Clone for LeblancHandle {
 }
 
 
-pub fn dump_stack_trace(error: Arc<Mutex<LeBlancObject>>, stack_trace: Vec<Instruction>) -> Arc<Mutex<LeBlancObject>> {
-    let mut borrowed =  error.lock().unwrap();
+pub fn dump_stack_trace(error: Arc<Strawberry<LeBlancObject>>, stack_trace: Vec<Instruction>) -> Arc<Strawberry<LeBlancObject>> {
+    let mut borrowed =  error.lock();
     let lbe: &mut LeblancError = borrowed.data.mut_data().unwrap();
     lbe.add_prior_trace(stack_trace);
     drop(borrowed);
     error
 }
 
+
+impl QuickUnwrap<LeblancHandle> for Arc<Strawberry<LeblancHandle>> {
+    fn arc_unwrap(self) -> LeblancHandle {
+        self.arc_unwrap()
+    }
+
+    fn clone_if_locked(&self) -> Arc<Strawberry<LeblancHandle>> {
+        let lock_attempt = self.try_lock();
+        let cloned = self.clone();
+        match lock_attempt {
+            Some(_) => cloned,
+            None => Arc::new(Strawberry::new(cloned.arc_unwrap()))
+        }
+    }
+}

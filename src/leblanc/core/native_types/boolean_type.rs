@@ -3,6 +3,7 @@
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 
 
@@ -29,7 +30,7 @@ impl ToLeblanc for bool {
     fn create(&self) -> LeBlancObject {
         leblanc_object_boolean(*self)
     }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
 }
 
 impl RustDataCast<bool> for LeBlancObjectData {

@@ -3,6 +3,7 @@
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 
 
@@ -42,7 +43,7 @@ pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
 
 impl ToLeblanc for i32 {
     fn create(&self) -> LeBlancObject { leblanc_object_int(*self) }
-    fn create_mutex(&self) -> Arc<Mutex<LeBlancObject>> { Arc::new(Mutex::new(self.create())) }
+    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
 }
 
 impl RustDataCast<i32> for LeBlancObjectData {

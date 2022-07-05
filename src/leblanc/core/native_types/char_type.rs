@@ -1,5 +1,6 @@
 use fxhash::{FxHashMap, FxHashSet};
 use std::sync::Arc;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
 
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -14,7 +15,7 @@ pub fn leblanc_object_char(ch: char) -> LeBlancObject {
         LeBlancObjectData::Char(ch),
         LeBlancType::Char,
         base_methods,
-        Arc::new(Mutex::new(FxHashMap::default())),
+        Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
     )
 }
