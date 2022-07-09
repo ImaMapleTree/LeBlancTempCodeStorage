@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 use std::process;
-use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, colorize_str};
+use crate::leblanc::include::lib::leblanc_colored::{Color, colorize_str};
 
 pub struct LeblancBaseException {
     rust_error: Box<dyn Error>,

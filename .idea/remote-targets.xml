@@ -2,17 +2,17 @@
 <project version="4">
   <component name="RemoteTargetsManager">
     <targets>
-      <target name="WSL - Ubuntu2" type="wsl" uuid="ee2ea620-f201-4781-a680-f8bf50479bfe">
+      <target name="WSL - Ubuntu" type="wsl" uuid="a75c76b9-68db-4452-8fcc-668a6973d116">
         <config>
           <option name="distributionMsId" value="Ubuntu" />
-          <option name="projectRootOnTarget" value="/mnt/c/Program Files/JetBrains/CLion 2022.1.3/jbr/bin&#10;/LeBlancTempCodeStorage" />
+          <option name="projectRootOnTarget" value="/mnt/c/Program Files/JetBrains/IntelliJ IDEA 2021.3.2/jbr/bin&#10;/hello-rust" />
         </config>
         <ContributedStateBase type="RsLanguageRuntime">
           <config>
             <option name="cargoPath" value="/home/evan/.cargo/bin/cargo" />
-            <option name="cargoVersion" value="1.64.0-nightly (dbff32b27 2022-06-24)" />
+            <option name="cargoVersion" value="1.63.0-nightly (4d92f07f3 2022-06-09)" />
             <option name="rustcPath" value="/home/evan/.cargo/bin/rustc" />
-            <option name="rustcVersion" value="1.64.0-nightly (f2d93935f 2022-07-02)" />
+            <option name="rustcVersion" value="1.63.0-nightly (c3b7d7b49 2022-06-17)" />
           </config>
         </ContributedStateBase>
       </target>

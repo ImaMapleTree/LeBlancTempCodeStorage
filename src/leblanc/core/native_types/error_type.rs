@@ -16,7 +16,7 @@ use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, Rus
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, ColorBright, colorize, ColorString};
+use crate::leblanc::include::lib::leblanc_colored::{Color, ColorBright, colorize, ColorString};
 
 #[derive(Clone, PartialEq, Eq, Debug, PartialOrd, Hash)]
 pub struct LeblancError {

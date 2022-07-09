@@ -11,7 +11,7 @@ use crate::leblanc::compiler::symbols::{Symbol, SymbolType};
 use crate::leblanc::core::native_types::type_value;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::relationship::Node;
-use crate::LeBlancType::Class;
+use crate::LeBlancType::{Class, Null};
 
 pub fn create_stub_dump(fabric: &mut Fabric) {
     let mut output = fabric.imports().iter().map(|i| i.source.clone()).collect::<Vec<String>>().join("|") + "\n";
@@ -116,7 +116,7 @@ fn match_leblanc_type(vocab_string: String) -> CompileVocab {
         "module" => MODULE(second_vocab.parse::<u64>().unwrap()),
         "boundary" => BOUNDARY(boundary_value(&second_vocab.chars().next().unwrap())),
         "function" => FUNCTION(function_type_value(&second_vocab)),
-        _ => UNKNOWN(Class(0))
+        _ => UNKNOWN(Null)
     };
 
 }

@@ -23,6 +23,8 @@ pub trait ToLeblanc {
     fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>>;
 }
 
+
+
 pub fn base_methods() -> Arc<FxHashSet<Method>> {
     unsafe {
         if BASE_METHODS.is_none() {

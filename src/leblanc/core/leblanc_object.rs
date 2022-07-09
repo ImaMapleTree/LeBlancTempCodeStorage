@@ -11,7 +11,7 @@ use std::pin::Pin;
 use std::sync::{Arc, LockResult, MutexGuard, TryLockResult};
 use fxhash::{FxHashMap, FxHashSet};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::Mutex;
+
 use std::task::{Context, Poll};
 
 use smol_str::SmolStr;
@@ -31,6 +31,7 @@ use crate::leblanc::core::native_types::group_type::LeblancGroup;
 
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::core::native_types::promise_type::{ArcLeblancPromise, LeblancPromise};
+use crate::leblanc::core::native_types::rust_type::RustObject;
 use crate::leblanc::rustblanc::Appendable;
 
 
@@ -179,6 +180,12 @@ impl LeBlancObject {
         self.data = other.data;
     }
 
+    pub fn swap_data(&mut self, other: &mut Self) {
+        swap(&mut self.members,&mut other.members);
+        swap(&mut self.data, &mut other.data);
+        self.typing = other.typing
+    }
+
 
     pub fn swap_rc(&mut self, other: &mut MutexGuard<LeBlancObject>) {
         swap(&mut self.members, &mut other.members);
@@ -264,6 +271,7 @@ pub enum LeBlancObjectData {
     Module(Module),
     Class(Box<ClassMeta>), // User defined class with ID
     Dynamic(&'static LeBlancObjectData),
+    Rust(RustObject),
 
     Promise(ArcLeblancPromise),
     Group(LeblancGroup),
@@ -336,6 +344,7 @@ impl Display for LeBlancObjectData {
             LeBlancObjectData::Group(data) => data.to_string(),
             LeBlancObjectData::Iterator(data) => data.to_string(),
             LeBlancObjectData::Error(data) => data.to_string(),
+            LeBlancObjectData::Rust(data) => data.to_string(),
             LeBlancObjectData::Null => "null".to_string()
         };
         write!(f, "{}", s)

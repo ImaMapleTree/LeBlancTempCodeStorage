@@ -1,46 +1,37 @@
-using random;
-using datelib;
+Enum Result<T> {
+    Success(T),
+    Failure(Exception!)
+}
+
+
+func Attempt($expr) returns Result {
+    try {
+        return Result::Success($expr.resolve());
+    }
+    except (Exception! e) {
+        return Failure(e);
+    }
+}
 
 func main() {
-    List input = [];
-    double st = epoch();
-    runner();
-    print("Async:");
-    print(epoch() - st);
-    st = epoch();
-    test(input);
-    print("Test:");
-    print(epoch() - st);
-
-
-}
-
-func runner() {
-    List new_list = [];
-    group async_group;
-
-    List promises = [];
-    for int i in 0 to 30 {
-        promises.append(a -> async_group);
+    int s = null;
+    string result;
+    try {
+        result = s.to_string();
+    } except (NullPointerException e) {
+        result = "null";
     }
-    print("Promise:");
-    print(promises);
 
-    async_group.pipe_async(new_list);
+    // Alternative
 
-    print(new_list.length());
-}
-
-func test(List input) returns int {
-    for int i in 0 to 300000 {
-        random(0, 100);
+    Result result = Attempt(s.to_string());
+    string s = match result {
+        Success(str) => str,
+        Failure(e) => match e {
+            NullPointerException 
+        "null";
+        }
     }
-    return 0;
-}
 
-func a(List input) returns int {
-    for int i in 0 to 10000 {
-        random(0, 100);
-    }
-    return 0;
+
 }

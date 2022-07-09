@@ -1,18 +1,16 @@
-use alloc::rc::Rc;
-use std::cell::RefCell;
+use core::borrow::BorrowMut;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 use crate::leblanc::core::internal::internal_list_iterator::LeblancVecIterator;
-use crate::leblanc::core::leblanc_object::{LeBlancObject, RustDataCast};
+use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::native_types::derived::iterator_type::{leblanc_object_iterator};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::int_type::leblanc_object_int;
 
 
 pub fn _internal_list_append_(_self: Arc<Strawberry<LeBlancObject>>, arguments: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
-    let mut borrowed = _self.lock();
-    let list: &mut LeblancList = borrowed.data.mut_data().unwrap();
-    list.internal_vec.push(arguments[0].clone());
+    //<LeBlancObjectData as RustDataCast<LeblancList>>::mut_data(&mut _self.underlying_pointer().data).unwrap().internal_vec.push(arguments[0].clone());
+    <LeBlancObjectData as RustDataCast<LeblancList>>::mut_data(&mut _self.lock().data).unwrap().internal_vec.push(arguments[0].clone());
     LeBlancObject::unsafe_null()
 }
 

@@ -5,7 +5,7 @@ use crate::leblanc::core::leblanc_argument::{number_argset};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::module::{CoreModule, ModuleMethod};
-use crate::leblanc::rustblanc::lib::random::_functions_::{_random_no_arg_, _random_one_arg_, _random_two_arg_};
+use crate::leblanc::include::lib::random::_functions_::{_random_no_arg_, _random_one_arg_, _random_two_arg_};
 use crate::LeBlancType;
 
 

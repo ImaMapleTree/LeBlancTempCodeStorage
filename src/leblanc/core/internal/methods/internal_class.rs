@@ -24,7 +24,7 @@ pub fn _internal_expose_(_self: Arc<Strawberry<LeBlancObject>>, _arguments: &mut
     let class_meta = ClassMeta::default("ExposedObject".to_string(), 0);
     let expose_object = LeBlancObject::new(
         LeBlancObjectData::Class(Box::new(class_meta.clone())),
-        LeBlancType::Class(class_meta.parse_id),
+        LeBlancType::Class(class_meta.name),
         base_methods(),
         Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty(),
@@ -35,7 +35,7 @@ pub fn _internal_expose_(_self: Arc<Strawberry<LeBlancObject>>, _arguments: &mut
     let variable_class_meta = ClassMeta::default("VariableContext".to_string(), 1);
     let variable_state = LeBlancObject::new(
         LeBlancObjectData::Class(Box::new(variable_class_meta.clone())),
-        LeBlancType::Class(variable_class_meta.parse_id),
+        LeBlancType::Class(variable_class_meta.name),
         base_methods(),
         Arc::new(Strawberry::new(FxHashMap::default())),
         VariableContext::empty()

@@ -6,9 +6,9 @@ use crate::leblanc::compiler::identifier::typed_token::TypedToken;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::leblanc::rustblanc::exception::leblanc_base_exception::LeblancBaseException;
-use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, ColorBright, colorize, colorize_str, ColorString};
-use crate::leblanc::rustblanc::lib::leblanc_colored::Color::Bright;
-use crate::leblanc::rustblanc::lib::leblanc_colored::ColorBright::{BrightGreen, BrightWhite};
+use crate::leblanc::include::lib::leblanc_colored::{Color, ColorBright, colorize, colorize_str, ColorString};
+use crate::leblanc::include::lib::leblanc_colored::Color::Bright;
+use crate::leblanc::include::lib::leblanc_colored::ColorBright::{BrightGreen, BrightWhite};
 
 
 fn create_dashes_to_symbol(number: u32, symbol_number: u32, string: String) -> String {

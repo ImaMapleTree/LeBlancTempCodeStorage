@@ -69,7 +69,7 @@ impl RuleAnalyzer {
     }
 
     pub fn evaluate_rule2(&self, errors: &mut Vec<ErrorStub>, tokens: &mut Vec<TypedToken>) {
-        tokens.iter().filter(|t| t.lang_type() == CompileVocab::UNKNOWN(Class(0)))
+        tokens.iter().filter(|t| t.lang_type() == CompileVocab::UNKNOWN(Null))
             .for_each(|t| { errors.append_item( ErrorStub::UndeclaredVariable(t.clone())) });
     }
 

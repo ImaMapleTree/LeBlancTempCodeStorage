@@ -229,7 +229,7 @@ fn _INSTRUCT_LOAD_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stac
     /*if result.is_none() { LeBlancObject::error().to_mutex(); }
     let result = result.unwrap().force_unwrap().to_mutex();*/
     // TODO Make method chance if we're currently running async (through a handle boolean, if so we force clone otherwise we can just check if it's locked
-    stack.push(result.clone_if_locked());
+    stack.push(result);
     Ok(())
 }
 
@@ -249,7 +249,6 @@ fn _INSTRUCT_LOAD_CONSTANT_(handle: &mut LeblancHandle, arg: &Instruction, stack
 #[inline(always)]
 fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Result<(), Arc<Strawberry<LeBlancObject>>> {
     let result= handle.variables.get(arg.arg as usize);
-    //println!("{:#?}", result);
     match result {
         None => {
             let null = LeBlancObject::null().to_mutex();
@@ -261,7 +260,7 @@ fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
             stack.push(null);
         },
         Some(res) => {
-            match res.lock().typing.is_numeric() {
+            match res.underlying_pointer().typing.is_numeric() {
                 true => stack.push(res.clone()),
                 false => stack.push(res.clone())
             }
@@ -299,19 +298,17 @@ fn _CALL_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &mut A
     };
 
     //let func = func.clone_if_locked();
-    let is_internal = func.lock().data.get_inner_method().unwrap().is_internal_method();
+    let is_internal = func.underlying_pointer().data.get_inner_method().unwrap().is_internal_method();
     let result = match is_internal {
         true => {
-            let handle = func.lock().data.get_inner_method().unwrap().handle;
-            let x = (handle)(func, &mut arguments); x
+            let handle = func.underlying_pointer().data.get_inner_method().unwrap().handle;
+            (handle)(func, &mut arguments)
         },
-        false => {//.execute(&mut arguments)//.execute(&mut arguments)
-            let lock = func.lock();
-            let x = lock.data.get_inner_method().unwrap().leblanc_handle.clone_if_locked().lock().execute(&mut arguments);
-            x}
+        false => //.execute(&mut arguments)//.execute(&mut arguments)
+            func.underlying_pointer().data.get_inner_method().unwrap().leblanc_handle.clone_if_locked().lock().execute(&mut arguments)
         };
 
-    let typing = result.lock().typing;
+    let typing = result.underlying_pointer().typing;
     match typing {
         LeBlancType::Exception => return Err(result),
         _ => stack.push(result)
@@ -421,10 +418,7 @@ fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mu
 
     while inner_iterator.has_next() {
         let variable = inner_iterator.next();
-        //println!("I'm good");
-        let mut lock = iter_variable.lock();
-        lock.move_data(variable.arc_unwrap());
-        //println!("I'm goododeer");
+        iter_variable.lock().move_data(variable.arc_unwrap());
         let _loop_result = handle.execute_range(loop_start+1, loop_start+1 + arg.arg as u64 );
         //println!("Hahahaha");
         //variable.lock().swap_rc(&mut iter_variable.lock());

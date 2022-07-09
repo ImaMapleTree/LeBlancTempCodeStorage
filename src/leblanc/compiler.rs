@@ -13,3 +13,4 @@ pub mod identifier;
 pub mod module_resolver;
 pub mod compile_types;
 pub mod import;
+pub mod compiler_rewrite;

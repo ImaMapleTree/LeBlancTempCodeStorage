@@ -33,7 +33,7 @@ impl TypedToken {
     pub fn empty() -> TypedToken {
         TypedToken {
             base: Token::empty(),
-            lang_type: CompileVocab::UNKNOWN(LeBlancType::Class(0)),
+            lang_type: CompileVocab::UNKNOWN(LeBlancType::Null),
             scope: -1,
             a_typing: vec![vec![], vec![]],
             global: false,

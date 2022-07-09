@@ -11,7 +11,7 @@ use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_,
 use crate::leblanc::core::internal::methods::internal_string::_internal_add_string;
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
+use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
@@ -53,4 +53,27 @@ pub fn string_addition_method() -> Method {
         _internal_add_string,
         MethodTag::Addition.singleton()
     )
+}
+
+impl RustDataCast<SmolStr> for LeBlancObjectData {
+    fn clone_data(&self) -> Option<SmolStr> {
+        match self {
+            LeBlancObjectData::String(string) => Some(string.clone()),
+            _ => None,
+        }
+    }
+
+    fn ref_data(&self) -> Option<&SmolStr> {
+        match self {
+            LeBlancObjectData::String(string) => Some(string),
+            _ => None,
+        }
+    }
+
+    fn mut_data(&mut self) -> Option<&mut SmolStr> {
+        match self {
+            LeBlancObjectData::String(string) => Some(string),
+            _ => None,
+        }
+    }
 }

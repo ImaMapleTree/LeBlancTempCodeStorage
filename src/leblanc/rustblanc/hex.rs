@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::ops::{Add, AddAssign};
 use std::vec;
 use crate::leblanc::rustblanc::Hexable;
-use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, ColorBright, colorize};
+use crate::leblanc::include::lib::leblanc_colored::{Color, ColorBright, colorize};
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct Hexadecimal {

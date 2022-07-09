@@ -28,6 +28,9 @@ clippy::slow_vector_initialization, clippy::to_string_in_format_args, clippy::un
 )]
 
 
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
 extern crate alloc;
 extern crate core;
 //
@@ -59,6 +62,7 @@ pub mod playground;
 static INTERACTIVE: bool = false;
 
 use mimalloc::MiMalloc;
+use crate::leblanc::compiler::compiler_rewrite::lexer::lex;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -84,15 +88,16 @@ fn main() -> io::Result<()> {
 
 
     set_colors_enabled(true);
+    lex("test.lb".to_string());
 
-    compile("test.lb".to_string(), CompilationMode::Full);
+   /* //compile("test.lb".to_string(), CompilationMode::Full);
 
 
     let bc = read_file("test.lb".to_string());
     run(bc);
 
     let elapsed = now.elapsed();
-    println!("Total Elapsed: {}", elapsed.as_secs_f64());
+    println!("Total Elapsed: {}", elapsed.as_secs_f64());*/
 
     Ok(())
 }

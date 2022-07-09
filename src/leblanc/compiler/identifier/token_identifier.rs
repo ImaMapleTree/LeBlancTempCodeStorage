@@ -16,7 +16,7 @@ use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub::InvalidSyntax;
 use crate::leblanc::rustblanc::relationship::Node;
-use crate::LeBlancType::{Class, Flex};
+use crate::LeBlancType::{Class, Exception, Flex, Null};
 
 pub fn identify(mut typed_tokens: Vec<TypedToken>, mut import_tokens: Vec<Node<TypedToken>>, type_map: &mut HashMap<String, Vec<Vec<CompileVocab>>>, mut func_matcher: HashMap<PartialToken, Vec<Vec<LeBlancType>>>, errors: &mut Vec<ErrorStub>, mode: CompilationMode) -> Vec<Node<TypedToken>>{
 
@@ -33,7 +33,7 @@ pub fn identify(mut typed_tokens: Vec<TypedToken>, mut import_tokens: Vec<Node<T
     for token in &mut typed_tokens {
         let mut partial_token = token.as_partial();
         let mut function_ref = false;
-        if partial_token.lang_type == UNKNOWN(Class(0)) {
+        if partial_token.lang_type == UNKNOWN(Exception) {
             partial_token.lang_type = FUNCTION(FunctionType::Call);
             function_ref = true;
         }
@@ -177,8 +177,8 @@ pub fn identify_functions(typed_tokens: &mut Vec<TypedToken>, func_matcher: &mut
                 errors.append_item( InvalidSyntax(token.clone()));
             } else {
                 if ndi != 0 {
-                    func_matcher.insert(typed_tokens[ndi].as_partial(), vec![vec![Class(0)], vec![]]);
-                    typed_tokens[ndi].set_typing_returns(vec![Class(0)]);
+                    func_matcher.insert(typed_tokens[ndi].as_partial(), vec![vec![Null], vec![]]);
+                    typed_tokens[ndi].set_typing_returns(vec![Null]);
                 }
                 ndi = i + 1;
             }
@@ -316,13 +316,13 @@ pub fn identify_unknown(typed_tokens: &mut Vec<TypedToken>, type_map: &mut HashM
                 if global_value.is_some() && !global_value.unwrap().is_empty() {
                     token.set_scope(0);
                     token.set_type(global_value.unwrap()[0]);
-                } else if *class_value > 0 {
+                }/* else if *class_value != "DNE" {
                     let class_scopes = optional_scopes.unwrap().get(*class_value as usize);
                     if class_scopes.is_some() && !class_scopes.unwrap().is_empty() {
                         token.set_scope(*class_value as i32);
                         token.set_type(class_scopes.unwrap()[0])
                     }
-                }
+                }*/
             }
         }
     }

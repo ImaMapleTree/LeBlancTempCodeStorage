@@ -11,7 +11,7 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
 use crate::leblanc::rustblanc::copystring::CopyString;
-use crate::leblanc::rustblanc::lib::get_core_modules;
+use crate::leblanc::include::lib::get_core_modules;
 
 pub mod instructions;
 pub mod interactive;

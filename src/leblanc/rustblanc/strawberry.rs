@@ -31,10 +31,24 @@ impl<T: Clone + Default> Strawberry<T> {
         cloned
     }
 
+    pub fn underlying_pointer(&self) -> &mut T {
+        unsafe {&mut *self.mutex.data_ptr()}
+    }
+
     pub fn try_lock(&self) -> Option<MutexGuard<'_, RawMutex, T>> {
         self.mutex.try_lock()
     }
 }
+
+/*pub struct StrawberryPointer<T> {
+    pointer: *mut T
+}
+
+impl<T> StrawberryPointer<T> {
+    pub fn unwrap(&self) -> &mut T {
+    }
+
+}*/
 
 unsafe impl<T: Clone + Default> Sync for Strawberry<T> {
 

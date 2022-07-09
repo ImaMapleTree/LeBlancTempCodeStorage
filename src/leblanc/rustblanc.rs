@@ -1,6 +1,5 @@
 
 use crate::leblanc::rustblanc::hex::Hexadecimal;
-pub(crate) mod lib;
 pub mod rust_override;
 pub mod relationship;
 pub mod utils;

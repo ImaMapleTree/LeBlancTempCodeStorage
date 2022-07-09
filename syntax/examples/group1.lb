@@ -1,5 +1,3 @@
-using random;
-using datelib;
 
 func main() {
     dis(test1);

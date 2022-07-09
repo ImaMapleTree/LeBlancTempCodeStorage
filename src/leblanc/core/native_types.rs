@@ -3,6 +3,7 @@ use core::str::FromStr;
 use std::fmt::{Display, Formatter};
 
 use crate::leblanc::core::native_types::derived::DerivedType;
+use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
 
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
@@ -27,12 +28,13 @@ pub mod attributes;
 pub mod derived;
 pub mod group_type;
 pub mod promise_type;
+pub mod rust_type;
 
 static VARIANTS: [&str; 24] = ["flex", "Self", "char", "short", "int", "int64", "int128", "arch", "float", "double", "boolean", "string", "group", "function", "module", "promise", "class", "dynamic", "exception", "marker", "null", "list", "iterator", "class.0"];
 
 #[derive(Eq, Clone, Copy, Debug, Ord, PartialOrd, Hash, Default)]
 pub enum LeBlancType {
-    Class(u32), // User defined class with ID
+    Class(CopyString), // User defined class with ID
     Flex,
     SelfType, // internal implementation of "flex"
     Char,
@@ -57,7 +59,7 @@ pub enum LeBlancType {
     Null
 }
 
-pub fn is_native_type(string: &str) -> bool { type_value(string) != Class(0) }
+pub fn is_native_type(string: &str) -> bool { type_value(string) != Class("DNE".to_cstring()) }
 
 pub fn type_value(string: &str) -> LeBlancType {
     match string {
@@ -85,10 +87,10 @@ pub fn type_value(string: &str) -> LeBlancType {
         "List" => Derived(DerivedType::List),
         Other => {
             if Other.starts_with("class.") {
-                let class_value = Other[6..].parse::<u32>().unwrap();
-                Class(class_value)
+                let class_value = Other[6..].parse::<String>().unwrap();
+                Class(class_value.to_cstring())
             } else {
-                Class(0)
+                Class("DNE".to_cstring())
             }
         }
     }

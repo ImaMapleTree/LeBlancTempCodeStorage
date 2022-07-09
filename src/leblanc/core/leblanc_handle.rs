@@ -17,13 +17,13 @@ use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBa
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{ArcToRc, LeBlancObject, QuickUnwrap, RustDataCast, Stringify};
 use crate::leblanc::core::native_types::error_type::LeblancError;
-use crate::leblanc::rustblanc::lib::leblanc_colored::{Color, colorize};
+use crate::leblanc::include::lib::leblanc_colored::{Color, colorize};
 
 use crate::leblanc::rustblanc::utils::{Timings};
 
-static DEBUG: bool = false;
+static DEBUG: bool = true;
 static TIME_DEBUG: bool = false;
-static STACK_DEBUG: bool = false;
+static STACK_DEBUG: bool = true;
 static mut GLOBAL_SIGNAL: ExecutionSignal = ExecutionSignal::Normal;
 
 static mut TIMINGS: Timings = Timings { map: None};
@@ -48,6 +48,7 @@ pub struct LeblancHandle {
     pub instructions: Arc<Vec<Instruction>>,
     pub current_instruct: u64,
     pub null: bool,
+    pub is_async: bool,
 }
 
 impl PartialEq for LeblancHandle {
@@ -67,7 +68,8 @@ impl LeblancHandle {
             variables: vec![],
             instructions: Arc::new(vec![]),
             current_instruct: 0,
-            null: true
+            null: true,
+            is_async: false
         }
     }
 
@@ -86,7 +88,8 @@ impl LeblancHandle {
             variables: Vec::with_capacity(context_length),
             instructions: instructs,
             current_instruct: 0,
-            null: false
+            null: false,
+            is_async: false
         }
     }
 
@@ -126,7 +129,7 @@ impl LeblancHandle {
                     return err
                 }
             };
-            //if STACK_DEBUG { println!("{} Stack: {}", colorize(self.name.to_string(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
+            if STACK_DEBUG { println!("{} Stack: {}", colorize(self.name.to_string(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
             /*if TIME_DEBUG {
                 let duration = now.elapsed().as_secs_f64();
                 unsafe { TIMINGS.add_timing(instruction.instruct.to_string(), duration); }
@@ -150,7 +153,7 @@ impl LeblancHandle {
         while self.current_instruct < right_bound {
             last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
-            //if DEBUG {println!("{} Range Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
+            if DEBUG {println!("{} Range Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
             match instruction.instruct {
                 InstructionBase::Return => return stack.pop().unwrap(),
                 InstructionBase::CallFunction => {
@@ -176,7 +179,7 @@ impl LeblancHandle {
                     return err
                 }
             };
-            //if STACK_DEBUG { println!("{} Range Stack: {}", colorize(self.name.to_string(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
+            if STACK_DEBUG { println!("{} Range Stack: {}", colorize(self.name.to_string(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
             /*if TIME_DEBUG {
                 let duration = now.elapsed().as_secs_f64();
                 unsafe { TIMINGS.add_timing(instruction.instruct.to_string(), duration); }
@@ -219,6 +222,7 @@ impl LeblancHandle {
 
     #[inline(always)]
     pub async fn execute_async(&mut self, inputs: Vec<Arc<Strawberry<LeBlancObject>>>) -> Arc<Strawberry<LeBlancObject>> {
+        self.is_async = true;
         inputs.clone_into(&mut self.variables);
         self.current_instruct = 0;
         let mut instruction = Instruction::empty();
@@ -274,12 +278,13 @@ impl LeblancHandle {
     pub fn full_clone(&self) -> LeblancHandle {
         LeblancHandle {
             name: self.name.clone(),
-            constants: Arc::new(self.constants.iter().map(|v| v.clone().arc_unwrap().clone().to_mutex()).collect()),
+            constants: Arc::new(self.constants.iter().map(|v| v.clone().arc_unwrap().to_mutex()).collect()),
             variable_context: self.variable_context.clone(),
-            variables: self.variables.iter().map(|v| v.clone().arc_unwrap()._clone().to_mutex()).collect(),
+            variables: self.variables.iter().map(|v| v.clone().arc_unwrap().to_mutex()).collect(),
             instructions: self.instructions.clone(),
             current_instruct: 0,
-            null: false
+            null: false,
+            is_async: self.is_async
         }
     }
 }
@@ -293,7 +298,8 @@ impl Clone for LeblancHandle {
             variables: Vec::with_capacity(self.variables.capacity()),
             instructions: self.instructions.clone(),
             current_instruct: self.current_instruct,
-            null: self.null
+            null: self.null,
+            is_async: self.is_async
         }
     }
 }
@@ -310,15 +316,14 @@ pub fn dump_stack_trace(error: Arc<Strawberry<LeBlancObject>>, stack_trace: Vec<
 
 impl QuickUnwrap<LeblancHandle> for Arc<Strawberry<LeblancHandle>> {
     fn arc_unwrap(self) -> LeblancHandle {
-        self.arc_unwrap()
+        self.force_unwrap()
     }
 
     fn clone_if_locked(&self) -> Arc<Strawberry<LeblancHandle>> {
-        let lock_attempt = self.try_lock();
         let cloned = self.clone();
-        match lock_attempt {
-            Some(_) => cloned,
-            None => Arc::new(Strawberry::new(cloned.arc_unwrap()))
+        match self.locked() {
+            false => cloned,
+            true => Arc::new(Strawberry::new(cloned.arc_unwrap()))
         }
     }
 }

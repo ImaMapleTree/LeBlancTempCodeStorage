@@ -1,0 +1,42 @@
+float_number = {(ASCII_DIGIT | "-")  ~ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT*}
+whole_number = {(ASCII_DIGIT | "-") ~ ASCII_DIGIT*}
+string = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+WHITESPACE = _{" " | "\t" | "\n" }
+word = @{ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*}
+
+operand = {word | float_number | whole_number | string}
+
+operator = {MATH_SYMBOL | "+" | "-" }
+operation = {operand ~ operator ~ operand}
+
+boundary = _{ ";" }
+
+ident = {operation | word}
+arg = {operation | operand}
+
+native_types = { "int" | "string" | "float" | "boolean" }
+types = { native_types | word }
+type_dec = ${ types ~ " " ~ word }
+
+function_call = {ident ~ "(" ~ (!")" ~ (arg ~ ","?)*)* ~ ")" }
+import = { "using" ~ word ~ boundary }
+
+function_name = { "func" ~ word }
+function_args = { "(" ~ (!")" ~ (type_dec ~ ","?)*)* ~ ")" }
+function_returns = { "returns" ~ (types)* }
+function_header = { function_name ~ function_args ~ function_returns? }
+function_body = { "{" ~ "}" }
+
+expr = {arg | function_call | ident}
+
+slice = { expr ~ ":" ~ expr }
+list_index = {ident ~ "[" ~ (slice | expr) ~ "]"}
+list = {"[" ~ (list_index | expr ~ ","?)* ~ "]"}
+
+assignment = {
+	type_dec ~ "=" ~ expr |
+    list_index ~ "=" ~ (list_index | expr)
+}
+
+
+file = {SOI ~ "\n"* ~ (function_header ~ function_body)* ~ EOI}

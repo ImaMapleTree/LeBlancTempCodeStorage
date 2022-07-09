@@ -23,12 +23,13 @@ use crate::leblanc::compiler::lang::leblanc_lang::ExtensionType::{ExtensionTypeP
 use crate::leblanc::compiler::lang::leblanc_lang::Specials::LambdaMarker;
 use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
 use crate::leblanc::rustblanc::Appendable;
-use crate::leblanc::rustblanc::lib::get_core_modules;
-use crate::LeBlancType::Dynamic;
+use crate::leblanc::include::lib::get_core_modules;
+use crate::leblanc::rustblanc::copystring::CopyStringable;
+use crate::LeBlancType::{Dynamic, Exception, Null};
 
 
 pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub>, mode: CompilationMode) -> Fabric {
-    let UNKNOWN_TYPE: LeBlancType = Class(0);
+    let UNKNOWN_TYPE: LeBlancType = Null;
     let UNKNOWN_VOCAB: CompileVocab = UNKNOWN(UNKNOWN_TYPE);
 
     let mut imports: Vec<Import> = Vec::new();
@@ -200,7 +201,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                         }
                         LBKeyword::Class => {
                             new_class_counter += 1;
-                            CLASS(Class(0))
+                            CLASS(Class(token_string.clone().to_cstring()))
                         }
                         _ => UNKNOWN_VOCAB
                     }
@@ -209,7 +210,7 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                 }
 
             } else if token_string == "class" {
-                TYPE(Class(0))
+                TYPE(Class("_CLS_".to_cstring()))
             } else if is_native_type(token_string.as_str()) {
                 let vocab_type = TYPE(type_value(token_string.as_str()));
                 vocab_type
@@ -228,15 +229,15 @@ pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub
                     } else if last_vocab == CompileVocab::SPECIAL(LambdaMarker, 120){
                         VARIABLE(Dynamic)
                     } else {
-                        UNKNOWN(Class(0))
+                        UNKNOWN_VOCAB
                     }
                 } else if is_constant(next_token.as_string().as_str()) {
                     UNKNOWN_VOCAB
                 } else if next_token.as_string() == "=" || next_token.as_string() == "->" {
-                    UNKNOWN(Class(0))
+                    UNKNOWN_VOCAB
                 } else {
                     new_class_counter += 1;
-                    TYPE(Class(0))
+                    TYPE(Class(token_string.clone().to_cstring()))
                 }
             };
 
