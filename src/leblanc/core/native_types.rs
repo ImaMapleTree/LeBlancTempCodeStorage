@@ -54,6 +54,8 @@ pub enum LeBlancType {
     Exception, // internal implementation of "dynamic
     Derived(DerivedType),
     Promise,
+    SuperLambda, // Used as a function arg
+    Trait(CopyString, bool),
     Marker,
     #[default]
     Null

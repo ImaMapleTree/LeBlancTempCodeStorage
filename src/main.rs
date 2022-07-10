@@ -27,11 +27,10 @@ clippy::needless_collect, clippy::or_fun_call, clippy::redundant_allocation, cli
 clippy::slow_vector_initialization, clippy::to_string_in_format_args, clippy::unnecessary_to_owned, clippy::useless_vec, clippy::vec_init_then_push
 )]
 
-
-extern crate pest;
-#[macro_use]
-extern crate pest_derive;
 extern crate alloc;
+extern crate core;
+#[macro_use] extern crate lalrpop_util;
+extern crate core;
 extern crate core;
 //
 
@@ -62,8 +61,6 @@ pub mod playground;
 static INTERACTIVE: bool = false;
 
 use mimalloc::MiMalloc;
-use crate::leblanc::compiler::compiler_rewrite::lexer::lex;
-
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
