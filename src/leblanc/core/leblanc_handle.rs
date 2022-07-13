@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex};
 
 use arrayvec::ArrayVec;
 use smol_str::SmolStr;
-use crate::leblanc::core::bytecode::function_bytes::FunctionBytecode;
+use crate::leblanc::compiler::bytecode::function_bytes::FunctionBytecode;
 
 use crate::leblanc::core::interpreter::instruction_execution::execute_instruction;
 use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};

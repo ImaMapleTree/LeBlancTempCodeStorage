@@ -1,4 +1,4 @@
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 pub mod stub_compiler;
 pub mod full_compiler;

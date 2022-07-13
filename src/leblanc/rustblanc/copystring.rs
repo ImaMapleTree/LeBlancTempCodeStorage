@@ -26,6 +26,10 @@ impl CopyString {
             string: string_ref
         }
     }
+
+    pub fn str(&self) -> &str {
+        self.string
+    }
 }
 
 impl Default for CopyString {

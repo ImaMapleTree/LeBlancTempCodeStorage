@@ -9,7 +9,6 @@ pub mod module;
 pub mod method_tag;
 pub mod internal;
 pub mod interpreter;
-pub mod bytecode;
 #[macro_use]
 pub mod leblanc_handle;
 pub mod leblanc_default_data;

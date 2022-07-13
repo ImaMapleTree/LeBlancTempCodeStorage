@@ -1,5 +1,3 @@
-func random() returns int, int {
-    Random r = Random();
-
-    return r.rand(0, 1000), r.seed();
+func test_func_here() returns string {
+    return "This is a test function";
 }

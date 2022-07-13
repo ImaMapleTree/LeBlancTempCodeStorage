@@ -82,7 +82,8 @@ impl LeblancError {
     }
 
     pub fn print_stack_trace(&self) {
-        let func_details = get_func_details(self.stack_trace.get(0).unwrap_or(&Instruction::empty()).arg as u32);
+        println!("STACK TRACK: {:#?}", self.stack_trace);
+        /*let func_details = get_func_details(self.stack_trace.get(0).unwrap_or(&Instruction::empty()).arg as u32);
         eprintln!("{}", colorize(format!("Exception starts at {} on {}", colorize(func_details.name, Color::Bright(ColorBright::BrightYellow)), ColorString::new(&("line ".to_owned() + &self.stack_trace.get(0).unwrap_or(&Instruction::empty()).line_number.to_string())).colorize(Color::Bright(ColorBright::BrightRed)).bold()), Color::Red));
         eprintln!("   -file:///{}:{}", func_details.file.replace('\\', "/"), self.stack_trace.get(0).unwrap_or(&Instruction::empty()).line_number);
         for instruct in self.stack_trace[1..self.stack_trace.len()-1].iter() {
@@ -95,7 +96,7 @@ impl LeblancError {
         let func_details = get_func_details(self.stack_trace[self.stack_trace.len()-1].arg as u32);
         eprintln!("{}", colorize(format!("And finally errors in {} on {}", colorize(func_details.name, Color::Bright(ColorBright::BrightYellow)),  ColorString::new(&("line ".to_owned() + &self.stack_trace[self.stack_trace.len()-1].line_number.to_string())).colorize(Color::Bright(ColorBright::BrightRed)).bold()), Color::Red));
         eprintln!("   -file:///{}:{}", func_details.file.replace('\\', "/"), self.stack_trace[self.stack_trace.len()-1].line_number);
-        println!("{}", format!("{}: {}", ColorString::new(self.name.as_str()).colorize(Color::Bright(ColorBright::BrightRed)).bold().string(), colorize(self.message.clone(), Color::Red)))
+        println!("{}", format!("{}: {}", ColorString::new(self.name.as_str()).colorize(Color::Bright(ColorBright::BrightRed)).bold().string(), colorize(self.message.clone(), Color::Red)))*/
     }
 
 }

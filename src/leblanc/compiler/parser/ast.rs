@@ -9,7 +9,10 @@ macro_rules! make_ast {
 
 }
 
+use std::hash::{Hash, Hasher};
 pub(crate) use make_ast;
+use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType::ConstantFlex;
 
 pub unsafe fn push_byte_location(value: (usize, usize)) {
     BYTE_LOCATION.push(value);
@@ -58,15 +61,15 @@ pub type Constant = Located<Const>;
 #[derive(Clone, Debug)]
 pub enum Cmpnt {
     Function { header: Box<Component>, body: Statement, tags: Vec<String> },
-    FunctionHeader { name: String, args: Vec<Expression>, returns: Vec<ParseType> },
+    FunctionHeader { name: String, args: Vec<Expression>, returns: Vec<LeBlancType> },
     Class { name: String, super_traits: Vec<String>, items: Vec<Component> },
     Trait { name: String, super_traits: Vec<String>, items: Vec<Component> },
-    Extension { name: String, targets: Vec<ParseType>, items: Vec<Component> },
-    Property { typing: ParseType, ident: String, value: Option<Expression> },
+    Extension { name: String, targets: Vec<LeBlancType>, items: Vec<Component> },
+    Property { typing: LeBlancType, ident: String, value: Option<Expression> },
     Import { module: String, import: Option<Vec<String>>},
     ExtImport { module: String, extension: String },
     Enum { name: String, type_params: Option<Vec<String>>, items: Vec<Component> },
-    EnumItem { name: String, nested: Vec<ParseType> }
+    EnumItem { name: String, nested: Vec<LeBlancType> }
 }
 
 
@@ -190,12 +193,6 @@ pub enum Expr {
         op: UnaryOperator,
         postfix: bool
     },
-
-    DeclarationAssignment {
-        prefix: Box<Expression>,
-        expr: Option<Box<Expression>>,
-    },
-
     ListAssignment {
         list: Box<Expression>,
         expr: Box<Expression>
@@ -227,11 +224,11 @@ pub enum Expr {
     },
 
     ExceptCatch {
-        errors: Vec<ParseType>,
+        errors: Vec<LeBlancType>,
         variable: String,
     },
 
-    TypedVariable { typing: ParseType, variable: String },
+    TypedVariable { typing: LeBlancType, variable: String },
 
     Ident { ident: Ident },
 
@@ -242,11 +239,12 @@ pub enum Expr {
 pub enum Id {
     Ident { ident: String },
     ObjIdent { ident: Box<Ident>, attr: Box<Ident>},
-    EnumIdent {ident: Box<Ident>, kind: Box<Ident>}
+    EnumIdent {ident: Box<Ident>, kind: Box<Ident>},
+    TypedListIdent { typing: LeBlancType },
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub enum BinaryOperator {
     BinAdd,
     BinSub,
@@ -258,7 +256,7 @@ pub enum BinaryOperator {
     BinRShift
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub enum UnaryOperator {
     UPositive,
     UNegative,
@@ -268,7 +266,7 @@ pub enum UnaryOperator {
     UDecrement
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 pub enum Comparator {
     Equal,
     NotEqual,
@@ -286,26 +284,44 @@ pub enum CondType {
     Else
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Const {
     String(String),
-    Whole(i128),
-    Float(f64),
-    Boolean(bool)
+    Whole(i128, Option<LeBlancType>),
+    Float(f64, Option<LeBlancType>),
+    Boolean(bool),
 }
 
-#[derive(Clone, Debug)]
-pub enum ParseType {
-    Flex,
-    String,
-    Int,
-    Float,
-    Double,
-    Function,
-    Group,
-    Promise,
-    SelfRef,
-    SuperLambda,
-    Class(String),
-    Trait(String, bool)
+impl Hash for Const {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Const::String(str) => str.hash(state),
+            Const::Whole(num, _) => num.hash(state),
+            Const::Float(num, _) => num.to_string().hash(state),
+            Const::Boolean(bool) => bool.hash(state),
+        }
+    }
+}
+
+impl Eq for Const {}
+
+impl Const {
+    pub fn to_lb_type(&self, arg: u32) -> LeBlancType {
+        match self {
+            Const::String(_) => LeBlancType::String,
+            Const::Whole(_, opt) => {
+                match opt {
+                    None => ConstantFlex(arg),
+                    Some(lbt) => *lbt
+                }
+            }
+            Const::Float(_, opt) => {
+                match opt {
+                    None => ConstantFlex(arg),
+                    Some(lbt) => *lbt,
+                }
+            }
+            Const::Boolean(_) => LeBlancType::Boolean,
+        }
+    }
 }

@@ -10,7 +10,7 @@ use crate::leblanc::core::leblanc_object::{LeBlancObject};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 pub mod builtin_disassemble;
 

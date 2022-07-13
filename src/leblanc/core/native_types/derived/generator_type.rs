@@ -15,7 +15,7 @@ use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::derived::iterator_type::{iterator_methods, LeblancIterable, LeblancIterator};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LeblancGenerator {

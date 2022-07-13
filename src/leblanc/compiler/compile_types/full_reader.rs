@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{BufReader, Read};
 
 
-use crate::leblanc::core::bytecode::LeblancBytecode;
+use crate::leblanc::compiler::bytecode::LeblancBytecode;
 
 
 use crate::leblanc::rustblanc::hex::Hexadecimal;

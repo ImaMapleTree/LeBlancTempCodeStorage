@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 
 
-use crate::leblanc::core::bytecode::LeblancBytecode;
+use crate::leblanc::compiler::bytecode::LeblancBytecode;
 use crate::leblanc::core::internal::methods::builtins::create_builtin_function_objects;
 use crate::leblanc::core::interpreter::leblanc_runner::LeBlancRunner;
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;

@@ -16,7 +16,7 @@ use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub;
 use crate::leblanc::rustblanc::exception::error_stubbing::ErrorStub::InvalidSyntax;
 use crate::leblanc::rustblanc::relationship::Node;
-use crate::LeBlancType::{Class, Exception, Flex, Null};
+use crate::leblanc::core::native_types::LeBlancType::{Class, Exception, Flex, Null};
 
 pub fn identify(mut typed_tokens: Vec<TypedToken>, mut import_tokens: Vec<Node<TypedToken>>, type_map: &mut HashMap<String, Vec<Vec<CompileVocab>>>, mut func_matcher: HashMap<PartialToken, Vec<Vec<LeBlancType>>>, errors: &mut Vec<ErrorStub>, mode: CompilationMode) -> Vec<Node<TypedToken>>{
 

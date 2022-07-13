@@ -1,6 +1,6 @@
-use crate::leblanc::core::bytecode::byte_limiter::ByteLimit::{Limited, Undefined};
-use crate::leblanc::core::bytecode::byte_limiter::ByteRestriction;
-use crate::leblanc::core::bytecode::ToBytecode;
+use crate::leblanc::compiler::bytecode::byte_limiter::ByteLimit::{Limited, Undefined};
+use crate::leblanc::compiler::bytecode::byte_limiter::ByteRestriction;
+use crate::leblanc::compiler::bytecode::ToBytecode;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
 

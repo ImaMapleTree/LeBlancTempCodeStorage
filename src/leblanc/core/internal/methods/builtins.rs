@@ -16,7 +16,7 @@ use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
 use crate::leblanc::core::internal::methods::builtins::builtin_debug::{_BUILTIN_DEBUG_METHOD_, _BUILTIN_DEBUG_OBJECT_};
 use crate::leblanc::core::internal::methods::builtins::builtin_debug::builtin_disassemble::{_BUILTIN_DISASSEMBLE_METHOD_, _BUILTIN_DISASSEMBLE_OBJECT_};
 use crate::leblanc::core::internal::methods::builtins::builtin_type::{_BUILTIN_TYPE_METHOD_, _BUILTIN_TYPE_OBJECT_};
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 pub mod builtin_print;
 pub mod builtin_debug;

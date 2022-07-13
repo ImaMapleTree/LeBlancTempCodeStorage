@@ -1,3 +1,5 @@
+using core;
+
 func returns_three() returns int {
-    return 13;
+    return core.test_func_here();
 }

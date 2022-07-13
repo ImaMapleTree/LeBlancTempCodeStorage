@@ -35,6 +35,7 @@ use crate::leblanc::core::native_types::group_type::{leblanc_object_group, Lebla
 pub fn execute_instruction(instruct: InstructionBase) -> fn(&mut LeblancHandle, &Instruction, &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Result<(), Arc<Strawberry<LeBlancObject>>> {
     match instruct {
         InstructionBase::InstructionMarker => _INSTRUCT_MARKER_,
+        InstructionBase::Jump => _INSTRUCT_JUMP_,
         InstructionBase::BinaryAdd => _INSTRUCT_BINARY_ADD_,
         InstructionBase::BinarySubtract => _INSTRUCT_BINARY_SUBTRACT_,
         InstructionBase::BinaryModulo => _INSTRUCT_BINARY_MODULO_,
@@ -86,6 +87,11 @@ fn safe_stack_pop(stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> R
 fn _INSTRUCT_BASE_(_handle: &mut LeblancHandle, _arg: &Instruction, _stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Result<(), Arc<Strawberry<LeBlancObject>>> {
     println!("I don't exist :)");
     Err(LeblancError::new("Instruction Doesn't Exist".to_string(), "".to_string(), vec![]).create_mutex())
+}
+
+fn _INSTRUCT_JUMP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Result<(), Arc<Strawberry<LeBlancObject>>> {
+    handle.current_instruct += arg.arg as u64;
+    Ok(())
 }
 
 fn _INSTRUCT_MARKER_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Result<(), Arc<Strawberry<LeBlancObject>>> {
@@ -438,7 +444,8 @@ fn _INSTRUCT_EQUALITY_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &m
     //println!("Good bye cruel world");
 
     let tos1 = tos1.lock();
-    let tos2_borrow = tos2.lock();
+    let tos2_clone = tos2.clone_if_locked();
+    let tos2_borrow = tos2_clone.lock();
 
     stack.push(match arg.arg {
         0 => (tos1.data == tos2_borrow.data),
@@ -464,24 +471,7 @@ fn _INSTRUCT_COMPARATOR_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
     if arg.instruct == Comparator_Else || *truth.lock().data.ref_data().unwrap() {
         let jump_result = handle.execute_range(block_start + 1, block_start + 1 + arg.arg as u64);
         stack.push(jump_result);
-        if arg.instruct == Comparator_Else {
-            handle.current_instruct -= 1;
-        } else {
-            let mut jump = 0;
-            while handle.current_instruct + jump < handle.instructions.len() as u64 {
-                let instruct: Instruction = handle.instructions[(handle.current_instruct + jump) as usize];
-                match instruct.instruct {
-                    Comparator_If => jump += instruct.arg as u64,
-                    Comparator_ElseIf => jump += instruct.arg as u64,
-                    Comparator_Else => {
-                        jump += instruct.arg as u64;
-                        break;
-                    }
-                    _ => { jump += 1; }
-                }
-            }
-            handle.current_instruct += jump;
-        };
+        handle.current_instruct -= 1;
 
     } else {
         handle.current_instruct += arg.arg as u64;

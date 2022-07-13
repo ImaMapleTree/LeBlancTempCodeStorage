@@ -9,7 +9,7 @@ use rand_chacha::{ChaCha8Rng};
 use rand_chacha::rand_core::{RngCore, SeedableRng};
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::native_types::base_type::ToLeblanc;
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 static mut RNG_GENERATOR: Option<ChaCha8Rng> = None;
 

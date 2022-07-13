@@ -11,7 +11,7 @@ use crate::leblanc::core::native_types::short_type::leblanc_object_short;
 use crate::leblanc::core::native_types::string_type::leblanc_object_string;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Debug)]
 pub struct DecompiledConstant {

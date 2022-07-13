@@ -9,7 +9,7 @@ use std::time::Instant;
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Reflect, RustDataCast};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::error_type::LeblancError;
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 static mut GLOBALS: Vec<Arc<Strawberry<LeBlancObject>>> = vec![];
 

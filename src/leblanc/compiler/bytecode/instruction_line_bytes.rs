@@ -1,6 +1,6 @@
-use crate::leblanc::core::bytecode::byte_limiter::ByteLimit::Limited;
-use crate::leblanc::core::bytecode::byte_limiter::ByteRestriction;
-use crate::leblanc::core::bytecode::ToBytecode;
+use crate::leblanc::compiler::bytecode::byte_limiter::ByteLimit::Limited;
+use crate::leblanc::compiler::bytecode::byte_limiter::ByteRestriction;
+use crate::leblanc::compiler::bytecode::ToBytecode;
 use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
@@ -10,6 +10,12 @@ pub struct InstructionBytecode {
     line_number: ByteRestriction,
     instructions: ByteRestriction,
     instruction_arguments: ByteRestriction
+}
+
+impl Default for InstructionBytecode {
+    fn default() -> Self {
+        InstructionBytecode::new()
+    }
 }
 
 impl InstructionBytecode {

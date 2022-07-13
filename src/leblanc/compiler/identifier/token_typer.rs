@@ -25,7 +25,8 @@ use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::include::lib::get_core_modules;
 use crate::leblanc::rustblanc::copystring::CopyStringable;
-use crate::LeBlancType::{Dynamic, Exception, Null};
+use crate::leblanc::core::native_types::LeBlancType::{Dynamic, Exception, Null};
+use crate::compile::compile;
 
 
 pub fn create_typed_tokens<'a>(mut tokens: Vec<Token>, mut errors: Vec<ErrorStub>, mode: CompilationMode) -> Fabric {

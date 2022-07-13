@@ -8,7 +8,7 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::base_type::base_methods;
 use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 pub trait RustSubTrait{
     fn _clone(&self) -> Box<dyn RustType>;

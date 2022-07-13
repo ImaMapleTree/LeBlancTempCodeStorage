@@ -18,7 +18,7 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method};
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 pub trait IteratorUtils {
     fn leblanc_iterator_clone(&self) -> Box<dyn LeblancIterable>;

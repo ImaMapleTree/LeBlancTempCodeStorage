@@ -4,7 +4,7 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::module::{CoreModule, ModuleMethod};
 use crate::leblanc::include::lib::io::_functions_::{_stdin_prompt_, _stdin_read_, _stdin_read_int_};
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 mod _functions_;
 

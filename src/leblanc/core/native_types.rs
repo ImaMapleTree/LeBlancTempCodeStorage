@@ -7,7 +7,7 @@ use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
 
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
-use crate::LeBlancType::{Arch, Group, Boolean, Char, Class, Derived, Double, Dynamic, Exception, Flex, Float, Function, Int, Int128, Int64, Module, Null, SelfType, Short, Marker, Promise};
+use crate::leblanc::core::native_types::{Arch, Group, Boolean, Char, Class, ConstantFlex, Derived, Double, Dynamic, Exception, Flex, Float, Function, Int, Int128, Int64, Module, Null, SelfType, Short, Marker, Promise, Trait};
 
 pub mod NULL;
 pub mod string_type;
@@ -30,7 +30,7 @@ pub mod group_type;
 pub mod promise_type;
 pub mod rust_type;
 
-static VARIANTS: [&str; 24] = ["flex", "Self", "char", "short", "int", "int64", "int128", "arch", "float", "double", "boolean", "string", "group", "function", "module", "promise", "class", "dynamic", "exception", "marker", "null", "list", "iterator", "class.0"];
+static VARIANTS: [&str; 24] = ["flex", "Self", "char", "short", "int", "int64", "int128", "arch", "float", "double", "boolean", "string", "group", "function", "module", "promise", "class", "dynamic", "exception", "marker", "null", "List", "iterator", "class.0"];
 
 #[derive(Eq, Clone, Copy, Debug, Ord, PartialOrd, Hash, Default)]
 pub enum LeBlancType {
@@ -55,6 +55,7 @@ pub enum LeBlancType {
     Derived(DerivedType),
     Promise,
     SuperLambda, // Used as a function arg
+    ConstantFlex(u32),
     Trait(CopyString, bool),
     Marker,
     #[default]
@@ -88,7 +89,12 @@ pub fn type_value(string: &str) -> LeBlancType {
         "promise" => Promise,
         "List" => Derived(DerivedType::List),
         Other => {
-            if Other.starts_with("class.") {
+            if Other.ends_with('!') {
+                Trait(Other[0..Other.len()-1].to_string().to_cstring(), true)
+            } else if Other.ends_with('?') {
+                Trait(Other[0..Other.len()-1].to_string().to_cstring(), false)
+            }
+            else if Other.starts_with("class.") {
                 let class_value = Other[6..].parse::<String>().unwrap();
                 Class(class_value.to_cstring())
             } else {
@@ -114,6 +120,7 @@ impl LeBlancType {
     pub fn as_str_real(&self) -> String {
         return match self {
             Class(v) => "class.".to_string() + &v.to_string(),
+            Trait(str, force) => str.to_string() + if *force {"!"} else {"?"},
             _ => self.as_str().to_string()
         }
     }
@@ -145,8 +152,10 @@ impl LeBlancType {
             }
             Dynamic => "dynamic",
             Exception => "exception",
+            ConstantFlex(_) => "int",
             Derived(Derive) => {
                 match Derive {
+                    DerivedType::TypedList(_) => "list",
                     DerivedType::List => "list",
                     DerivedType::Iterator => "iterator",
                     DerivedType::Slice => "slice"
@@ -154,6 +163,8 @@ impl LeBlancType {
             }
             Marker => "marker",
             Null => "null",
+            LeBlancType::SuperLambda => "superlambda",
+            LeBlancType::Trait(string, forced) => "trait",
         }
     }
 
@@ -191,10 +202,15 @@ impl Display for LeBlancType {
 
 impl PartialEq for LeBlancType {
     fn eq(&self, other: &Self) -> bool {
-        match self {
-            Flex => true,
-            Dynamic => true,
-            _ => self.as_str_real() == other.as_str_real()
+        if let ConstantFlex(_v) = other {
+            matches!(self, Flex | Char | Short | Int | Int64 | Int128 | Arch | Float | Double | Dynamic)
+        } else {
+            match self {
+                Flex => true,
+                Dynamic => true,
+                ConstantFlex(_) => matches!(other, Flex | Char | Short | Int | Int64 | Int128 | Arch | Float | Double | Dynamic),
+                _ => self.as_str_real() == other.as_str_real()
+            }
         }
     }
 }

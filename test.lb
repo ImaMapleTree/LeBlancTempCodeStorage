@@ -1,37 +1,24 @@
-Enum Result<T> {
-    Success(T),
-    Failure(Exception!)
-}
-
-
-func Attempt($expr) returns Result {
-    try {
-        return Result::Success($expr.resolve());
-    }
-    except (Exception! e) {
-        return Failure(e);
-    }
-}
+using returns_three from rust;
 
 func main() {
-    int s = null;
-    string result;
-    try {
-        result = s.to_string();
-    } except (NullPointerException e) {
-        result = "null";
-    }
-
-    // Alternative
-
-    Result result = Attempt(s.to_string());
-    string s = match result {
-        Success(str) => str,
-        Failure(e) => match e {
-            NullPointerException 
-        "null";
+    int b = 10;
+    if 5 == 5 {
+        if 4 == 4 {
+            int a = 0;
+            if a == 1 {
+                print(returns_three());
+            } else if b == 10 {
+                print("But b equaled 10!");
+            } else {
+                print("A did not equal 1 LOL");
+            }
         }
+
     }
 
+    print("This is being printed too");
+}
 
+func test() {
+    return 5;
 }

@@ -4,7 +4,7 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::module::{CoreModule, ModuleMethod};
 use crate::leblanc::include::lib::timelib::_functions_::{_epoch_, _epoch_seconds_, _sleep_};
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 mod _functions_;
 

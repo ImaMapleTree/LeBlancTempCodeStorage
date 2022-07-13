@@ -14,7 +14,7 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::error_type::LeblancError;
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Debug, Clone, Default)]
 pub struct ArcLeblancPromise {

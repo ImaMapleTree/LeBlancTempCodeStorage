@@ -1,7 +1,8 @@
 use std::io::Write;
 use crate::{CompilationMode, compile};
-use crate::leblanc::core::bytecode::LeblancBytecode;
+use crate::leblanc::compiler::bytecode::LeblancBytecode;
 use crate::leblanc::core::interpreter::instructions::Instruction;
+use crate::compile::compile;
 
 static MAIN_MODE: bool = true;
 

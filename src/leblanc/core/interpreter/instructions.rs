@@ -7,6 +7,7 @@ use crate::{CompileVocab, TypedToken};
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
 use crate::leblanc::compiler::lang::leblanc_lang::{BoundaryType, FunctionType, Specials};
 use crate::leblanc::compiler::lang::leblanc_operators::LBOperator;
+use crate::leblanc::compiler::parser::ast::{BinaryOperator, Comparator, UnaryOperator};
 use crate::leblanc::core::interpreter::instructions::InstructionBase::*;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 
@@ -18,6 +19,15 @@ pub enum InstructionBase {
     NotImplemented,
     Dummy(u32),
     InstructionMarker,
+    Jump,
+
+    UnaryPositive,
+    UnaryNegative,
+    UnaryNot,
+    UnaryInverse,
+    UnaryIncrement,
+    UnaryDecrement,
+
     InPlaceAdd,
     BinaryAdd,
     BinarySubtract,
@@ -45,6 +55,7 @@ pub enum InstructionBase {
     LoadLocal,
     LoadGlobal,
     LoadFunction,
+    LoadAttr,
     StoreLocal,
     StoreGlobal,
     StoreUndefined,
@@ -84,6 +95,10 @@ impl Hexable for InstructionBase {
 }
 
 impl InstructionBase {
+    pub fn instruct(&self, arg: u16, line_number: u32) -> Instruction {
+        Instruction::new(*self, arg, line_number)
+    }
+
     pub fn to_value(&self) -> u32 {
         let variants: &[&'static str] = InstructionBase::VARIANTS;
         variants.iter().position(|s| *s.to_string() == self.to_string()).unwrap() as u32
@@ -200,5 +215,41 @@ impl Instruction {
 
     pub fn base(&self) -> InstructionBase {
         self.instruct
+    }
+}
+
+pub fn comparator_instruct(comparator: Comparator) -> u16 {
+    match comparator {
+        Comparator::Equal => 0,
+        Comparator::NotEqual => 1,
+        Comparator::GreaterEqual => 4,
+        Comparator::LesserEqual => 5,
+        Comparator::Greater => 2,
+        Comparator::Lesser => 3,
+        Comparator::In => 6,
+    }
+}
+
+pub fn binary_instruct(binary_op: BinaryOperator) -> InstructionBase {
+    match binary_op {
+        BinaryOperator::BinAdd => BinaryAdd,
+        BinaryOperator::BinSub => BinarySubtract,
+        BinaryOperator::BinMul => BinaryMultiply,
+        BinaryOperator::BinDiv => BinaryDivide,
+        BinaryOperator::BinPow => BinaryPower,
+        BinaryOperator::BinMod => BinaryModulo,
+        BinaryOperator::BinLShift => BinaryLShift,
+        BinaryOperator::BinRShift => BinaryRShift
+    }
+}
+
+pub fn unary_instruct(unary_op: UnaryOperator) -> InstructionBase {
+    match unary_op {
+        UnaryOperator::UPositive => UnaryPositive,
+        UnaryOperator::UNegative => UnaryNegative,
+        UnaryOperator::UNot => UnaryNot,
+        UnaryOperator::UInverse => UnaryInverse,
+        UnaryOperator::UIncrement => UnaryIncrement,
+        UnaryOperator::UDecrement => UnaryDecrement,
     }
 }

@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::Appendable;
-use crate::LeBlancType::Null;
+use crate::leblanc::core::native_types::LeBlancType::Null;
 
 #[derive(Eq, Clone, Debug, PartialOrd, Copy)]
 pub struct LeBlancArgument {

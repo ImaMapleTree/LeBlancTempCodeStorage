@@ -19,7 +19,7 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
 
 
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 static mut STDOUT: Option<io::Stdout> = None;
 

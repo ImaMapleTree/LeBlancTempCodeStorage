@@ -18,7 +18,7 @@ use crate::leblanc::core::method_tag::MethodTag;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 
-use crate::LeBlancType::Flex;
+use crate::leblanc::core::native_types::LeBlancType::Flex;
 
 pub fn leblanc_object_string(string: String) -> LeBlancObject {
     let mut hash_set = FxHashSet::default();

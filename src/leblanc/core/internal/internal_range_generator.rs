@@ -11,7 +11,7 @@ use crate::leblanc::core::leblanc_object::{LBODOperation, LeBlancObject, Reflect
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::derived::iterator_type::{leblanc_object_iterator, LeblancIterable};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Clone, PartialEq)]
 pub struct LeblancInternalRangeGenerator {

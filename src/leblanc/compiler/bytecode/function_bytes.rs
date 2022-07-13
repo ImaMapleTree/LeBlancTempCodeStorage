@@ -1,13 +1,13 @@
 use fxhash::{FxHashMap};
-use crate::leblanc::core::bytecode::byte_limiter::ByteLimit::{Limited, Undefined};
-use crate::leblanc::core::bytecode::byte_limiter::ByteRestriction;
-use crate::leblanc::core::bytecode::decompiled_constant::DecompiledConstant;
-use crate::leblanc::core::bytecode::instruction_line_bytes::InstructionBytecode;
-use crate::leblanc::core::bytecode::ToBytecode;
+use crate::leblanc::compiler::bytecode::byte_limiter::ByteLimit::{Limited, Undefined};
+use crate::leblanc::compiler::bytecode::byte_limiter::ByteRestriction;
+use crate::leblanc::compiler::bytecode::decompiled_constant::DecompiledConstant;
+use crate::leblanc::compiler::bytecode::instruction_line_bytes::InstructionBytecode;
+use crate::leblanc::compiler::bytecode::ToBytecode;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
-use crate::LeBlancType;
+use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Debug)]
 pub struct FunctionBytecode {
@@ -15,6 +15,8 @@ pub struct FunctionBytecode {
     name: ByteRestriction,
     argument_length: ByteRestriction,
     arguments: ByteRestriction,
+    returns_length: ByteRestriction,
+    returns: ByteRestriction,
     constants_total_length: ByteRestriction,
     constant_value_length: ByteRestriction,
     constant_value: ByteRestriction,
@@ -31,6 +33,12 @@ pub struct FunctionBytecode {
     instruction_line: ByteRestriction,
 }
 
+impl Default for FunctionBytecode {
+    fn default() -> Self {
+        FunctionBytecode::new()
+    }
+}
+
 impl FunctionBytecode {
     pub fn new() -> FunctionBytecode {
         FunctionBytecode {
@@ -38,6 +46,8 @@ impl FunctionBytecode {
             name: ByteRestriction::once(Undefined),
             argument_length: ByteRestriction::once(Limited(4)),
             arguments: ByteRestriction::repeated(Limited(2)),
+            returns_length: ByteRestriction::once(Limited(4)),
+            returns: ByteRestriction::repeated(Limited(2)),
             constants_total_length: ByteRestriction::once(Limited(6)),
             constant_value_length: ByteRestriction::repeated(Limited(4)),
             constant_value: ByteRestriction::repeated(Undefined),
@@ -65,6 +75,10 @@ impl FunctionBytecode {
 
     pub fn add_argument(&mut self, leblanc_type: LeBlancType) {
         self.arguments.consume_bytes(leblanc_type.enum_id().to_hex(2)).expect("Argument too long").to_hex(128);
+    }
+
+    pub fn add_return(&mut self, leblanc_type: LeBlancType) {
+        self.returns.consume_bytes(leblanc_type.enum_id().to_hex(2)).expect("Type too long");
     }
 
 
@@ -129,6 +143,13 @@ impl FunctionBytecode {
         while !arguments.is_empty() {
             let argument = arguments.scrape(fb.arguments.unpack().unwrap() as usize);
             fb.arguments.consume_bytes(argument).unwrap();
+        }
+        let returns_length = hex.scrape(fb.returns_length.unpack().unwrap() as usize);
+        let returns_length_u32 = returns_length.to_hexable::<u32>();
+        let mut returns = hex.scrape(returns_length_u32 as usize);
+        while !returns.is_empty() {
+            let return_type = returns.scrape(fb.returns.unpack().unwrap() as usize);
+            fb.returns.consume_bytes(return_type).unwrap();
         }
 
         let mut constants_total_length = hex.scrape(fb.constants_total_length.unpack().unwrap() as usize);
@@ -209,7 +230,9 @@ impl ToBytecode for FunctionBytecode {
 
         self.argument_length.consume_bytes(self.arguments.bytes().len().to_hex(4)).expect("arguments too long");
 
-        self.name_length.bytes() + self.name.bytes() + self.argument_length.bytes() + self.arguments.bytes() + self.constants_total_length.bytes() + constants +
+        self.returns_length.consume_bytes(self.returns.bytes().len().to_hex(4)).expect("returns too long");
+
+        self.name_length.bytes() + self.name.bytes() + self.argument_length.bytes() + self.arguments.bytes() + self.returns_length.bytes() + self.returns.bytes() + self.constants_total_length.bytes() + constants +
             self.variable_total_length.bytes() + variables + self.precompiled_total_length.bytes() + precompile + self.instructions_total_size.bytes() + instruction_bytes
     }
 }

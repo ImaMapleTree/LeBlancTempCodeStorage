@@ -30,16 +30,12 @@ clippy::slow_vector_initialization, clippy::to_string_in_format_args, clippy::un
 extern crate alloc;
 extern crate core;
 #[macro_use] extern crate lalrpop_util;
-extern crate core;
-extern crate core;
 //
 
 use std::io;
 
 use std::time::Instant;
 use clicolors_control::set_colors_enabled;
-use crate::leblanc::compiler::compile::compile;
-
 use crate::leblanc::compiler::compile_types::CompilationMode;
 use crate::leblanc::compiler::compile_types::full_reader::read_file;
 use crate::leblanc::compiler::identifier::typed_token::TypedToken;
@@ -61,6 +57,8 @@ pub mod playground;
 static INTERACTIVE: bool = false;
 
 use mimalloc::MiMalloc;
+use crate::leblanc::compiler::{compile, compile2};
+
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
@@ -85,16 +83,16 @@ fn main() -> io::Result<()> {
 
 
     set_colors_enabled(true);
-    lex("test.lb".to_string());
+    compile2("test.lb".to_string());
 
-   /* //compile("test.lb".to_string(), CompilationMode::Full);
+   //compile("test.lb".to_string(), CompilationMode::Full);
 
 
     let bc = read_file("test.lb".to_string());
     run(bc);
 
     let elapsed = now.elapsed();
-    println!("Total Elapsed: {}", elapsed.as_secs_f64());*/
+    println!("Total Elapsed: {}", elapsed.as_secs_f64());
 
     Ok(())
 }

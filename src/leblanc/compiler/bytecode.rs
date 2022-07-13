@@ -7,8 +7,8 @@ pub mod precompiled;
 pub mod decompiled_constant;
 pub mod extension_bytes;
 
-use crate::leblanc::core::bytecode::file_body::FileBodyBytecode;
-use crate::leblanc::core::bytecode::file_header::FileHeaderBytecode;
+use crate::leblanc::compiler::bytecode::file_body::FileBodyBytecode;
+use crate::leblanc::compiler::bytecode::file_header::FileHeaderBytecode;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 
 ///    XX     XX   XXXXXXXXX   XXXXXXXXX   XXXXXXXX     XXXXXXXXX   XXXXXXX

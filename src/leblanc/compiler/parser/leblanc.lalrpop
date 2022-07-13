@@ -1,0 +1,632 @@
+use std::str::FromStr;
+use crate::leblanc::compiler::parser::constant_evaluation::*;
+use crate::leblanc::compiler::parser::ast;
+use crate::leblanc::compiler::parser::ast::*;
+use crate::leblanc::compiler::parser::ast::make_ast;
+use crate::leblanc::core::native_types::*;
+use crate::leblanc::core::native_types::derived::*;
+use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
+
+
+grammar;
+
+match {
+    // Ignore block comments of /* COMMENT */
+    r"/[*][^*]*[*]+(?:[^/*][^*]*[*]+)*/" => {},
+} else {
+    // Ignore in-line comments: // COMMENT
+    r"//[^\n\r]*[\n\r]*" => { },
+}
+else {
+    // Ignore whitespace
+    r"\s*" => { },
+    _ // Everything else
+}
+
+
+pub File: Vec<Component> = {
+    <component:Component*> => component
+}
+
+Component: Component = {
+    Import,
+    Extension,
+    Class,
+    Trait,
+    Enum,
+    FunctionDeclaration
+}
+
+Import: Component = {
+    <l:@L> "using" <name:Word> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::Import { module: name, import: None }),
+    <l:@L> "using" <import:SubImports> "from" <module:Word> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::Import { module, import: Some(import) }),
+    <l:@L> "using" "ext" <extension:Word> "from" <module:Word> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::ExtImport { module, extension }),
+    <l:@L> "using" "extension" <extension:Word> "from" <module:Word> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::ExtImport { module, extension }),
+}
+
+SubImports: Vec<String> = {
+    <import:Word> <o: ("," <Word>)*> => {
+        let mut o = o;
+        o.insert(0, import);
+        o
+    }
+}
+
+
+Enum: Component = {
+    <l:@L> "Enum" <name:Word> <type_params:TypeParameterDeclaration?> "{" <items:OptComma<EnumItem>> "}" <r:@R> => {
+        make_ast!(l, r, Component, Cmpnt::Enum { name, type_params, items })
+    }
+}
+
+
+Class: Component = {
+    <l:@L> "Class" <name:Word> <tr:SuperTraits?> "{" <items:ClassItem*> "}" <r:@R> => {
+        make_ast!(l, r, Component, Cmpnt::Class { name, super_traits: tr.unwrap_or_default(), items })
+     }
+}
+
+pub ClassTest: Component = {
+    <l:@L> "Class" <name:Word> <tr:SuperTraits?> "{" <items:ClassItem*> "}" <r:@R> => {
+        Component {
+            location: Location::new((l, r)),
+            data: Cmpnt::Class { name, super_traits: tr.unwrap_or_default(), items }
+        }
+
+     }
+}
+
+Extension: Component = {
+    <l:@L> "Extension" <name:Word> "of" <targets:TypeReturns> "{" <items:ExtensionItem*> "}" <r:@R> => {
+        make_ast!(l, r, Component, Cmpnt::Extension { name, targets, items })
+    }
+}
+
+Trait: Component = {
+    <l:@L> "Trait" <name:Word> <tr:SuperTraits?> "{" <items:TraitItem*> "}" <r:@R> => {
+        make_ast!(l, r, Component, Cmpnt::Trait { name, super_traits: tr.unwrap_or_default(), items })
+    }
+}
+
+SuperTraits: Vec<String> = {
+    "(" <tr:Word?> <o: ("," <Word>)*> ")" => {
+        match tr {
+            Some(t) => {
+                let mut o = o;
+                o.insert(0, t);
+                o
+            },
+            None => o
+        }
+    }
+}
+
+EnumItem: Component = {
+    <l:@L> <name:Word> <r:@R> => make_ast!(l, r, Component, Cmpnt::EnumItem { name, nested: vec![]}),
+    <l:@L> <name:Word> <r:@R> "(" <nested:TypeReturns?> ")" => make_ast!(l, r, Component, Cmpnt::EnumItem { name, nested: nested.unwrap_or_default()}),
+}
+
+ClassItem: Component = {
+    <l:@L> <typing:TypePlus> <ident:Word> "=" <value:WeakExpression> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::Property { typing, ident, value: Some(value) }),
+    <item:FunctionDeclaration> => item
+}
+
+ExtensionItem: Component = {
+    <l:@L> "property" <typing:TypePlus> <ident:Word> "=" <value:WeakExpression> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::Property { typing, ident, value: Some(value) }),
+    <item:Property> ";" => item,
+    <item:FunctionDeclaration> => item
+}
+
+TraitItem: Component = {
+    <item:Property> ";" => item,
+    <item:FuncHeader> ";" => item
+}
+
+Property: Component = {
+    <l:@L> "property" <typing:TypePlus> <ident:Word> <r:@R> => make_ast!(l, r, Component, Cmpnt::Property { typing, ident, value: None })
+}
+
+FunctionDeclaration: Component = {
+    <l:@L> <tags: FuncTags*> <header:FuncHeader> <body: BlockStatement> <r:@R> => {
+        let tags: Vec<String> = tags.iter().cloned().flatten().collect();
+        make_ast!(l, r, Component, Cmpnt::Function { header: Box::new(header), body, tags })
+    }
+}
+
+FuncTags: Vec<String> = {
+    "<|" <tag1:Word> <other: ("," <Word>)*> "|>" => {
+        let mut other = other;
+        other.insert(0, tag1);
+        other
+    }
+}
+
+FuncHeader: Component = {
+    <l:@L> "func" <name:Word> "(" <params:TypeArg?> ")" <ret: ("returns" <TypeReturns>)?> <r:@R> => {
+        let args = match params {
+            Some(c) => c,
+            None => vec![]
+        };
+        let returns = match ret {
+            Some(c) => c,
+            None => vec![]
+        };
+        make_ast!(l, r, Component, Cmpnt::FunctionHeader { name, args, returns })
+    }
+}
+
+TypeArg: Vec<Expression> = {
+    <ident:FunctionHeaderType> <o: ("," <FunctionHeaderType>)*> => {
+        let mut o = o;
+        o.insert(0, ident);
+        o
+    }
+}
+
+FunctionHeaderType: Expression = {
+    TypedAssignmentPrefix,
+    <l:@L> "$" <variable:Word> <r:@R> => make_ast!(l, r, Expression, Expr::TypedVariable { typing: LeBlancType::SuperLambda, variable }),
+}
+
+TypeReturns: Vec<LeBlancType> = {
+    <ident:TypePlus> <o: ("," <TypePlus>)*> => {
+        let mut o = o;
+        o.insert(0, ident);
+        o
+    }
+}
+
+TypeParameterDeclaration: Vec<String> = {
+    "<" <ident:Word> <o: ("," <Word>)*> ">" => {
+        let mut o = o;
+        o.insert(0, ident);
+        o
+    }
+}
+
+
+GlobalStatement: Statement = {
+    <l:@L>"global" <statement:Statement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Global { statement: Box::new(statement) }),
+    Statement,
+}
+
+Statement: Statement = {
+    TryStatement,
+    ExceptStatement,
+    ForLoop,
+    InfLoop,
+    WhileLoop,
+    ConditionalIf,
+    ConditionalElseIf,
+    ConditionalElse,
+    RefStatement
+}
+
+RefStatement: Statement = {
+    ReturnStatement,
+    CommonStatement,
+}
+
+CommonStatement: Statement = {
+    LineStatement,
+    BlockStatement
+}
+
+ResolveStatement: Statement = {
+    LineStatement,
+    ReturnStatement
+}
+
+LineStatement: Statement = {
+    <l:@L> <expr:Expression> ";" <r:@R> => make_ast!(l, r, Statement, Stmnt::Line { expr }),
+}
+
+BlockStatement: Statement = {
+    <l:@L> "{" <s:Statement*> "}" <r:@R> => make_ast!(l, r, Statement, Stmnt::Block { statements: s }),
+}
+
+ReturnStatement: Statement = {
+    <l:@L> "return" <common:CommonStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Return { statement: Box::new(common) })
+}
+
+TryStatement: Statement = {
+    <l:@L> "try" <statement:BlockStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Try { statement: Box::new(statement)}),
+    <l:@L> "try" ":" <statement:ResolveStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Try { statement: Box::new(statement)}),
+}
+
+ExceptStatement: Statement = {
+    <l:@L> "except" <catch:ExceptParameters?> <statement:BlockStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Except { catch, statement: Box::new(statement)}),
+    <l:@L> "except" <catch:ExceptParameters?> ":" <statement:ResolveStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Except { catch, statement: Box::new(statement)}),
+}
+
+ExceptParameters: Expression = {
+    <l:@L> "(" <errors:TypeReturns> <variable:Word> ")" <r:@R> => make_ast!(l, r, Expression, Expr::ExceptCatch { errors, variable })
+}
+
+ForLoop: Statement = {
+    <l:@L> "for" <variable:TypedAssignmentPrefix> "in" <iterable: WeakExpression> <statement:BlockStatement> <r:@R> => {
+        make_ast!(l, r, Statement, Stmnt::For { variable, iterable, statement: Box::new(statement) })
+    },
+    <l:@L> "for" <variable:TypedAssignmentPrefix> "in" <iterable: WeakExpression> ":" <statement:ResolveStatement> <r:@R> => {
+        make_ast!(l, r, Statement, Stmnt::For { variable, iterable, statement: Box::new(statement) })
+    },
+}
+
+
+InfLoop: Statement = {
+    <l:@L> "loop" <statement:BlockStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::InfLoop { statement: Box::new(statement)}),
+    <l:@L> "loop" ":" <statement:ResolveStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::InfLoop { statement: Box::new(statement)}),
+}
+
+WhileLoop: Statement = {
+    <l:@L> "while" <weak:WeakExpression> <statement:BlockStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::While { condition: weak, statement: Box::new(statement)}),
+    <l:@L> "while" <weak:WeakExpression> ":" <statement:ResolveStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::While { condition: weak, statement: Box::new(statement)}),
+}
+
+ConditionalIf: Statement = {
+    <l:@L> "if" <weak:WeakExpression> <statement:BlockStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Conditional { conditional: Conditional::If { condition: weak, statement: Box::new(statement) } }),
+    <l:@L> "if" <weak:WeakExpression> ":" <statement:ResolveStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Conditional { conditional: Conditional::If { condition: weak, statement: Box::new(statement) } }),
+}
+
+ConditionalElseIf: Statement = {
+    <l:@L> "else if" <weak:WeakExpression> <statement:BlockStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Conditional { conditional: Conditional::ElseIf { condition: weak, statement: Box::new(statement) } }),
+    <l:@L> "else if" <weak:WeakExpression> ":" <statement:ResolveStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Conditional { conditional: Conditional::ElseIf { condition: weak, statement: Box::new(statement) } }),
+}
+
+ConditionalElse: Statement = {
+    <l:@L> "else" <statement:BlockStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Conditional { conditional: Conditional::Else { statement: Box::new(statement) } }),
+    <l:@L> "else" ":" <statement:ResolveStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Conditional { conditional: Conditional::Else { statement: Box::new(statement) } }),
+}
+
+Expression: Expression = {
+    WeakExpression,
+    Assignment,
+    <l:@L> "break" <r:@R> => make_ast!(l, r, Expression, Expr::Break),
+}
+
+WeakExpression: Expression = {
+    GroupExpression,
+}
+
+GroupExpression: Expression = {
+    <l:@L> <assignee:Lambda> <r:@R> "->" <group:LowLevelTerm> => make_ast!(l, r, Expression, Expr::GroupAssignment { assignee: Box::new(assignee), group: Box::new(group) }),
+    Lambda
+}
+
+Assignment: Expression = {
+    ListAssignment,
+    MultiAssignment
+}
+
+ListAssignment: Expression = {
+    <l:@L> <list:ListIndex> "=" <expr:WeakExpression> <r:@R> => make_ast!(l, r, Expression, Expr::ListAssignment { list: Box::new(list), expr: Box::new(expr) })
+}
+
+MultiAssignment: Expression = {
+    <l:@L> <d:TypedAssignmentPrefix> <o: ("," <TypedAssignmentPrefix>)*> <a: ("=" <WeakExpression>)?> <r:@R> => {
+        let mut o = o;
+        o.insert(0, d);
+        make_ast!(l, r, Expression, Expr::TypedAssignment { idents: o, expr: a.map(Box::new)})
+    },
+    MultiNormalAssignment
+}
+
+TypedAssignmentPrefix: Expression = {
+    <l:@L> "Self" <r:@R> => make_ast!(l, r, Expression, Expr::TypedVariable { typing: LeBlancType::SelfType, variable: "Self".to_string() }),
+    <l:@L> <typing:TypePlus> <ident:Word> <r:@R> => make_ast!(l, r, Expression, Expr::TypedVariable { typing, variable: ident }),
+}
+
+MultiNormalAssignment: Expression = {
+     <l:@L> <chained: ChainedIdent> "=" <expr:WeakExpression> <r:@R> => make_ast!(l, r, Expression, Expr::NormalAssignment { idents: chained, expr: Box::new(expr) })
+}
+
+
+RangeExpression: Expression = {
+    <l:@L> <start:NotExpression> "to" <bound:NotExpression> <step: ("by" <Lambda>)?> <r:@R> => {
+        let step = Box::new(match step {
+            Some(s) => s,
+            None => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Whole(1, Some(LeBlancType::Int)) })
+        });
+        make_ast!(l, r, Expression, Expr::RangeExpression { start: Box::new(start), bound: Box::new(bound), step })
+    },
+    NotExpression
+}
+
+Lambda: Expression = {
+    <l:@L> "|" <chained: ChainedIdent?> "|" <block: BlockStatement> <r:@R> => {
+        let variables = match chained {
+            Some(c) => c,
+            None => vec![]
+        };
+        make_ast!(l, r, Expression, Expr::BlockLambda { variables, block: Box::new(block) })
+    },
+    <l:@L> "|" <chained: ChainedIdent?> "|" <expr: Lambda> <r:@R> => {
+        let variables = match chained {
+            Some(c) => c,
+            None => vec![]
+        };
+        make_ast!(l, r, Expression, Expr::ExprLambda { variables, expr: Box::new(expr) })
+    },
+    RangeExpression
+}
+
+ChainedIdent: Vec<Ident> = {
+    <ident:ObjIdent> <o: ("," <ObjIdent>)*> => {
+        let mut o = o;
+        o.insert(0, ident);
+        o
+    }
+}
+
+
+NotExpression: Expression = {
+    <l:@L> "!" <expr:Equality> <r:@R> => make_ast!(l, r, Expression, Expr::UnaryOperation { term: Box::new(expr), op: UnaryOperator::UNot }),
+    Equality
+}
+
+Equality: Expression = {
+    <l:@L> <left: Equality> <comparator: Comparator> <right: BinaryAdditive> <r:@R> => make_ast!(l, r, Expression, Expr::Equality { left: Box::new(left), comparator, right: Box::new(right) }),
+    BinaryAdditive
+}
+
+BinaryAdditive: Expression = {
+    <l:@L> <left:BinaryAdditive> <op: ArithPlusMinusOperator> <right: BinaryMultiplicative> <r:@R> => {
+        if let Expr::Constant { ref constant } = left.data {
+            let c1 = constant;
+            if let Expr::Constant { ref constant } = right.data {
+                let func = match op {
+                    BinaryOperator::BinAdd => add_constants,
+                    BinaryOperator::BinSub => sub_constants,
+                    _ => return make_ast!(l, r, Expression, Expr::ArithPlusMinusOperation { left: Box::new(left), op, right: Box::new(right) })
+                };
+                if let Ok(constant) = func(c1.clone(), constant.clone()) {
+                   return make_ast!(l, r, Expression, Expr::Constant { constant })
+                }
+            }
+        }
+        make_ast!(l, r, Expression, Expr::ArithPlusMinusOperation { left: Box::new(left), op, right: Box::new(right) })
+    },
+    BinaryMultiplicative
+}
+
+
+BinaryMultiplicative: Expression = {
+    <l:@L> <left:BinaryMultiplicative> <op: ArithMulDivModOperator> <right: BinaryExponential> <r:@R> => {
+        if let Expr::Constant { ref constant } = left.data {
+            let c1 = constant;
+            if let Expr::Constant { ref constant } = right.data {
+                let func = match op {
+                    BinaryOperator::BinMul => mul_constants,
+                    BinaryOperator::BinDiv => div_constants,
+                    BinaryOperator::BinMod => mod_constants,
+                    _ => return make_ast!(l, r, Expression, Expr::ArithMulDivModOperation { left: Box::new(left), op, right: Box::new(right) })
+                };
+                if let Ok(constant) = func(c1.clone(), constant.clone()) {
+                    return make_ast!(l, r, Expression,  Expr::Constant { constant })
+                }
+            }
+        }
+        make_ast!(l, r, Expression, Expr::ArithMulDivModOperation { left: Box::new(left), op, right: Box::new(right) })
+    },
+    BinaryExponential
+}
+
+
+BinaryExponential: Expression = {
+    <l:@L> <left:BinaryExponential> <op: ExponentOperator> <right: ConstantFactor> <r:@R> => {
+            if let Expr::Constant { ref constant } = left.data {
+                let c1 = constant;
+                if let Expr::Constant { ref constant } = right.data {
+                    if let Ok(constant) = pow_constants(c1.clone(), constant.clone()) {
+                        return make_ast!(l, r, Expression, Expr::Constant { constant })
+                    }
+                }
+            }
+            make_ast!(l, r, Expression, Expr::ExponentialOperation { left: Box::new(left), op, right: Box::new(right) })
+        },
+    ConstantFactor
+}
+
+ConstantFactor: Expression = {
+    ConstantTerm,
+    UnaryFactor
+}
+
+UnaryFactor: Expression = {
+    <l:@L> <u:UnaryOperator> <f:UnaryFactor> <r:@R> => make_ast!(l, r, Expression, Expr::UnaryOperation { term: Box::new(f), op: u }),
+    PostFixFactor
+}
+
+PostFixFactor: Expression = {
+    <l:@L> <factor: PreFixFactor> <op: IncDecOperator> <r:@R> => make_ast!(l, r, Expression, Expr::IncrementDecrementOperation { term: Box::new(factor), op, postfix: true }),
+    PreFixFactor
+}
+
+PreFixFactor: Expression = {
+    <l:@L> <op: IncDecOperator> <factor: PreFixFactor> <r:@R> => make_ast!(l, r, Expression, Expr::IncrementDecrementOperation { term: Box::new(factor), op, postfix: false }),
+    LowLevelTerm,
+}
+
+LowLevelFactor: Expression = {
+    LowLevelTerm,
+}
+
+LowLevelTerm: Expression = {
+    <l:@L> <i: LowLevelTerm> "(" <e:ExprList> ")" <r:@R> => make_ast!(l, r, Expression, Expr::StaticMethodCall { method_name: Box::new(i), args: e}),
+    <l:@L> "[" <items:ExprList> "]" <r:@R> => make_ast!(l, r, Expression, Expr::List {items}),
+    ListIndex,
+    <l:@L> <i:ObjIdent> <r:@R> => make_ast!(l, r, Expression, Expr::Ident { ident: i}),
+    "(" <expr:WeakExpression> ")" => expr,
+}
+
+ListIndex: Expression = {
+    <l:@L> <i:LowLevelTerm> "[" <left:WeakExpression> ":" <right:WeakExpression> "]" <r:@R> => {
+        make_ast!(l, r, Expression, Expr::ListIndex { list: Box::new(i), slice: Box::new(Expr::Slice {
+                left: Box::new(left),
+                right: Box::new(right)
+            })
+        })
+    },
+    <l:@L> <i:LowLevelTerm> "[" <first:WeakExpression> <indices:CommaExpr> "]" <r:@R> => {
+        let mut indices = indices;
+        indices.insert(0, first);
+        make_ast!(l, r, Expression, Expr::ListIndex { list: Box::new(i), slice: Box::new(Expr::SeriesIndex {
+                indices
+
+            })
+        })
+    },
+}
+
+ConstantTerm: Expression = {
+    <l:@L> <c:Number> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Whole(c, None) }),
+    <l:@L> <c:Float> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Float(c, None) }),
+    <l:@L> <c:StringLiteral> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::String(c) }),
+    <l:@L> <c:Boolean> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Boolean(c) }),
+}
+
+
+ExprList: Vec<Expression> = {
+    <ex1: WeakExpression?> <ex2: CommaExpr> => {
+        match ex1 {
+            Some(e) => {
+                let mut v = ex2.to_vec();
+                v.insert(0, e);
+                v
+            },
+            None => vec![]
+        }
+
+    }
+}
+
+CommaExpr: Vec<Expression> = {
+    <t: ("," <WeakExpression>)*> => {
+        t.to_vec()
+    }
+}
+
+TypePlus: LeBlancType = {
+    <id:Type> "[]" => LeBlancType::Derived(DerivedType::TypedList(id.as_str_real().to_cstring())),
+    Type,
+}
+
+ObjIdent: Ident = {
+    EnumIdent,
+    <l:@L> <i: ObjIdent> "." <o:EnumIdent> <r:@R> => make_ast!(l, r, Ident, Id::ObjIdent { ident: Box::new(i), attr: Box::new(o)}),
+}
+
+EnumIdent: Ident = {
+    Ident,
+    <l:@L> <i: EnumIdent> "::" <o:Ident> <r:@R> => make_ast!(l, r, Ident, Id::EnumIdent { ident: Box::new(i), kind: Box::new(o)}),
+}
+
+Ident: Ident = {
+    <l:@L> <id:Word> <r:@R> => make_ast!(l, r, Ident, Id::Ident { ident: id.to_string() }),
+}
+
+#[inline]
+Word: String = {
+    <r"[A-Za-z]\w*"> => <>.to_string()
+}
+
+Type: LeBlancType = {
+    "flex" => LeBlancType::Flex,
+    "Self" => LeBlancType::SelfType,
+    "char" => LeBlancType::Char,
+    "short" => LeBlancType::Short,
+    "int" => LeBlancType::Int,
+    "int64" => LeBlancType::Int64,
+    "int128" => LeBlancType::Int128,
+    "float" => LeBlancType::Float,
+    "float64" => LeBlancType::Double,
+    "double" => LeBlancType::Double,
+    "boolean" => LeBlancType::Boolean,
+    "string" => LeBlancType::String,
+    "group" => LeBlancType::Group,
+    "function" => LeBlancType::Function,
+    "dynamic" => LeBlancType::Dynamic,
+    "promise" => LeBlancType::Promise,
+    "List" => LeBlancType::Derived(DerivedType::List),
+    <w:Word> "!" => LeBlancType::Trait(w.to_cstring(), true),
+    <w:Word> "?" => LeBlancType::Trait(w.to_cstring(), false),
+    <w:Word> => LeBlancType::Class(w.to_cstring())
+}
+
+Boolean: bool = {
+    "false" => false,
+    "true" => true
+}
+
+Float: f64 = {
+    <l: r"\d+"> "." <r: r"\d+"> => f64::from_str(&(l.to_string() + "." + &r.to_string())).unwrap()
+}
+
+Number: i128 = {
+    <s:r"\d+"> => i128::from_str(s).unwrap(),
+}
+
+StringLiteral: String = {
+    <s:r#""[^"]*""#> => s[1..s.len()-1].to_string(),
+    <s:r"'[^']*'"> => s[1..s.len()-1].to_string()
+}
+
+ArithPlusMinusOperator: BinaryOperator = {
+    "+" => BinaryOperator::BinAdd,
+    "-" => BinaryOperator::BinSub,
+}
+
+ArithMulDivModOperator: BinaryOperator = {
+    "*" => BinaryOperator::BinMul,
+    "/" => BinaryOperator::BinDiv,
+    "%" => BinaryOperator::BinMod,
+}
+
+ExponentOperator: BinaryOperator = {
+    "**" => BinaryOperator::BinPow,
+}
+
+IncDecOperator: UnaryOperator = {
+    "++" => UnaryOperator::UIncrement,
+    "--" => UnaryOperator::UDecrement,
+}
+
+UnaryOperator: UnaryOperator = {
+    "+" => UnaryOperator::UPositive,
+    "-" => UnaryOperator::UNegative,
+    "~" => UnaryOperator::UInverse,
+}
+
+Comparator: Comparator = {
+    "==" => Comparator::Equal,
+    "!=" => Comparator::NotEqual,
+    ">=" => Comparator::GreaterEqual,
+    "<=" => Comparator::LesserEqual,
+    ">" => Comparator::Greater,
+    "<" => Comparator::Lesser,
+    "in" => Comparator::In,
+}
+
+ConditionType: CondType = {
+    "if" => CondType::If,
+    "else if" => CondType::ElseIf,
+    "else" => CondType::Else
+}
+
+#[inline]
+Comma<T>: Vec<T> = {
+    <first: T> <items: ("," <T>)*> => {
+        let mut items = items;
+        items.insert(0, first);
+        items
+    }
+};
+
+#[inline]
+OptComma<T>: Vec<T> = {
+    <items: (<T> ",")*> <last: T?> => {
+        let mut items = items;
+        items.extend(last);
+        items
+    }
+};

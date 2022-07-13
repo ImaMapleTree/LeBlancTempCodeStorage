@@ -11,7 +11,7 @@ use crate::leblanc::compiler::symbols::{Symbol, SymbolType};
 use crate::leblanc::core::native_types::type_value;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::relationship::Node;
-use crate::LeBlancType::{Class, Null};
+use crate::leblanc::core::native_types::LeBlancType::{Class, Null};
 
 pub fn create_stub_dump(fabric: &mut Fabric) {
     let mut output = fabric.imports().iter().map(|i| i.source.clone()).collect::<Vec<String>>().join("|") + "\n";
