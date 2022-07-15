@@ -52,6 +52,10 @@ impl InstructionBytecode {
         bytecode
     }
 
+    pub fn is_empty(&mut self) -> bool {
+        self.instructions.segments().unwrap().is_empty()
+    }
+
     pub fn to_instructions(mut self) -> Vec<Instruction> {
         let mut instructions = self.instructions.segments().unwrap();
         let mut instruction_args = self.instruction_arguments.segments().unwrap();

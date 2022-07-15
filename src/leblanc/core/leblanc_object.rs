@@ -61,7 +61,7 @@ pub trait RustDataCast<T> {
 #[derive(Debug, Default)]
 pub struct LeBlancObject {
     pub data: LeBlancObjectData,
-    pub(crate) typing: LeBlancType,
+    pub typing: LeBlancType,
     pub methods: Arc<FxHashSet<Method>>,
     pub members: Arc<Strawberry<FxHashMap<String, LeBlancObject>>>,
     pub context: VariableContext
@@ -97,6 +97,8 @@ impl LeBlancObject {
             }
         }
     }
+
+
 
     pub fn marker() -> LeBlancObject {
         LeBlancObject {
@@ -234,7 +236,7 @@ impl LeBlancObject {
             data: self.data.clone(),
             typing: self.typing,
             methods: self.methods.clone(),
-            members: self.members.clone(),
+            members: Arc::new(Strawberry::new(self.members.lock().clone())),
             context: self.context
         }
     }

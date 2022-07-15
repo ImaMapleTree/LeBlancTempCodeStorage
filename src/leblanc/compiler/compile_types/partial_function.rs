@@ -1,7 +1,7 @@
-use crate::{LeBlancType, TypedToken};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
+use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Eq, Debug, Clone, Hash)]
 pub struct PartialFunction {
@@ -11,22 +11,6 @@ pub struct PartialFunction {
 }
 
 impl PartialFunction {
-    pub fn from_token_args(token: &TypedToken) -> PartialFunction {
-        return PartialFunction {
-            name: token.as_string(),
-            args: LeBlancArgument::from_positional(&token.typing()[0].clone()),
-            returns: vec![]
-        }
-    }
-
-    pub fn from_token_returns(token: &TypedToken) -> PartialFunction {
-        return PartialFunction {
-            name: token.as_string(),
-            args: vec![],
-            returns: token.typing()[1].clone()
-        }
-    }
-
     pub fn from_method(method: Method, returns: Vec<LeBlancType>) -> PartialFunction {
         return PartialFunction::from_method_store(method.store(), returns)
     }

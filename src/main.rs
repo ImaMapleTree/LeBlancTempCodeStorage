@@ -32,23 +32,14 @@ extern crate core;
 #[macro_use] extern crate lalrpop_util;
 //
 
+use alloc::rc::Rc;
 use std::io;
+use std::path::Path;
 
 use std::time::Instant;
 use clicolors_control::set_colors_enabled;
 use crate::leblanc::compiler::compile_types::CompilationMode;
-use crate::leblanc::compiler::compile_types::full_reader::read_file;
-use crate::leblanc::compiler::identifier::typed_token::TypedToken;
-use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{BraceOpen, Semicolon};
-use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab;
-use crate::leblanc::compiler::lang::leblanc_lang::CompileVocab::BOUNDARY;
-use crate::leblanc::compiler::fabric::Fabric;
-use crate::leblanc::compiler::token_stack_generator::create_stack;
-use crate::leblanc::compiler::tokenizer::create_tokens;
-use crate::leblanc::core::interpreter::interactive::start;
-use crate::leblanc::core::interpreter::run;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::relationship::to_node_vec;
 
 
 pub mod leblanc;
@@ -57,7 +48,13 @@ pub mod playground;
 static INTERACTIVE: bool = false;
 
 use mimalloc::MiMalloc;
-use crate::leblanc::compiler::{compile, compile2};
+use sharedlib::{Data, FuncTracked, Lib, LibRc, LibTracked, LibUnsafe, Symbol};
+use crate::leblanc::core::module::CoreModule;
+use crate::leblanc::compiler::{compile2};
+use crate::leblanc::compiler::compile_types::full_reader::read_file;
+use crate::leblanc::core::interpreter::run;
+use crate::leblanc::core::leblanc_object::LeBlancObject;
+use crate::leblanc::core::native_types::string_type::leblanc_object_string;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -67,19 +64,10 @@ fn main() -> io::Result<()> {
     let _DEBUG = true;
     //playground::playground();
 
-    if INTERACTIVE {
+    /*if INTERACTIVE {
         start();
-    }
+    }*/
     let now = Instant::now();
-
-
-
-
-    //exit(0);
-
-
-
-
 
 
     set_colors_enabled(true);
@@ -96,3 +84,22 @@ fn main() -> io::Result<()> {
 
     Ok(())
 }
+
+/*fn call_dynamic() -> Result<LeBlancObject, Box<dyn std::error::Error>> {
+    unsafe {
+        let path = Path::new("random.dll");
+        println!("Path: {:#?}", path.is_file());
+        println!("Path: {:#?}", path);
+        let lib = libloading::Library::new(path).unwrap();
+        let method : libloading::Symbol<unsafe fn() -> *mut CoreModule> = lib.get(b"MODULE").unwrap();
+        let mut module = Box::from_raw(method());
+        let mut m = module.exp_methods.get_mut(0).unwrap().clone();
+        println!("M: {:#?}", m);
+
+        let lbo = m.method.run(LeBlancObject::unsafe_null(), &mut [leblanc_object_string(String::from("Hello World!")).to_mutex()]).force_unwrap().clone();
+
+        println!("I am okay");
+        Ok(lbo)
+    }
+}*/
+

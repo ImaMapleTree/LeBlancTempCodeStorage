@@ -5,12 +5,13 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "leblanc_lib"
+name = "leblanc"
 path = "src/lib.rs"
 
 [[bin]]
 name = "leblanc"
 path = "src/main.rs"
+doc = false
 
 
 [build-dependencies]
@@ -28,7 +29,7 @@ strum_macros = "0.24"
 chrono = "0.4.19"
 hex = "0.4.3"
 prettytable-rs = "0.8.0"
-mimalloc = { version = "*", default-features = false }
+mimalloc = { version = "*", default-features = true }
 parking_lot = "0.12.1"
 fxhash = "0.2.1"
 arrayvec = "0.7.2"
@@ -43,6 +44,11 @@ lalrpop-util = {version = "0.19.8", features=["lexer"]}
 codespan-reporting = "0.11.1"
 codespan = "0.11.1"
 glob = "0.3.0"
+proc-macro2 = "1.0.40"
+quote = "1.0.20"
+libloading = "0.7.3"
+sharedlib = "7.0.0"
+typed-arena = "2.0.1"
 
 
 #[target.'cfg(target_env = "x86_64-unknown-linux-gnu")']
@@ -50,8 +56,9 @@ glob = "0.3.0"
 #rustflags = ["-Clink-arg=-fuse-ld=lld", "-Clink-arg=-Wl,--no-rosegment"]
 
 [profile.dev]
-opt-level = 3
+opt-level = 1
 debug = true
+codegen-units = 255
 
 [profile.release]
 lto = true

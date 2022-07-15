@@ -1,12 +1,18 @@
-
+use std::sync::Arc;
+use crate::leblanc::core::leblanc_object::LeBlancObject;
+use crate::leblanc::core::module::CoreModule;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 pub mod rust_override;
-pub mod relationship;
-pub mod utils;
+pub(crate) mod utils;
 pub mod hex;
-pub mod copystring;
-pub mod exception;
+pub(crate) mod copystring;
+pub(crate) mod exception;
 pub mod strawberry;
+pub mod bridge;
+pub mod types;
+
 
 pub trait Appendable<T> {
     fn append_item(&mut self, item: T);

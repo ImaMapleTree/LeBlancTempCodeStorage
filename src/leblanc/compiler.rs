@@ -1,29 +1,25 @@
+use alloc::rc::Rc;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::Arc;
 use lalrpop_util::lalrpop_mod;
+use sharedlib::{FuncTracked, FuncUnsafe, LibRc, LibUnsafe, Symbol};
 use crate::leblanc::compiler::parser::ast::{Component, push_byte_location};
 use crate::leblanc::compiler::parser::error::report;
 use parser::rules::declaration_rule::declaration_analysis;
 use crate::leblanc::compiler::parser::generator::generate_bytecode;
 use crate::leblanc::compiler::parser::import_manager::{CompiledImport, scan_imports};
+use crate::leblanc::core::leblanc_object::{LeBlancObject, Stringify};
+use crate::leblanc::core::module::CoreModule;
+use crate::leblanc::rustblanc::bridge::{_unsafe_get_module_export, _unsafe_get_shared_object, _unsafe_set_module_export, _unsafe_set_shared_object, clear_mod, clear_obj};
+use crate::leblanc::rustblanc::strawberry::Strawberry;
+use crate::leblanc::rustblanc::types::{BridgeModGetter, BridgeModSetter, BridgeObjGetter, BridgeObjSetter};
 
-pub mod char_reader;
-pub mod compile;
-pub mod driver;
-pub mod tokenizer;
-pub mod symbols;
 pub mod lang;
-pub mod compiler_util;
-pub mod compile_error_reporter;
-pub mod fabric;
-pub mod syntax_rules;
-pub mod token_stack_generator;
-pub mod identifier;
-pub mod module_resolver;
-pub mod compile_types;
 pub mod import;
 pub mod parser;
 pub mod bytecode;
+pub mod compile_types;
 
 lalrpop_mod!(pub lalrpop, "/leblanc/compiler/parser/leblanc.rs");
 
@@ -53,37 +49,68 @@ pub fn compile2(name: String) {
 }
 
 pub fn compile_import(name: String, path: PathBuf) -> Vec<CompiledImport> {
+    println!("Current dir: {:?}", std::env::current_dir().unwrap().join(path.clone()));
     println!("Import Path: {:?}", path);
-    let input = fs::read_to_string(path).unwrap();
+    let path = std::env::current_dir().unwrap().join(path);
 
-    let bytes = input.clone().into_bytes();
+    return if path.extension().unwrap().eq("dll")  || path.extension().unwrap().eq("so") {
+        let core_mod = import_dynamic(path);
+        let compiled_import = CompiledImport { name, components: vec![], module: Some(core_mod) };
+        vec![compiled_import]
+    } else {
+        let input = fs::read_to_string(path).unwrap();
+        let bytes = input.clone().into_bytes();
 
-
-    let mut line_number: usize = 1;
-    let mut symbol_number: usize = 0;
-    for byte in bytes {
-        unsafe { push_byte_location((line_number, symbol_number)); }
-        symbol_number += 1;
-        if byte == 10 {
-            line_number += 1;
-            symbol_number = 0;
+        let mut line_number: usize = 1;
+        let mut symbol_number: usize = 0;
+        for byte in bytes {
+            unsafe { push_byte_location((line_number, symbol_number)); }
+            symbol_number += 1;
+            if byte == 10 {
+                line_number += 1;
+                symbol_number = 0;
+            }
         }
+
+
+        let result = lalrpop::FileParser::new().parse(&input);
+        let mut unwrapped = result.unwrap();
+        let self_compiled = CompiledImport { name, components: unwrapped, module: None };
+        let imports = scan_imports(self_compiled);
+        imports
     }
-
-
-    let result = lalrpop::FileParser::new().parse(&input);
-    let mut unwrapped = result.unwrap();
-    let self_compiled = CompiledImport { name, components: unwrapped };
-    let imports = scan_imports(self_compiled);
-    return imports;
 }
 
 fn _compile(mut tokens: Vec<Component>) {
-    let self_compiled = CompiledImport { name: String::from("_MAIN_"), components: tokens };
+    let self_compiled = CompiledImport { name: String::from("_MAIN_"), components: tokens, module: None };
     let mut modules = scan_imports(self_compiled);
     let type_map = declaration_analysis(&mut modules);
 
 
     println!("TYPE MAP: {:#?}", type_map);
     generate_bytecode(modules, type_map);
+}
+
+fn import_dynamic(path: PathBuf) -> CoreModule {
+    unsafe {
+        println!("File: {}", path.display());
+        let lib = sharedlib::LibUnsafe::new(path).unwrap();
+        let _setup: FuncUnsafe<unsafe fn(mbs: BridgeModSetter, mbg: BridgeModGetter, obs: BridgeObjSetter, obg: BridgeObjGetter)> = lib.find_func("_SETUP_").unwrap();
+        //let lib = libloading::Library::new(path).unwrap();
+        //let _setup: libloading::Symbol<unsafe fn(mbs: BridgeModSetter, mbg: BridgeModGetter, obs: BridgeObjSetter, obg: BridgeObjGetter)> = lib.get(b"_SETUP_").unwrap();
+        _setup(_unsafe_set_module_export, _unsafe_get_module_export, _unsafe_set_shared_object, _unsafe_get_shared_object);
+        //let func: libloading::Symbol<unsafe fn() -> Option<&'static mut CoreModule>> = lib.get(b"MODULE").unwrap();
+        let func: FuncUnsafe<unsafe fn() -> Option<&'static mut CoreModule>> = lib.find_func("MODULE").unwrap();
+        clear_mod();
+        let mut module = func().unwrap().clone();
+
+        let f = &mut module.methods[0];
+        for i in 0..100 {
+            println!("{} Result: {}", i, f.method.run(LeBlancObject::unsafe_null(), &mut [LeBlancObject::unsafe_marker()]).to_string());
+            clear_obj();
+        }
+
+
+        module
+    }
 }

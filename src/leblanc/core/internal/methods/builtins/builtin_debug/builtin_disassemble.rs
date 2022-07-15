@@ -52,7 +52,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<S
             } else {line_number_format = grow_to_size("", 8)}
 
             let arg_string = match instruction.instruct {
-                InstructionBase::LoadLocal => format!("({})", leblanc_handle.lock().variable_context.values().find(|context| context.relationship == instruction.arg as u32).unwrap().name),
+                InstructionBase::LoadLocal => format!("({})", leblanc_handle.lock().variable_context.as_ref().unwrap().values().find(|context| context.relationship == instruction.arg as u32).unwrap().name),
                 InstructionBase::LoadConstant => format!("({})", leblanc_handle.lock().constants[instruction.arg as usize].lock().data),
                 InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].lock().data.get_inner_method().unwrap().context.name.clone()}),
                 InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),

@@ -72,7 +72,21 @@ pub fn declaration_analysis(modules: &mut Vec<CompiledImport>) -> HashMap<String
                 _ => {}
             }
         }
+        if import.module.is_some() {
+            let dynmod = import.module.as_ref().unwrap();
+            for f in &dynmod.methods {
+                let args = f.method.context.arguments.iter().map(|t| t.typing).collect::<Vec<LeBlancType>>();
+                let scope_val = ScopeValue {
+                    scope: ScopeType::Global,
+                    arg_types: args.clone(),
+                    types: f.returns.clone(),
+                    id: gid_pp()
+                };
+                add_to_type_map(type_map, IdentStore::Function(f.method.context.name.clone(), args), scope_val).unwrap_or_default();
+            }
+        }
     }
+
 
     import_map
 }

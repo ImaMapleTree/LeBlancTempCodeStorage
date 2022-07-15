@@ -1,4 +1,4 @@
 pub mod core;
-pub mod compiler;
+pub (in crate) mod compiler;
 pub mod rustblanc;
 pub mod include;

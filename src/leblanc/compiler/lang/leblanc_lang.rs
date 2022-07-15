@@ -1,6 +1,5 @@
 use std::fmt::{Display, Formatter};
 use crate::leblanc::compiler::lang::leblanc_lang::BoundaryType::{BraceClosed, BraceOpen, BracketClosed, BracketOpen, Comma, DNE, ParenthesisClosed, ParenthesisOpen, Semicolon, VerticalLine};
-use crate::leblanc::compiler::symbols::Symbol;
 use crate::leblanc::compiler::lang::leblanc_keywords::LBKeyword;
 use crate::leblanc::compiler::lang::leblanc_lang::Specials::{BlockCommentCloser, BlockCommentOpener, Dot, InlineComment, LambdaMarker, RangeMarker, SliceStart, StackAppend, TagCloser, TagOpener};
 use crate::leblanc::compiler::lang::leblanc_operators::LBOperator;
@@ -21,10 +20,6 @@ pub enum CompileVocab {
     CLASS(LeBlancType),
     TYPE(LeBlancType),
     UNKNOWN(LeBlancType)
-}
-
-impl Symbol {
-    pub fn is_boundary(&self) -> bool { boundary_value(self.char()) != DNE }
 }
 
 pub enum QuotationTypes {

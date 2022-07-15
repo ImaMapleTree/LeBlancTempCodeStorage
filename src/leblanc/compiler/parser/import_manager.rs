@@ -1,24 +1,23 @@
-use alloc::vec::IntoIter;
-use core::slice::Iter;
-use std::collections::HashMap;
-use std::iter::FilterMap;
 use std::path::PathBuf;
 use glob::{glob, Paths};
-use crate::compile2;
 use crate::leblanc::compiler::compile_import;
 use crate::leblanc::compiler::parser::ast::{Cmpnt, Component};
 use crate::leblanc::compiler::parser::parse_structs::{IdentStore, ScopeSet};
+use crate::leblanc::core::module::CoreModule;
 
 pub struct CompiledImport {
     pub name: String,
     pub components: Vec<Component>,
+    pub module: Option<CoreModule>
 }
 
 pub fn get_leblanc_file(name: &String, directory: Option<String>) -> Option<PathBuf> {
     println!("Searching for: {}", name);
     let glob1 = glob("*.lb").unwrap();
     let glob2 = glob("*.leblanc").unwrap();
-    let mut glob_iter = glob1.chain(glob2);
+    let glob3 = glob("*.dll").unwrap();
+    let glob4 = glob("*.so").unwrap();
+    let mut glob_iter = glob1.chain(glob2).chain(glob3).chain(glob4);
     let path = glob_iter.find_map(|e| {
         let file = e.unwrap();
         if file.is_file() && file.display().to_string().starts_with(name) { Some(file) }

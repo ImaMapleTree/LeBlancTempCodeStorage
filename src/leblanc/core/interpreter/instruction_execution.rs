@@ -26,7 +26,7 @@ use crate::leblanc::core::native_types::error_type::LeblancError;
 use crate::leblanc::core::native_types::int_type::leblanc_object_int;
 
 
-use crate::{LeBlancType};
+use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::core::native_types::double_type::leblanc_object_double;
 use crate::leblanc::core::native_types::float_type::leblanc_object_float;
 use crate::leblanc::core::native_types::group_type::{leblanc_object_group, LeblancGroup};

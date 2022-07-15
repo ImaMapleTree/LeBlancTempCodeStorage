@@ -21,22 +21,29 @@ impl Display for Module {
     }
 }
 
+#[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CoreModule {
     pub name: String,
-    pub methods: Vec<ModuleMethod>
+    pub methods: Vec<ModuleMethod>,
+    pub exp_methods: Box<Vec<Box<ModuleMethod>>>
 }
 
 impl CoreModule {
     pub fn new(name: String, methods: Vec<ModuleMethod>) -> CoreModule {
         CoreModule {
             name,
-            methods
+            methods,
+            exp_methods: Box::new(vec![])
         }
     }
     pub fn add_method(&mut self, method: ModuleMethod) {
         self.methods.push(method);
     }
+    pub fn add_method_box(&mut self, method: ModuleMethod) {
+        self.exp_methods.push(Box::new(method));
+    }
+
     pub fn methods_as_partials(&self) -> Vec<PartialFunction> {
         self.methods.iter().map(|method| PartialFunction::from_method(method.method.clone(), method.returns.clone())).collect()
     }
@@ -50,6 +57,8 @@ impl Default for CoreModule {
         CoreModule::new("".to_string(), vec![])
     }
 }
+
+unsafe impl Send for CoreModule {}
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct ModuleMethod {

@@ -3,6 +3,7 @@ use fxhash::{FxHashMap};
 
 use alloc::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::future::Future;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
@@ -43,7 +44,7 @@ pub enum ExecutionSignal {
 pub struct LeblancHandle {
     pub name: SmolStr,
     pub constants: Arc<Vec<Arc<Strawberry<LeBlancObject>>>>,
-    pub variable_context: Arc<FxHashMap<String, VariableContext>>,
+    pub variable_context: Option<Arc<HashMap<String, VariableContext>>>,
     pub variables: Vec<Arc<Strawberry<LeBlancObject>>>,
     pub instructions: Arc<Vec<Instruction>>,
     pub current_instruct: u64,
@@ -64,7 +65,7 @@ impl LeblancHandle {
         LeblancHandle {
             name: SmolStr::default(),
             constants: Arc::new(vec![]),
-            variable_context: Arc::new(FxHashMap::default()),
+            variable_context: None,
             variables: vec![],
             instructions: Arc::new(vec![]),
             current_instruct: 0,
@@ -84,7 +85,7 @@ impl LeblancHandle {
         LeblancHandle {
             name,
             constants: Arc::new(constants),
-            variable_context: Arc::new(variable_context),
+            variable_context: Some(Arc::new(variable_context)),
             variables: Vec::with_capacity(context_length),
             instructions: instructs,
             current_instruct: 0,

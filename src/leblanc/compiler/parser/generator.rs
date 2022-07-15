@@ -152,7 +152,7 @@ fn generate_function(body: Stmnt, scope_value: Rc<RefCell<ScopeTrack>>, type_map
         }
         instruct_line.add_instruction(instruct.instruct.to_hex(2), instruct.arg.to_hex(2));
     }
-    if !instruct_line.clone().to_instructions().is_empty() {
+    if !instruct_line.is_empty() {
         function_bytecode.add_instruction_line(instruct_line.generate())
     }
 

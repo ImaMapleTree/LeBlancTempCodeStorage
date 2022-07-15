@@ -1,13 +1,15 @@
 use core::str::FromStr;
 
 use std::fmt::{Display, Formatter};
+use proc_macro2::{Ident, Punct, Spacing, Span};
+use quote::TokenStreamExt;
 
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
 
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
-use crate::leblanc::core::native_types::{Arch, Group, Boolean, Char, Class, ConstantFlex, Derived, Double, Dynamic, Exception, Flex, Float, Function, Int, Int128, Int64, Module, Null, SelfType, Short, Marker, Promise, Trait};
+use crate::leblanc::core::native_types::LeBlancType::{Arch, Group, Boolean, Char, Class, ConstantFlex, Double, Dynamic, Exception, Flex, Float, Function, Int, Int128, Int64, Module, Null, SelfType, Short, Marker, Promise, Trait, Derived};
 
 pub mod NULL;
 pub mod string_type;
@@ -212,5 +214,39 @@ impl PartialEq for LeBlancType {
                 _ => self.as_str_real() == other.as_str_real()
             }
         }
+    }
+}
+
+
+impl quote::ToTokens for LeBlancType {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        tokens.append(Ident::new("LeBlancType", Span::mixed_site()));
+        tokens.append(Punct::new(':', Spacing::Joint));
+        tokens.append(Punct::new(':', Spacing::Alone));
+        let s =match self {
+            Flex => "Flex",
+            Char => "Char",
+            Short => "Short",
+            Int => "Int",
+            Int64 => "Int64",
+            Int128 => "Int128",
+            Arch => "Arch",
+            Float => "Float",
+            Double => "Double",
+            Boolean => "Boolean",
+            LeBlancType::String => "String",
+            Group => "Group",
+            Function => "Function",
+            Module => "Module",
+            Dynamic => "Dynamic",
+            Derived(val) => {
+                todo!();
+                "Null"
+            }
+            Promise => "Promise",
+            Null => "Null",
+            _ => "Null"
+        };
+        tokens.append(Ident::new(s, Span::mixed_site()));
     }
 }

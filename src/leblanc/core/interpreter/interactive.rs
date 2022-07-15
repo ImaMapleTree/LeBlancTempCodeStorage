@@ -1,8 +1,6 @@
-use std::io::Write;
-use crate::{CompilationMode, compile};
+/*use std::io::Write;
 use crate::leblanc::compiler::bytecode::LeblancBytecode;
 use crate::leblanc::core::interpreter::instructions::Instruction;
-use crate::compile::compile;
 
 static MAIN_MODE: bool = true;
 
@@ -90,4 +88,4 @@ impl DelimiterCount {
 
 pub fn wrap_in_main(string: String) -> String {
     "func main() {\n".to_owned() + "\t" + &string.replace(";;", ";\n\t") + "\n}"
-}
+}*/

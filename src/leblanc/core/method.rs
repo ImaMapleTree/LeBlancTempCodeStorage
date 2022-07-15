@@ -14,6 +14,7 @@ use crate::leblanc::core::method_tag::MethodTag;
 use alloc::rc::Rc;
 
 use std::cell::{RefCell};
+use std::mem::take;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 
@@ -22,6 +23,7 @@ pub struct Method {
     pub leblanc_handle: Arc<Strawberry<LeblancHandle>>,
     pub arc_handle: Option<LeblancHandle>,
     pub handle: fn(Arc<Strawberry<LeBlancObject>>, &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>>,
+    pub c_handle: fn(Arc<Strawberry<LeBlancObject>>, &mut [Arc<Strawberry<LeBlancObject>>]) -> Option<&mut LeBlancObject>,
     pub tags: BTreeSet<MethodTag>,
     pub method_type: MethodType,
 }
@@ -36,7 +38,20 @@ impl Method {
             arc_handle: None,
             handle,
             tags,
+            c_handle: null_c_func,
             method_type: MethodType::InternalMethod
+        }
+    }
+
+    pub fn c_method(context: MethodStore, c_handle: fn(Arc<Strawberry<LeBlancObject>>, &mut [Arc<Strawberry<LeBlancObject>>]) -> Option<&mut LeBlancObject>, tags: BTreeSet<MethodTag>) -> Method {
+        Method {
+            context,
+            leblanc_handle: Arc::new(Strawberry::new(LeblancHandle::null())),
+            arc_handle: None,
+            handle: null_func,
+            tags,
+            c_handle,
+            method_type: MethodType::LinkedMethod
         }
     }
 
@@ -48,6 +63,7 @@ impl Method {
             arc_handle: None,
             handle: null_func,
             tags: BTreeSet::new(),
+            c_handle: null_c_func,
             method_type: MethodType::InternalMethod
         }
     }
@@ -59,11 +75,14 @@ impl Method {
             arc_handle: None,
             handle: error_func,
             tags: BTreeSet::new(),
+            c_handle: null_c_func,
             method_type: MethodType::InternalMethod
         }
     }
 
-    pub fn is_internal_method(&self) -> bool { self.method_type == MethodType::InternalMethod }
+    pub fn is_internal_method(&self) -> bool {
+        matches!(self.method_type, MethodType::LinkedMethod | MethodType::InternalMethod)
+    }
 
     pub fn no_handle(context: MethodStore, tags: BTreeSet<MethodTag>) -> Method {
         Method::new(context, null_func, tags)
@@ -77,6 +96,7 @@ impl Method {
             arc_handle: None,
             handle: null_func,
             tags,
+            c_handle: null_c_func,
             method_type: MethodType::DefinedMethod
         }
     }
@@ -87,42 +107,13 @@ impl Method {
 
     #[inline(always)]
     pub fn run(&mut self, _self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
-        unsafe {
-            return match self.is_internal_method() {
-                false => self.leblanc_handle.clone_if_locked().lock().execute(args),
-                true => (self.handle)(_self, args)
-            }
+        match self.method_type {
+            MethodType::DefinedMethod => self.leblanc_handle.clone_if_locked().lock().execute(args),
+            MethodType::LinkedMethod => (self.c_handle)(_self, args).unwrap()._clone().to_mutex(),
+            MethodType::InternalMethod => (self.handle)(_self, args)
         }
     }
 
-    /*pub async fn run_async(&mut self, _self: Arc<Strawberry<LeBlancObject>>, mut vec_arcs: Vec<Arc<Strawberry<LeBlancObject>>>) -> Arc<Strawberry<LeBlancObject>> {
-        let args = &mut vec_arcs;
-        let mut handle = Rc::unwrap_or_clone(self.leblanc_handle.clone()).into_inner();
-        let internal_method = self.is_internal_method();
-        match internal_method {
-            false => {
-                handle.execute_async(args).await
-            }
-            //true => async { (self.handle)(_self.to_rc(), args) }.await.to_arc()
-            true => handle.execute_async(args).await
-        }
-    }
-*/
-    /*#[inline(always)]
-    pub fn run_with_vec(&mut self, _self: Arc<Strawberry<LeBlancObject>>, args: &mut Vec<Strawberry<LeBlancObject>>) -> Arc<Strawberry<LeBlancObject>> {
-        let mut leblanc_handle = match self.leblanc_handle.acquire() {
-            Ok(lock) => lock.get(),
-            Err(mut lock) => lock.get()
-        };
-        let null_handle = leblanc_handle.lock().null;
-        return match null_handle {
-            false => {
-                //self.leblanc_handle.variables = args.clone();
-                leblanc_handle.lock().execute(args)
-            }
-            true => (self.handle)(_self, args)
-        }
-    }*/
 
     #[inline(always)]
     pub fn run_uncloned(&self, _self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
@@ -188,6 +179,7 @@ impl Clone for Method {
             handle: self.handle,
             leblanc_handle: self.leblanc_handle.clone(),
             tags: self.tags.clone(),
+            c_handle: self.c_handle.clone(),
             method_type: self.method_type,
             arc_handle: None
         }
@@ -204,6 +196,8 @@ impl PartialOrd for Method {
 fn null_func(_self: Arc<Strawberry<LeBlancObject>>, _args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {LeBlancObject::unsafe_null()}
 
 fn error_func(_self: Arc<Strawberry<LeBlancObject>>, _args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {LeBlancObject::unsafe_error()}
+
+fn null_c_func(_self: Arc<Strawberry<LeBlancObject>>, _args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Option<&'static mut LeBlancObject> { panic!("Function Not Implemented") }
 
 impl Display for Method {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -231,5 +225,6 @@ fn tags_to_string(tags: &BTreeSet<MethodTag>) -> String {
 #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MethodType {
     InternalMethod,
+    LinkedMethod,
     DefinedMethod
 }

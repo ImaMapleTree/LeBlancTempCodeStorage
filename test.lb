@@ -1,24 +1,6 @@
-using returns_three from rust;
+using random;
+using rust;
 
 func main() {
-    int b = 10;
-    if 5 == 5 {
-        if 4 == 4 {
-            int a = 0;
-            if a == 1 {
-                print(returns_three());
-            } else if b == 10 {
-                print("But b equaled 10!");
-            } else {
-                print("A did not equal 1 LOL");
-            }
-        }
-
-    }
-
-    print("This is being printed too");
-}
-
-func test() {
-    return 5;
+    print(random.random());
 }
