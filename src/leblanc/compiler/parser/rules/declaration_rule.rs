@@ -1,9 +1,9 @@
 use alloc::rc::Rc;
 use std::cell::RefCell;
 use std::collections::{HashMap};
-use crate::leblanc::compiler::parser::ast::{Cmpnt, Component, Conditional, Expr, Expression, Statement, Stmnt};
+use crate::leblanc::compiler::parser::ast::{Cmpnt, Component, Conditional, Expr, Expression, Id, Ident, Statement, Stmnt};
 use crate::leblanc::compiler::parser::import_manager::CompiledImport;
-use crate::leblanc::compiler::parser::parse_structs::{IdentStore, ScopeSet, ScopeTrack, ScopeType, ScopeValue, SyntaxError};
+use crate::leblanc::compiler::parser::parse_structs::{FunctionType, IdentStore, ScopeSet, ScopeTrack, ScopeType, ScopeValue, SyntaxError};
 use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::type_value;
@@ -82,7 +82,7 @@ pub fn declaration_analysis(modules: &mut Vec<CompiledImport>) -> HashMap<String
                     types: f.returns.clone(),
                     id: gid_pp()
                 };
-                add_to_type_map(type_map, IdentStore::Function(f.method.context.name.clone(), args), scope_val).unwrap_or_default();
+                add_to_type_map(type_map, IdentStore::Function(f.method.context.name.clone(), args, FunctionType::Linked), scope_val).unwrap_or_default();
             }
         }
     }
@@ -94,8 +94,8 @@ pub fn declaration_analysis(modules: &mut Vec<CompiledImport>) -> HashMap<String
 fn analyze_header(comp: &mut Box<Component>, scope_type: Rc<RefCell<ScopeTrack>>, type_map: &mut HashMap<IdentStore, ScopeSet>) -> Option<SyntaxError> {
     unsafe { VARIABLE_ID = 0 }
     if let Cmpnt::FunctionHeader { name: n, args: a, returns } = &comp.data {
-        let args: Vec<(LeBlancType, String)> = a.iter().map(|a| {
-            let(t, variable) = if let Expr::TypedVariable { typing: t, variable } = a.clone().data {(t, variable)} else { (LeBlancType::Null, String::default()) };
+        let args: Vec<(LeBlancType, Ident)> = a.iter().map(|a| {
+            let(t, variable) = if let Expr::TypedVariable { typing: t, variable } = a.clone().data {(t, variable)} else { (LeBlancType::Null, Ident::default()) };
             (t, variable)
         }).collect();
 
@@ -106,7 +106,7 @@ fn analyze_header(comp: &mut Box<Component>, scope_type: Rc<RefCell<ScopeTrack>>
             id: gid_pp()
         };
 
-        match add_to_type_map(type_map, IdentStore::Function(n.to_string(), function.arg_types.clone()), function) {
+        match add_to_type_map(type_map, IdentStore::Function(n.to_string(), function.arg_types.clone(), FunctionType::LeBlanc), function) {
             Ok(_) => {},
             Err(err) => return Some(err)
         }
@@ -118,7 +118,8 @@ fn analyze_header(comp: &mut Box<Component>, scope_type: Rc<RefCell<ScopeTrack>>
                 types: vec![arg.0],
                 id: vid_pp()
             };
-            match add_to_type_map(type_map, IdentStore::Variable(arg.1), arg_scope) {
+            let ident = unpack_ident(&arg.1, type_map)[0].string.clone();
+            match add_to_type_map(type_map, IdentStore::Variable(ident), arg_scope) {
                 Ok(_) => {},
                 Err(err) => return Some(err)
             }
@@ -141,7 +142,10 @@ fn dec_analy_stmnt(statement: Statement, mut scope_type: Rc<RefCell<ScopeTrack>>
         Stmnt::Line { expr } => dec_analy_expr(expr, scope_type, type_map),
         Stmnt::Conditional { conditional } => dec_analy_cond(conditional, scope_type, type_map),
         Stmnt::While { condition: _c, statement } => { dec_analy_stmnt(*statement, Rc::new(RefCell::new(scope_type.borrow_mut().bump())), type_map) }
-        Stmnt::For { variable: _v, iterable: _i, statement } => { dec_analy_stmnt(*statement, Rc::new(RefCell::new(scope_type.borrow_mut().bump())), type_map) }
+        Stmnt::For { variable: v, iterable: _i, statement } => {
+            dec_analy_expr(v, scope_type.clone(), type_map);
+            dec_analy_stmnt(*statement, Rc::new(RefCell::new(scope_type.borrow_mut().bump())), type_map)
+        }
         Stmnt::InfLoop { statement } => dec_analy_stmnt(*statement, Rc::new(RefCell::new(scope_type.borrow_mut().bump())), type_map),
         Stmnt::Try { statement } => dec_analy_stmnt(*statement, Rc::new(RefCell::new(scope_type.borrow_mut().bump())), type_map),
         Stmnt::Except { catch: _c, statement } => dec_analy_stmnt(*statement, Rc::new(RefCell::new(scope_type.borrow_mut().bump())), type_map),
@@ -150,6 +154,7 @@ fn dec_analy_stmnt(statement: Statement, mut scope_type: Rc<RefCell<ScopeTrack>>
 }
 
 fn dec_analy_expr(expr: Expression, scope_type: Rc<RefCell<ScopeTrack>>, type_map: &mut HashMap<IdentStore, ScopeSet>) -> Option<SyntaxError> {
+    println!("Expr: {:#?}", expr);
     match expr.data {
         Expr::TypedAssignment { idents: ids, expr } => {
             for id in ids {
@@ -158,6 +163,21 @@ fn dec_analy_expr(expr: Expression, scope_type: Rc<RefCell<ScopeTrack>>, type_ma
                     Some(err) => return Some(err)
                 }
             } None
+        }
+        Expr::TypedVariable { typing, variable} => {
+            let scope_value = ScopeValue {
+                scope: scope_type.borrow().get_scope_type(),
+                arg_types: vec![],
+                types: vec![typing],
+                id: vid_pp()
+            };
+            let ident = unpack_ident(&variable, type_map)[0].string.clone();
+            match add_to_type_map(type_map, IdentStore::Variable(ident), scope_value) {
+                Ok(_) => None,
+                Err(err) => Some(err),
+            }
+
+
         }
         _ => None
     }
@@ -185,9 +205,63 @@ fn dec_analy_ident(expr: Expression, scope_value: Rc<RefCell<ScopeTrack>>, type_
             types: vec![t],
             id: vid_pp()
         };
-        match add_to_type_map(type_map, IdentStore::Variable(variable), arg_scope) {
+        let ident = unpack_ident(&variable, type_map)[0].string.clone();
+        match add_to_type_map(type_map, IdentStore::Variable(ident), arg_scope) {
             Ok(_) => {}, Err(err) => return Some(err)
         }
     }
     None
+}
+
+fn unpack_ident(ident: &Ident, scope_map: &mut HashMap<IdentStore, ScopeSet>) -> Vec<UnpackedIdent> {
+    let mut parts: Vec<UnpackedIdent> = vec![];
+    match &ident.data {
+        Id::Ident { ident } => {
+            let ty = match parts.first() {
+                Some(val) => {
+                    match val.ty {
+                        UIdentType::Object => UIdentType::Attr,
+                        UIdentType::Module => UIdentType::FuncOrVar,
+                        _ => UIdentType::Attr
+                    }
+                },
+                None => {
+                    match scope_map.iter().find(|(store, set)| store.get_ident() == ident) {
+                        Some(_) => UIdentType::Object, // We tune this afterwards
+                        None => {
+                            UIdentType::FuncOrVar
+                        }
+                    }
+                }
+            };
+            parts.push( UnpackedIdent { string: ident.to_owned(), ty })
+        }
+        Id::ObjIdent { ident, attr } => {
+            parts.append(&mut unpack_ident(ident, scope_map));
+            parts.append(&mut unpack_ident(attr, scope_map));
+        }
+        Id::EnumIdent { .. } => {}
+        Id::TypedListIdent { .. } => {}
+    }
+    if parts.len() == 1 {
+        let part = parts.get_mut(0).unwrap();
+        if part.ty == UIdentType::Object {
+            part.ty = UIdentType::FuncOrVar;
+        }
+    }
+    parts
+}
+
+#[derive(PartialEq, Debug)]
+pub struct UnpackedIdent {
+    pub string: String,
+    pub ty: UIdentType
+}
+
+#[derive(PartialEq, Debug)]
+pub enum UIdentType {
+    Object,
+    Module,
+    Attr,
+    FuncOrVar
 }

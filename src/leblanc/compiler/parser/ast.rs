@@ -58,6 +58,21 @@ pub type Statement = Located<Stmnt>;
 pub type Ident = Located<Id>;
 pub type Constant = Located<Const>;
 
+impl Default for Ident {
+    fn default() -> Self {
+        Ident {
+            location: Location {
+                byte_pos: (0, 0),
+                line_number: 0,
+                symbol_number: 0
+            },
+            data: Id::Ident {
+                ident: String::default()
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum Cmpnt {
     Function { header: Box<Component>, body: Statement, tags: Vec<String> },
@@ -228,7 +243,7 @@ pub enum Expr {
         variable: String,
     },
 
-    TypedVariable { typing: LeBlancType, variable: String },
+    TypedVariable { typing: LeBlancType, variable: Ident },
 
     Ident { ident: Ident },
 

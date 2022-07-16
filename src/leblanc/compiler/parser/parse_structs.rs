@@ -77,6 +77,10 @@ impl ScopeSet {
         Some(self.inner_map.iter().next().unwrap().id)
     }
 
+    pub fn set_first_id(&mut self, id: usize)  {
+        self.inner_map.iter_mut().next().unwrap().id = id;
+    }
+
     pub fn iter(&self) -> Iter<'_, ScopeValue> {
         self.inner_map.iter()
     }
@@ -130,8 +134,14 @@ impl ScopeTrack {
 
 #[derive(Clone, Hash, PartialEq, PartialOrd, Debug, Eq)]
 pub enum IdentStore {
-    Function(String, Vec<LeBlancType>),
+    Function(String, Vec<LeBlancType>, FunctionType),
     Variable(String)
+}
+
+#[derive(Clone, Hash, PartialEq, PartialOrd, Debug, Eq, Copy)]
+pub enum FunctionType {
+    Linked,
+    LeBlanc,
 }
 
 impl Display for IdentStore {
@@ -143,7 +153,7 @@ impl Display for IdentStore {
 impl IdentStore {
     pub fn get_ident(&self) -> &String {
         match self {
-            IdentStore::Function(str, _) => str,
+            IdentStore::Function(str, _, _) => str,
             IdentStore::Variable(str) => str
         }
     }

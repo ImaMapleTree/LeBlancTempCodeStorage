@@ -6,3 +6,5 @@ pub mod parse_structs;
 pub mod rules;
 pub mod generator;
 pub mod import_manager;
+pub mod helper;
+pub mod function_sorter;

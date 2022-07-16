@@ -1,8 +1,10 @@
 use alloc::rc::Rc;
+use std::alloc::{alloc, GlobalAlloc, Layout};
 use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
+use mimalloc::MiMalloc;
 use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
 
 use crate::leblanc::core::leblanc_object::LeBlancObject;
@@ -26,22 +28,18 @@ impl Display for Module {
 pub struct CoreModule {
     pub name: String,
     pub methods: Vec<ModuleMethod>,
-    pub exp_methods: Box<Vec<Box<ModuleMethod>>>
 }
 
 impl CoreModule {
-    pub fn new(name: String, methods: Vec<ModuleMethod>) -> CoreModule {
+    pub fn new<T: Display>(name: T, methods: Vec<ModuleMethod>) -> CoreModule {
         CoreModule {
-            name,
+            name: name.to_string(),
             methods,
-            exp_methods: Box::new(vec![])
         }
     }
+
     pub fn add_method(&mut self, method: ModuleMethod) {
         self.methods.push(method);
-    }
-    pub fn add_method_box(&mut self, method: ModuleMethod) {
-        self.exp_methods.push(Box::new(method));
     }
 
     pub fn methods_as_partials(&self) -> Vec<PartialFunction> {

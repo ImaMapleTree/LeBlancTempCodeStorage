@@ -7,15 +7,15 @@ use sharedlib::{FuncTracked, FuncUnsafe, LibRc, LibUnsafe, Symbol};
 use crate::leblanc::compiler::parser::ast::{Component, push_byte_location};
 use crate::leblanc::compiler::parser::error::report;
 use parser::rules::declaration_rule::declaration_analysis;
+use crate::leblanc::compiler::parser::function_sorter::sort_functions;
 use crate::leblanc::compiler::parser::generator::generate_bytecode;
-use crate::leblanc::compiler::parser::import_manager::{CompiledImport, scan_imports};
+use crate::leblanc::compiler::parser::import_manager::{CompiledImport, import_dynamic, scan_imports};
 use crate::leblanc::core::leblanc_object::{LeBlancObject, Stringify};
 use crate::leblanc::core::module::CoreModule;
-use crate::leblanc::rustblanc::bridge::{_unsafe_get_module_export, _unsafe_get_shared_object, _unsafe_set_module_export, _unsafe_set_shared_object, clear_mod, clear_obj};
+use crate::leblanc::rustblanc::bridge::{_unsafe_get_module_export, _unsafe_get_shared_object, _unsafe_set_module_export, _unsafe_set_shared_object, set_mod_swapper, set_obj_swapper};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
-use crate::leblanc::rustblanc::types::{BridgeModGetter, BridgeModSetter, BridgeObjGetter, BridgeObjSetter};
+use crate::leblanc::rustblanc::types::{BIModFunc, BIObjFunc, BModGetter, BModSwapper, BObjGetter, BObjSwapper};
 
-pub mod lang;
 pub mod import;
 pub mod parser;
 pub mod bytecode;
@@ -84,33 +84,11 @@ pub fn compile_import(name: String, path: PathBuf) -> Vec<CompiledImport> {
 fn _compile(mut tokens: Vec<Component>) {
     let self_compiled = CompiledImport { name: String::from("_MAIN_"), components: tokens, module: None };
     let mut modules = scan_imports(self_compiled);
-    let type_map = declaration_analysis(&mut modules);
+    let mut type_map = declaration_analysis(&mut modules);
 
+    sort_functions(&mut type_map);
 
     println!("TYPE MAP: {:#?}", type_map);
     generate_bytecode(modules, type_map);
 }
 
-fn import_dynamic(path: PathBuf) -> CoreModule {
-    unsafe {
-        println!("File: {}", path.display());
-        let lib = sharedlib::LibUnsafe::new(path).unwrap();
-        let _setup: FuncUnsafe<unsafe fn(mbs: BridgeModSetter, mbg: BridgeModGetter, obs: BridgeObjSetter, obg: BridgeObjGetter)> = lib.find_func("_SETUP_").unwrap();
-        //let lib = libloading::Library::new(path).unwrap();
-        //let _setup: libloading::Symbol<unsafe fn(mbs: BridgeModSetter, mbg: BridgeModGetter, obs: BridgeObjSetter, obg: BridgeObjGetter)> = lib.get(b"_SETUP_").unwrap();
-        _setup(_unsafe_set_module_export, _unsafe_get_module_export, _unsafe_set_shared_object, _unsafe_get_shared_object);
-        //let func: libloading::Symbol<unsafe fn() -> Option<&'static mut CoreModule>> = lib.get(b"MODULE").unwrap();
-        let func: FuncUnsafe<unsafe fn() -> Option<&'static mut CoreModule>> = lib.find_func("MODULE").unwrap();
-        clear_mod();
-        let mut module = func().unwrap().clone();
-
-        let f = &mut module.methods[0];
-        for i in 0..100 {
-            println!("{} Result: {}", i, f.method.run(LeBlancObject::unsafe_null(), &mut [LeBlancObject::unsafe_marker()]).to_string());
-            clear_obj();
-        }
-
-
-        module
-    }
-}

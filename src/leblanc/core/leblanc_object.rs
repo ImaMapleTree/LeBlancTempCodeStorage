@@ -236,7 +236,7 @@ impl LeBlancObject {
             data: self.data.clone(),
             typing: self.typing,
             methods: self.methods.clone(),
-            members: Arc::new(Strawberry::new(self.members.lock().clone())),
+            members: self.members.clone(),
             context: self.context
         }
     }

@@ -24,7 +24,7 @@ use crate::leblanc::rustblanc::utils::{Timings};
 
 static DEBUG: bool = true;
 static TIME_DEBUG: bool = false;
-static STACK_DEBUG: bool = true;
+static STACK_DEBUG: bool = false;
 static mut GLOBAL_SIGNAL: ExecutionSignal = ExecutionSignal::Normal;
 
 static mut TIMINGS: Timings = Timings { map: None};
@@ -154,7 +154,7 @@ impl LeblancHandle {
         while self.current_instruct < right_bound {
             last_instruct = instruction;
             instruction = self.instructions[self.current_instruct as usize];
-            if DEBUG {println!("{} Range Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
+            //if DEBUG {println!("{} Range Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
             match instruction.instruct {
                 InstructionBase::Return => return stack.pop().unwrap(),
                 InstructionBase::CallFunction => {
@@ -180,7 +180,7 @@ impl LeblancHandle {
                     return err
                 }
             };
-            if STACK_DEBUG { println!("{} Range Stack: {}", colorize(self.name.to_string(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
+            //if STACK_DEBUG { println!("{} Range Stack: {}", colorize(self.name.to_string(), Color::Blue), if stack.len() > 0 {stack.get(stack.len()-1).unwrap_or(&LeBlancObject::unsafe_null()).to_string()} else { LeBlancObject::unsafe_null().to_string()});}
             /*if TIME_DEBUG {
                 let duration = now.elapsed().as_secs_f64();
                 unsafe { TIMINGS.add_timing(instruction.instruct.to_string(), duration); }

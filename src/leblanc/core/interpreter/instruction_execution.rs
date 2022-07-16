@@ -118,8 +118,8 @@ fn _INSTRUCT_INPLACE_ADD_(_handle: &mut LeblancHandle, _arg: &Instruction, stack
 }
 
 fn _INSTRUCT_BINARY_ADD_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Result<(), Arc<Strawberry<LeBlancObject>>> {
-    let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
     let ntargeter = targeter.lock();
     let ntarget = target.lock();
@@ -158,8 +158,8 @@ fn _INSTRUCT_BINARY_ADD_(_handle: &mut LeblancHandle, _arg: &Instruction, stack:
 }
 
 fn _INSTRUCT_BINARY_SUBTRACT_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Result<(), Arc<Strawberry<LeBlancObject>>> {
-    let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
     let ntargeter = targeter.lock();
     let ntarget = target.lock();
@@ -439,8 +439,8 @@ fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mu
 
 fn _INSTRUCT_EQUALITY_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Result<(), Arc<Strawberry<LeBlancObject>>> {
     //println!("Error?");
-    let tos1 = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let tos2 = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
+    let tos1 = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     //println!("Good bye cruel world");
 
     let tos1 = tos1.lock();

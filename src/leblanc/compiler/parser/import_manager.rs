@@ -1,10 +1,16 @@
+use std::mem::take;
 use std::path::PathBuf;
 use glob::{glob, Paths};
+use sharedlib::FuncUnsafe;
 use crate::leblanc::compiler::compile_import;
 use crate::leblanc::compiler::parser::ast::{Cmpnt, Component};
 use crate::leblanc::compiler::parser::parse_structs::{IdentStore, ScopeSet};
+use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::module::CoreModule;
+use crate::leblanc::rustblanc::bridge::{_unsafe_get_module_export, _unsafe_get_shared_object, _unsafe_set_module_export, _unsafe_set_shared_object, set_mod_swapper, set_obj_swapper};
+use crate::leblanc::rustblanc::types::{BIModFunc, BIObjFunc, BModGetter, BModSwapper, BObjGetter, BObjSwapper};
 
+#[derive(Debug)]
 pub struct CompiledImport {
     pub name: String,
     pub components: Vec<Component>,
@@ -82,4 +88,19 @@ fn import_pass(current_module: &mut CompiledImport, components: Vec<(String, Opt
         new_components.append(&mut import(current_module, tuple.1, tuple.0));
     });
     new_components
+}
+
+pub fn import_dynamic(path: PathBuf) -> CoreModule {
+    unsafe {
+        println!("File: {}", path.display());
+        let lib = sharedlib::LibUnsafe::new(path).unwrap();
+        let _setup: FuncUnsafe<unsafe fn(m: BIModFunc, mg: BModGetter, o: BIObjFunc, og: BObjGetter, me: BModSwapper, oe: BObjSwapper)> = lib.find_func("_SETUP_").unwrap();
+        //let lib = libloading::Library::new(path).unwrap();
+        //let _setup: libloading::Symbol<unsafe fn(mbs: BridgeModSetter, mbg: BridgeModGetter, obs: BridgeObjSetter, obg: BridgeObjGetter)> = lib.get(b"_SETUP_").unwrap();
+        _setup(_unsafe_set_module_export, _unsafe_get_module_export, _unsafe_set_shared_object, _unsafe_get_shared_object, set_mod_swapper, set_obj_swapper);
+
+        //let func: libloading::Symbol<unsafe fn() -> Option<&'static mut CoreModule>> = lib.get(b"MODULE").unwrap();
+        let func: FuncUnsafe<unsafe fn() -> Option<&'static mut CoreModule>> = lib.find_func("_MODULE_").unwrap();
+        take(func().unwrap())
+    }
 }

@@ -1,6 +1,11 @@
-using random;
-using rust;
+using timer;
 
 func main() {
-    print(random.random());
+    test();
+    //test();
+}
+
+func test() {
+    timer.HelloWorld();
+
 }

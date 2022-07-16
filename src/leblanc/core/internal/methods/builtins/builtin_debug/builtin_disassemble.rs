@@ -14,7 +14,7 @@ use crate::leblanc::core::interpreter::instructions::InstructionBase;
 use crate::leblanc::core::interpreter::leblanc_runner::get_globals;
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, Reflect, Stringify};
-use crate::leblanc::core::method::Method;
+use crate::leblanc::core::method::{Method, MethodType};
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
 
@@ -32,7 +32,8 @@ fn _BUILTIN_DISASSEMBLE(_self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<S
     };
 
     let mut output = String::new();
-    if method.is_internal_method() {
+
+    if matches!(method.method_type, MethodType::InternalMethod | MethodType::LinkedMethod) {
         if dis_rust_func {
             println!("Disassembling builtin");
         }

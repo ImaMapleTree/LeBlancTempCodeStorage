@@ -56,8 +56,8 @@ use crate::leblanc::core::interpreter::run;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::native_types::string_type::leblanc_object_string;
 
-#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
+/*#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;*/
 
 
 fn main() -> io::Result<()> {

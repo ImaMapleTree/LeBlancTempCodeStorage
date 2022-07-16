@@ -1,11 +1,13 @@
 use alloc::rc::Rc;
 use alloc::vec::IntoIter;
+use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Write;
 use std::iter::{FilterMap};
+use std::mem;
 use crate::leblanc::compiler::bytecode::file_body::FileBodyBytecode;
 use crate::leblanc::compiler::bytecode::file_header::FileHeaderBytecode;
 use crate::leblanc::compiler::bytecode::function_bytes::FunctionBytecode;
@@ -14,20 +16,21 @@ use crate::leblanc::compiler::bytecode::{LeblancBytecode, ToBytecode};
 use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
 use crate::leblanc::compiler::parser::ast::{Cmpnt, Component, Conditional, Const, Expr, Expression, Id, Ident, Statement, Stmnt};
 use crate::leblanc::compiler::parser::import_manager::{CompiledImport, import};
-use crate::leblanc::compiler::parser::parse_structs::{IdentStore, ScopeSet, ScopeTrack, ScopeValue, SyntaxError};
+use crate::leblanc::compiler::parser::parse_structs::{FunctionType, IdentStore, ScopeSet, ScopeTrack, ScopeValue, SyntaxError};
 use crate::leblanc::core::internal::methods::builtins::create_partial_functions;
 use crate::leblanc::core::interpreter::instructions::{binary_instruct, comparator_instruct, Instruction, InstructionBase as Instruct, InstructionBase, unary_instruct};
 use crate::leblanc::core::interpreter::instructions::InstructionBase::{ListSetup, LoadFunction, LoadLocal};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
+use crate::leblanc::core::module::CoreModule;
 use crate::leblanc::core::native_types::derived::DerivedType;
-use crate::leblanc::rustblanc::Hexable;
+use crate::leblanc::rustblanc::{bridge, Hexable};
 use crate::leblanc::core::native_types::LeBlancType;
 
 static mut CONSTANT_TRACK: Option<ConstantTrack> = None;
 static mut CURRENT_MODULE: String = String::new();
 
 fn ident_and_set_to_partial(store: &IdentStore, value: &ScopeSet) -> Option<PartialFunction> {
-    if let IdentStore::Function(name, args) = store {
+    if let IdentStore::Function(name, args, _type) = store {
         let mut returns = value.iter().next().unwrap().types.clone();
         if returns.is_empty() { returns.push(LeBlancType::Null) }
         Some(PartialFunction {
@@ -43,15 +46,16 @@ fn ident_and_set_to_partial(store: &IdentStore, value: &ScopeSet) -> Option<Part
 pub fn generate_bytecode(modules: Vec<CompiledImport>, mut type_map: HashMap<String, HashMap<IdentStore, ScopeSet>>) {
     let mut partial_functions = create_partial_functions();
 
-    let mut functions = type_map.iter().map(|(_key, value)| {
+    let mut functions = type_map.iter().flat_map(|(_key, value)| {
         value.iter().filter(|(key, _value)| {
-            matches!(key, IdentStore::Function(_name, _types))
+            matches!(key, IdentStore::Function(_name, _types, _type))
         }).collect::<Vec<(&IdentStore, &ScopeSet)>>()
-    }).flatten().collect::<Vec<(&IdentStore, &ScopeSet)>>();
+    }).collect::<Vec<(&IdentStore, &ScopeSet)>>();
 
     functions.sort_by(|(_key, value), (_key2, value2)| value.get_first_id().unwrap().cmp(&value2.get_first_id().unwrap()));
     functions.iter().for_each(|(key, value)| partial_functions.push(ident_and_set_to_partial(key, value).unwrap()));
 
+    let mut header = FileHeaderBytecode::new();
 
     let mut body = FileBodyBytecode::new();
     for module in modules {
@@ -64,12 +68,19 @@ pub fn generate_bytecode(modules: Vec<CompiledImport>, mut type_map: HashMap<Str
                 None
             }
         }), scope, &mut type_map, &mut partial_functions);
+
+        if module.module.is_some() {
+            header.add_import_name(unsafe {&CURRENT_MODULE});
+            mem::forget(module.module)
+        }
     }
 
 
 
-    let mut header = FileHeaderBytecode::new();
+
     header.set_file_name(&String::from("test.lb"));
+
+
     let mut bytecode = LeblancBytecode::new(header, body);
     let file = File::options().truncate(true).write(true).create(true).open("test.lbbc");
     let generated = bytecode.generate();
@@ -156,6 +167,7 @@ fn generate_function(body: Stmnt, scope_value: Rc<RefCell<ScopeTrack>>, type_map
         function_bytecode.add_instruction_line(instruct_line.generate())
     }
 
+    println!("Still alive");
     function_bytecode
 }
 
@@ -221,7 +233,14 @@ fn instruct_stack_statement(statement: &Stmnt, scope_value: Rc<RefCell<ScopeTrac
             StackCount::default()
         }
         Stmnt::For { variable: variable, iterable: iter, statement } => {
-            StackCount::default()
+            let mut stack_count = instruct_stack_expr(iter, scope_value.clone(), stack, type_map, partial_functions);
+            stack_count.add(&instruct_stack_expr(variable, scope_value.clone(), stack, type_map, partial_functions));
+            let mut temp_stack = vec![];
+            let instructs = instruct_stack_statement(&statement.data, scope_value.borrow_mut().bump().rc(), &mut temp_stack, type_map, partial_functions);
+            stack_count = stack_count.macro_instruct(stack, Instruct::ForLoop.instruct(instructs.instruct_count as u16, iter.location.line_number as u32), -2, vec![]);
+            stack.append(&mut temp_stack);
+            stack_count.add(&instructs);
+            stack_count
         }
         Stmnt::InfLoop { statement } => {
             StackCount::default()
@@ -338,11 +357,9 @@ fn instruct_stack_expr(expr: &Expression, scope_value: Rc<RefCell<ScopeTrack>>, 
         Expr::StaticMethodCall { method_name: method, args } => {
             let mut stack_count = StackCount::default();
             args.iter().for_each(|arg| stack_count.add(&instruct_stack_expr(arg, scope_value.clone(), stack, type_map, partial_functions)));
-            println!("Stack count: {:#?}", stack_count);
             let arg_count = stack_count.clone();
             let mut args = arg_count.provided_types.len();
             let mut index_partial: Option<(usize, PartialFunction)> = None;
-            println!("Searching: {:#?}", method);
             if let Expr::Ident { ident } = &method.data {
                 let unpacked = unpack_ident(ident, type_map);
                 let mut module = unsafe { CURRENT_MODULE.clone() };
@@ -475,6 +492,7 @@ fn instruct_stack_expr(expr: &Expression, scope_value: Rc<RefCell<ScopeTrack>>, 
                 if let Expr::TypedVariable { typing, variable } = ident.data.clone() {
                     match expr {
                         Some(expr) => {
+                            let variable = unpack_ident(&variable, type_map)[0].string.clone();
                             stack_count.add(&instruct_stack_expr(expr, scope_value.clone(), stack, type_map, partial_functions));
                             let identity = curmod_ident_get(type_map, &IdentStore::Variable(variable)).unwrap().iter().find(|a| a.scope == scope_value.borrow().get_scope_type()).unwrap();
                             stack_count.expects(identity.types.clone());
@@ -516,7 +534,8 @@ fn instruct_stack_expr(expr: &Expression, scope_value: Rc<RefCell<ScopeTrack>>, 
         }
         Expr::TypedVariable { typing, variable } => {
             let stack_count = StackCount::default();
-            let identity = curmod_ident_get(type_map, &IdentStore::Variable(variable.clone())).unwrap().iter().find(|a| a.scope == scope_value.borrow().get_scope_type()).unwrap();
+            let variable = unpack_ident(&variable, type_map)[0].string.clone();
+            let identity = curmod_ident_get(type_map, &IdentStore::Variable(variable)).unwrap().iter().find(|a| a.scope == scope_value.borrow().get_scope_type()).unwrap();
             stack_count.macro_instruct(stack,
            LoadLocal.instruct(identity.id as u16, line_number), -1, identity.arg_types.clone())
 
@@ -535,9 +554,10 @@ fn instruct_stack_ident(ident: &Ident, scope_value: Rc<RefCell<ScopeTrack>>, sta
     match &ident.data {
         Id::Ident { ident: id } => {
             let stack_count = StackCount::default();
+            println!("Searching for: {:?}", id);
             let scopes = curmod_ident_get(type_map, &IdentStore::Variable(id.clone()));
             if scopes.is_none() {
-                let (store, set) = type_map.get_mut("_MAIN_").unwrap().iter().find(|(s, v)| s.get_ident() == id).unwrap();
+                let (store, set) = type_map.get_mut(unsafe { &CURRENT_MODULE }).unwrap().iter().find(|(s, v)| s.get_ident() == id).unwrap();
                 let identity = set.get_first_id().unwrap();
                 stack_count.macro_instruct(stack,
                 Instruct::LoadFunction.instruct(identity as u16, ident.location.line_number as u32), -1, vec![LeBlancType::Function])

@@ -165,7 +165,7 @@ TypeArg: Vec<Expression> = {
 
 FunctionHeaderType: Expression = {
     TypedAssignmentPrefix,
-    <l:@L> "$" <variable:Word> <r:@R> => make_ast!(l, r, Expression, Expr::TypedVariable { typing: LeBlancType::SuperLambda, variable }),
+    <l:@L> "$" <variable:Ident> <r:@R> => make_ast!(l, r, Expression, Expr::TypedVariable { typing: LeBlancType::SuperLambda, variable }),
 }
 
 TypeReturns: Vec<LeBlancType> = {
@@ -312,8 +312,8 @@ MultiAssignment: Expression = {
 }
 
 TypedAssignmentPrefix: Expression = {
-    <l:@L> "Self" <r:@R> => make_ast!(l, r, Expression, Expr::TypedVariable { typing: LeBlancType::SelfType, variable: "Self".to_string() }),
-    <l:@L> <typing:TypePlus> <ident:Word> <r:@R> => make_ast!(l, r, Expression, Expr::TypedVariable { typing, variable: ident }),
+    <l:@L> "Self" <r:@R> => make_ast!(l, r, Expression, Expr::TypedVariable { typing: LeBlancType::SelfType, variable: make_ast!(l, r, Ident, Id::Ident { ident: "Self".to_string() }) }),
+    <l:@L> <typing:TypePlus> <ident:Ident> <r:@R> => make_ast!(l, r, Expression, Expr::TypedVariable { typing, variable: ident }),
 }
 
 MultiNormalAssignment: Expression = {

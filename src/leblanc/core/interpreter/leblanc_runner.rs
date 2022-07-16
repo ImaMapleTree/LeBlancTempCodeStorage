@@ -26,8 +26,11 @@ impl LeBlancRunner {
     }
 
     pub fn run_main(&mut self) {
+        println!("Running");
         unsafe { GLOBALS = self.globals.to_vec(); }
+        println!("Running2");
         let main_object = self.globals.iter_mut().filter(|g| g.lock().typing == LeBlancType::Function).find(|g| g.reflect().downcast_ref::<Box<Method>>().unwrap().context.name == "main");
+        println!("Running3");
 
         let main_elapsed = Instant::now();
         let f = main_object.unwrap().call("main", &mut []).unwrap();
@@ -36,6 +39,7 @@ impl LeBlancRunner {
             let error: &LeblancError = borrowed.data.ref_data().unwrap();
             error.print_stack_trace();
         }
+        println!("Running4");
         //println!("Final: {:#?}", f.lock().data);
         println!("Execution Elapsed: {}", main_elapsed.elapsed().as_secs_f64());
     }
