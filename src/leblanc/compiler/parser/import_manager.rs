@@ -1,8 +1,7 @@
-use std::mem::take;
+/*use std::mem::take;
 use std::path::PathBuf;
 use glob::{glob, Paths};
 use sharedlib::FuncUnsafe;
-use crate::leblanc::compiler::compile_import;
 use crate::leblanc::compiler::parser::ast::{Cmpnt, Component};
 use crate::leblanc::compiler::parser::parse_structs::{IdentStore, ScopeSet};
 use crate::leblanc::core::leblanc_object::LeBlancObject;
@@ -104,3 +103,4 @@ pub fn import_dynamic(path: PathBuf) -> CoreModule {
         take(func().unwrap())
     }
 }
+*/

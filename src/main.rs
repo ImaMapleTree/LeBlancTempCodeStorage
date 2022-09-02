@@ -50,7 +50,7 @@ static INTERACTIVE: bool = false;
 use mimalloc::MiMalloc;
 use sharedlib::{Data, FuncTracked, Lib, LibRc, LibTracked, LibUnsafe, Symbol};
 use crate::leblanc::core::module::CoreModule;
-use crate::leblanc::compiler::{compile2};
+use crate::leblanc::compiler::{compile};
 use crate::leblanc::compiler::compile_types::full_reader::read_file;
 use crate::leblanc::core::interpreter::run;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
@@ -71,7 +71,7 @@ fn main() -> io::Result<()> {
 
 
     set_colors_enabled(true);
-    compile2("test.lb".to_string());
+    compile("test.lb".to_string());
 
    //compile("test.lb".to_string(), CompilationMode::Full);
 

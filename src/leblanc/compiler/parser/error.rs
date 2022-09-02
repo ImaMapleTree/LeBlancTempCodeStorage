@@ -32,4 +32,8 @@ pub fn report(error: ParseError<usize, Token<'_>, &str>) {
 
     term::emit(&mut writer.lock(), &config, &file, &diagnostic).unwrap();
 
+    loop {
+
+    }
+
 }

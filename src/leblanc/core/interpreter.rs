@@ -4,7 +4,6 @@ use std::path::PathBuf;
 
 use crate::leblanc::compiler::bytecode::LeblancBytecode;
 use crate::leblanc::compiler::parser::import_manager;
-use crate::leblanc::compiler::parser::import_manager::import_dynamic;
 use crate::leblanc::core::internal::methods::builtins::create_builtin_function_objects;
 use crate::leblanc::core::interpreter::leblanc_runner::LeBlancRunner;
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
@@ -37,7 +36,7 @@ pub fn run(mut bytecode: LeblancBytecode) {
         }
     }
 
-    for import in bytecode.file_header().imports() {
+    /*for import in bytecode.file_header().imports() {
         let file = import_manager::get_leblanc_file(&import, None);
         match file {
             None => {}
@@ -50,7 +49,7 @@ pub fn run(mut bytecode: LeblancBytecode) {
         /*if let Some(module) = core_modules.iter().find(|module| module.name == import) {
             globals.append(&mut module.methods_as_objects());
         }*/
-    }
+    }*/
 
     let mut runner = LeBlancRunner::new(globals);
 

@@ -107,6 +107,7 @@ EnumItem: Component = {
 }
 
 ClassItem: Component = {
+    <l:@L> <typing:TypePlus> <ident:Word> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::Property { typing, ident, value: None }),
     <l:@L> <typing:TypePlus> <ident:Word> "=" <value:WeakExpression> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::Property { typing, ident, value: Some(value) }),
     <item:FunctionDeclaration> => item
 }
