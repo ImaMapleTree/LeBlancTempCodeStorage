@@ -9,6 +9,7 @@ pub(crate) mod utils;
 pub mod hex;
 pub(crate) mod copystring;
 pub(crate) mod exception;
+pub(crate) mod component_map;
 pub mod strawberry;
 pub mod bridge;
 pub mod types;

@@ -1,44 +1,10 @@
-Trait Paper {
-    property string signature;
-}
-
-Class Document(Paper) {
-    func Document() {}
-    func Document(string sig) { self.signature = sig; }
-}
-
-Class Folder {
-    Paper![] papers = [];
-    func add_paper(Paper! paper) {
-        papers.append(paper);
-    }
-
-    func get_paper(int index) returns Paper! {
-        return papers.get(index);
-    }
-}
-
 func main() {
-    Folder f = Folder();
+    print("Hello world!");
 
-    Paper! p = f.get(0);
-
-    string signature;
-    if p is null {
-        signature = "N/A";
-    } else if p.signature is null {
-        signature = "N/A";
-    } else {
-        signature = p.signature;
-    }
-
-    if p is null {
-        signature = "N/A";
-    } else {
-        signature = p.signature ?? "N/A";
-    }
-
-    signature = p?.signature ?? "N/A";
 
 }
 
+func test(int a, string b) returns Paper? {
+
+
+}

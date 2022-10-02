@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use lalrpop_util::lalrpop_mod;
 use sharedlib::{FuncTracked, FuncUnsafe, LibRc, LibUnsafe, Symbol};
+use crate::leblanc::compiler::generator::generate;
 use crate::leblanc::compiler::parser::ast::{Component, push_byte_location};
 use crate::leblanc::compiler::parser::error::report;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, Stringify};
@@ -16,7 +17,7 @@ pub mod import;
 pub mod parser;
 pub mod bytecode;
 pub mod compile_types;
-pub mod generate;
+pub mod generator;
 
 lalrpop_mod!(pub lalrpop, "/leblanc/compiler/parser/leblanc.rs");
 
@@ -40,7 +41,7 @@ pub fn compile(name: String) {
 
     let result = lalrpop::FileParser::new().parse(&input);
     match result {
-        Ok(g) => {}
+        Ok(g) => generate(g),
         Err(b) => report(b)
     }
 }

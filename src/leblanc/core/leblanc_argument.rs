@@ -52,6 +52,10 @@ impl LeBlancArgument {
         return_args
     }
 
+    pub fn from_leblanc_types(args: Vec<LeBlancType>) -> Vec<LeBlancArgument> {
+        args.iter().enumerate().map(|(v, t)| LeBlancArgument::default(*t, v as u32)).collect()
+    }
+
     pub fn null(position: u32) -> LeBlancArgument {
         LeBlancArgument {
             typing: LeBlancType::Null,

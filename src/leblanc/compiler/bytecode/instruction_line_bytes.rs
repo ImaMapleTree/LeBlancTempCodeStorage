@@ -31,6 +31,10 @@ impl InstructionBytecode {
         self.line_number.consume_bytes(line_number.to_hex(128)).expect("Line number too many bytes");
     }
 
+    pub fn line_number(&self) -> u32 {
+        self.line_number.bytes().to_hexable()
+    }
+
     pub fn add_instruction(&mut self, instruction: Hexadecimal, instruction_argument: Hexadecimal) {
         self.instructions.consume_bytes(instruction).expect("instruction too many bytes");
         self.instruction_arguments.consume_bytes(instruction_argument).expect("instruction arg too many bytes");

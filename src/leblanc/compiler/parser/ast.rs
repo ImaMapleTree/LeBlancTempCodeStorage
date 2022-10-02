@@ -18,7 +18,7 @@ pub unsafe fn push_byte_location(value: (usize, usize)) {
     BYTE_LOCATION.push(value);
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq)]
 pub struct Location {
     pub byte_pos: (usize, usize),
     pub line_number: usize,
@@ -36,7 +36,7 @@ impl Location {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Located<T> {
     pub location: Location,
     pub data: T,
@@ -73,6 +73,27 @@ impl Default for Ident {
     }
 }
 
+
+///`Function`
+/// ## header: `Box<Component>`, body: Statement, tags: `Vec<String>`
+///`FunctionHeader`
+/// ## name: String, args: `Vec<Expression>`, returns: `Vec<LeBlancType>`
+///`Class`
+/// ## name: String, super_traits: `Vec<String>`, items: `Vec<Component>`
+///`Trait`
+/// ## name: String, super_traits: `Vec<String>`, items: `Vec<Component>`
+///`Extension`
+/// ## name: String, targets: `Vec<LeBlancType>`, items: `Vec<Component>`
+///`Property`
+/// ## typing: LeBlancType, ident: String, value: `Option<Expression>`
+///`Import`
+/// ## module: String, import: `Option<Vec<String>>`
+///`ExtImport`
+/// ## module: String, extension: String
+///`Enum`
+/// ## name: String, type_params: `Option<Vec<String>>`, items: `Vec<Component>`
+///`EnumItem`
+/// ## name: String, nested: `Vec<LeBlancType>`
 #[derive(Clone, Debug)]
 pub enum Cmpnt {
     Function { header: Box<Component>, body: Statement, tags: Vec<String> },
@@ -89,7 +110,7 @@ pub enum Cmpnt {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Stmnt {
     Global {
         statement: Box<Statement>
@@ -118,7 +139,7 @@ pub enum Stmnt {
     Return { statement: Box<Statement> }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Conditional {
     If {
         condition: Expression,
@@ -135,7 +156,7 @@ pub enum Conditional {
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expr {
     Break,
 
@@ -250,7 +271,7 @@ pub enum Expr {
     Constant {constant: Const }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Id {
     Ident { ident: String },
     ObjIdent { ident: Box<Ident>, attr: Box<Ident>},
@@ -259,7 +280,7 @@ pub enum Id {
 }
 
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub enum BinaryOperator {
     BinAdd,
     BinSub,
@@ -271,7 +292,7 @@ pub enum BinaryOperator {
     BinRShift
 }
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub enum UnaryOperator {
     UPositive,
     UNegative,
@@ -281,7 +302,7 @@ pub enum UnaryOperator {
     UDecrement
 }
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub enum Comparator {
     Equal,
     NotEqual,
@@ -292,7 +313,7 @@ pub enum Comparator {
     In
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CondType {
     If,
     ElseIf,

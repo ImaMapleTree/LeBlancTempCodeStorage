@@ -37,6 +37,12 @@ pub struct FileHeaderBytecode {
     global_name: ByteRestriction
 }
 
+impl Default for FileHeaderBytecode {
+    fn default() -> Self {
+        FileHeaderBytecode::new()
+    }
+}
+
 impl FileHeaderBytecode {
     pub fn new() -> FileHeaderBytecode {
         FileHeaderBytecode {

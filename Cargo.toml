@@ -4,9 +4,9 @@ name = "leblanc"
 version = "0.1.0"
 edition = "2021"
 
-[lib]
-name = "leblanc"
-path = "src/lib.rs"
+#[lib]
+#name = "leblanc"
+#path = "src/lib.rs"
 
 [[bin]]
 name = "leblanc"

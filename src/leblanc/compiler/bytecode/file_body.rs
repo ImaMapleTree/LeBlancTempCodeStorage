@@ -17,6 +17,12 @@ pub struct FileBodyBytecode {
     extension: ByteRestriction,
 }
 
+impl Default for FileBodyBytecode {
+    fn default() -> Self {
+        FileBodyBytecode::new()
+    }
+}
+
 impl FileBodyBytecode {
     pub fn new() -> FileBodyBytecode {
         FileBodyBytecode {

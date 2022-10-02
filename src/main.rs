@@ -56,8 +56,8 @@ use crate::leblanc::core::interpreter::run;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::native_types::string_type::leblanc_object_string;
 
-/*#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;*/
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 
 fn main() -> io::Result<()> {
@@ -76,8 +76,8 @@ fn main() -> io::Result<()> {
    //compile("test.lb".to_string(), CompilationMode::Full);
 
 
-    let bc = read_file("test.lb".to_string());
-    run(bc);
+    //let bc = read_file("test.lb".to_string());
+    //run(bc);
 
     let elapsed = now.elapsed();
     println!("Total Elapsed: {}", elapsed.as_secs_f64());

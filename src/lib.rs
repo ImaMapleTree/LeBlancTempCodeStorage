@@ -10,6 +10,7 @@
 #![feature(ptr_const_cast)]
 #![feature(cell_leak)]
 #![feature(ptr_as_uninit)]
+#![feature(let_else)]
 
 pub mod leblanc;
 pub mod playground;
