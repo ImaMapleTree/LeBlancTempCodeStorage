@@ -1,10 +1,16 @@
 func main() {
-    print(fib(2));
+    //loop_func(15, 0);
+    print(fib(5));
 }
 
 func fib(int a) {
     if a <= 1: return a;
 
     return fib(a - 2) + fib(a - 1);
+}
 
+func loop_func(int a, int b) returns int {
+    print(fib(b));
+    if a <= 1: return 0;
+    return loop_func(a - 1, b + 1);
 }

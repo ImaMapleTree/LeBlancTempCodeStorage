@@ -18,6 +18,7 @@ use crate::leblanc::core::interpreter::instruction_execution2::execute_instructi
 
 use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
 use crate::leblanc::core::interpreter::instructions2::Instruction2;
+use crate::leblanc::core::interpreter::leblanc_runner::get_globals;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{ArcToRc, LeBlancObject, QuickUnwrap, RustDataCast, Stringify};
 use crate::leblanc::core::native_types::error_type::LeblancError;
@@ -55,6 +56,7 @@ pub struct LeblancHandle {
     pub current_instruct: usize,
     pub null: bool,
     pub is_async: bool,
+    pub global_index: usize,
 }
 
 impl PartialEq for LeblancHandle {
@@ -75,7 +77,8 @@ impl LeblancHandle {
             instructions: Arc::new(vec![]),
             current_instruct: 0,
             null: true,
-            is_async: false
+            is_async: false,
+            global_index: usize::MAX
         }
     }
 
@@ -97,30 +100,18 @@ impl LeblancHandle {
             instructions: Arc::from(instructs2),
             current_instruct: 0,
             null: false,
-            is_async: false
+            is_async: false,
+            global_index: unsafe { get_globals() }.len()
         }
     }
 
     pub fn execute(&mut self, inputs: &mut [LBObject]) -> LBObject {
-        inputs.iter_mut().enumerate().for_each(|(i, item)| {
+        /*inputs.iter_mut().enumerate().for_each(|(i, item)| {
             self.variables[i] = take(item)
-        });
-        self.current_instruct = 0;
-        let total_instructions = self.instructions.len();
-        let mut stack = LeBlancStack::new();
-        while self.current_instruct < total_instructions {
-            let instruction = self.instructions[self.current_instruct];
-            if instruction.get_inum() == 21 {
-                return stack.pop().unwrap()
-            }
-            let iexec = execute_instruction2(instruction)(self, instruction, &mut stack);
-            self.debug(instruction);
-            if let Err(error) = iexec {
-                return self.cascade_error(error)
-            }
-            self.current_instruct += 1;
-        }
-        stack.pop().unwrap_or_else(LeBlancObject::unsafe_null)
+        });*/
+
+
+        LeBlancObject::unsafe_null()
     }
 
     fn cascade_error(&self, err: LBObject) -> LBObject {
@@ -276,7 +267,8 @@ impl LeblancHandle {
             instructions: self.instructions.clone(),
             current_instruct: 0,
             null: false,
-            is_async: self.is_async
+            is_async: self.is_async,
+            global_index: self.global_index
         }
     }
 }
@@ -291,7 +283,8 @@ impl Clone for LeblancHandle {
             instructions: self.instructions.clone(),
             current_instruct: self.current_instruct,
             null: self.null,
-            is_async: self.is_async
+            is_async: self.is_async,
+            global_index: self.global_index
         }
     }
 }

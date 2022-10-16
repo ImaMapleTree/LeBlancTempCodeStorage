@@ -24,6 +24,7 @@ impl CodeGenerator {
                         function_bytecode.add_argument(arg.typing);
                     }
                     println!("Compiling for: {}", name);
+                    //println!("Args: {:#?}", self.type_map);
                     function_bytecode.set_name(name.to_string());
                     returns.iter().for_each(|ty| function_bytecode.add_return(*ty))
                 }

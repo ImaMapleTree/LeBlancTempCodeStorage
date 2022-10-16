@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use arrayvec::ArrayVec;
 use crate::leblanc::configuration::SSM_KB;
+use crate::leblanc::core::interpreter::execution_context::ExecutionContext;
 use crate::leblanc::core::interpreter::instructions2::Instruction2;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
@@ -8,7 +9,7 @@ use crate::leblanc::core::module::CoreModule;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 
 pub type LeBlancStack = ArrayVec<LBObject, { (SSM_KB * 1000) / 200 }>;
-pub type IExec = fn(&mut LeblancHandle, Instruction2, &mut LeBlancStack) -> IExecResult;
+pub type IExec = fn(&mut ExecutionContext, Instruction2) -> IExecResult;
 pub type IExecResult = Result<(), LBObject>;
 
 pub type LBObject = Arc<Strawberry<LeBlancObject>>;

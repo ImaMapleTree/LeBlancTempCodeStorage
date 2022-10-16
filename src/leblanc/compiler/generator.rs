@@ -144,7 +144,7 @@ impl CodeGenerator {
             self.reporter.add_snippet(snippet);
             Err(())
         } else {
-            let var_id = self.type_map.len();
+            let var_id = self.get_idents_for_function(self.function_number).len();
             self.type_map.insert(context, (ty, var_id));
             Ok(CompileInfo::new(id, ty, var_id))
         }
