@@ -1,4 +1,4 @@
-use crate::leblanc::compiler::generator::generator_types::GeneratedFuncHeader;
+use crate::leblanc::compiler::generator::generator_types::FunctionSignature;
 use crate::leblanc::compiler::parser::ast::{BinaryOperator, Comparator, Constant, Expr, Expression, Ident, Statement};
 use crate::leblanc::core::native_types::LeBlancType;
 
@@ -16,6 +16,16 @@ impl TypedVariable {
     }
 }
 
+impl From<&Expression> for TypedVariable {
+    fn from(expr: &Expression) -> Self {
+        if let Expr::TypedVariable { typing, variable} = &expr.data {
+            TypedVariable::new(*typing, variable.clone())
+        } else {
+            panic!("Invalid Type! Cannot make {:?} into TypedVariable", expr.data)
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Property {
     pub typing: LeBlancType,
@@ -25,7 +35,7 @@ pub struct Property {
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Function {
-    pub header: GeneratedFuncHeader,
+    pub header: FunctionSignature,
     pub body: Statement,
     pub tags: Vec<String>
 }

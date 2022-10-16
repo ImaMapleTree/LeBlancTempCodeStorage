@@ -1,10 +1,7 @@
+using main;
+
 func main() {
-    print("Hello world!");
-
-
-}
-
-func test(int a, string b) returns Paper? {
-
+    int a = 3;
+    a = "hello world";
 
 }

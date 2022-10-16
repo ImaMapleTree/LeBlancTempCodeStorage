@@ -20,7 +20,7 @@ impl ByteRestriction {
         ByteRestriction {
             limit,
             repeated,
-            bytes: Hexadecimal::empty(),
+            bytes: Hexadecimal::default(),
             segments: vec![]
         }
     }
@@ -84,7 +84,7 @@ impl ByteRestriction {
     }
 
     pub fn join(&self, data: &ByteRestriction) -> Hexadecimal {
-        let mut hex = Hexadecimal::empty();
+        let mut hex = Hexadecimal::default();
         for i in 0..self.segments.len() {
             hex.append(&mut self.segments[i].clone());
             hex.append(&mut data.segments[i].clone());
@@ -93,7 +93,7 @@ impl ByteRestriction {
     }
 
     pub fn join_uncloned(&mut self, data: &mut ByteRestriction) -> Hexadecimal {
-        let mut hex = Hexadecimal::empty();
+        let mut hex = Hexadecimal::default();
         for i in 0..self.segments.len() {
             hex.append(&mut self.segments[i]);
             hex.append(&mut data.segments[i]);
@@ -102,7 +102,7 @@ impl ByteRestriction {
     }
 
     pub fn join_thrice(&self, second: &ByteRestriction, third: &ByteRestriction) -> Hexadecimal {
-        let mut hex = Hexadecimal::empty();
+        let mut hex = Hexadecimal::default();
         for i in 0..self.segments.len() {
             hex.append(&mut self.segments[i].clone());
             hex.append(&mut second.segments[i].clone());
@@ -113,7 +113,7 @@ impl ByteRestriction {
 
     pub fn bytes(&self) -> Hexadecimal {
         if self.repeated {
-            let mut hex = Hexadecimal::empty();
+            let mut hex = Hexadecimal::default();
             self.segments.iter().for_each(|seg| hex += seg.clone());
             return hex;
         }

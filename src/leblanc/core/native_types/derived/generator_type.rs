@@ -48,7 +48,7 @@ impl LeblancIterable for LeblancGenerator {
         self.leblanc_handle.execute_from_last_point().to_mutex()
     }
     fn has_next(&self) -> bool {
-        self.leblanc_handle.current_instruct < self.leblanc_handle.instructions.len() as u64
+        self.leblanc_handle.current_instruct < self.leblanc_handle.instructions.len()
     }
 
     fn reverse(&mut self) {

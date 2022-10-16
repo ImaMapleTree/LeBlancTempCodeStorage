@@ -424,6 +424,21 @@ impl LeBlancObjectData {
         }
     }
 
+    pub fn as_i64(&self) -> i64 {
+        match self {
+            LeBlancObjectData::Char(item) => (*item).to_digit(10).unwrap() as i64,
+            LeBlancObjectData::Short(item) => *item as i64,
+            LeBlancObjectData::Int(item) => *item as i64,
+            LeBlancObjectData::Int64(item) => *item as i64,
+            LeBlancObjectData::Int128(item) => *item as i64,
+            LeBlancObjectData::Arch(item) => *item as i64,
+            LeBlancObjectData::Float(item) => *item as i64,
+            LeBlancObjectData::Double(item) => *item as i64,
+            LeBlancObjectData::Boolean(item) => *item as i64,
+            _ => 0
+        }
+    }
+
     pub fn simple_operation(&self, other: &Self, _operation: LBODOperation) -> LeBlancObjectData {
         match self {
             LeBlancObjectData::Int(data) => { LeBlancObjectData::Int(*data + other.as_i128() as i32)}

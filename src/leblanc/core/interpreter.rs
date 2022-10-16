@@ -18,6 +18,8 @@ pub mod instructions;
 pub mod interactive;
 pub mod instruction_execution;
 pub mod leblanc_runner;
+pub mod instructions2;
+pub mod instruction_execution2;
 
 
 pub fn run(mut bytecode: LeblancBytecode) {

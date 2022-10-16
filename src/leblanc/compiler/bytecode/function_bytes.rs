@@ -192,10 +192,13 @@ impl FunctionBytecode {
             fb.precompiled_seg_length.consume_bytes(precompiled_seg_length).unwrap();
             fb.precompiled_code.consume_bytes(precompiled_code).unwrap();
         }
+        println!("NAME: {}", String::from_hex(&name));
 
+        println!("PRECOMPILED TOTAL LENGTH: {:?}", precompiled_total_length_u64);
         let mut instructions_total_size = hex.scrape(fb.instructions_total_size.unpack().unwrap() as usize);
         instructions_total_size.extend_to_length(8);
         let instruction_total_size_u64 = instructions_total_size.to_hexable::<u64>();
+        println!("INSTRUCTION TOTAL LENGTH: {:?}", instruction_total_size_u64);
         let mut instructions = hex.scrape(instruction_total_size_u64 as usize);
         while !instructions.is_empty() {
             let instruction_line_length = instructions.scrape(fb.instruction_line_length.unpack().unwrap() as usize);

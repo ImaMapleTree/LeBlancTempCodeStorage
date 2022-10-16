@@ -3,6 +3,7 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::LeBlancType;
 
+//noinspection RsExternalLinter
 #[derive(Eq, Debug, Clone, Hash)]
 pub struct PartialFunction {
     pub name: String,

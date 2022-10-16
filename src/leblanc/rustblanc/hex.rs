@@ -8,7 +8,7 @@ use std::vec;
 use crate::leblanc::rustblanc::Hexable;
 use crate::leblanc::include::lib::leblanc_colored::{Color, ColorBright, colorize};
 
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash, PartialEq, Eq, Default)]
 pub struct Hexadecimal {
     bytes: Vec<String>
 }
@@ -17,12 +17,6 @@ impl Hexadecimal {
     pub fn new(bytes: Vec<String>) -> Hexadecimal {
         Hexadecimal {
             bytes
-        }
-    }
-
-    pub fn empty() -> Hexadecimal {
-        Hexadecimal {
-            bytes: Vec::new()
         }
     }
 
@@ -109,6 +103,10 @@ impl Hexadecimal {
             new_hex.push(self.bytes.remove(0))
         }
         Hexadecimal::new(new_hex)
+    }
+
+    pub fn hex<T: Hexable>(mut self, other: T, bytes: usize) -> Hexadecimal {
+        self.append(&mut other.to_hex(bytes)); self
     }
 
     pub fn to_hexable<T: Hexable>(&self) -> T {

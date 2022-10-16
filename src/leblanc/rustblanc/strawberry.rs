@@ -1,4 +1,4 @@
-use std::ptr::{addr_of, null, null_mut};
+
 use parking_lot::lock_api::MutexGuard;
 use parking_lot::{Mutex, RawMutex};
 
@@ -31,6 +31,7 @@ impl<T: Clone + Default> Strawberry<T> {
         cloned
     }
 
+    //noinspection RsExternalLinter
     pub fn underlying_pointer(&self) -> &mut T {
         unsafe {&mut *self.mutex.data_ptr()}
     }
@@ -39,16 +40,6 @@ impl<T: Clone + Default> Strawberry<T> {
         self.mutex.try_lock()
     }
 }
-
-/*pub struct StrawberryPointer<T> {
-    pointer: *mut T
-}
-
-impl<T> StrawberryPointer<T> {
-    pub fn unwrap(&self) -> &mut T {
-    }
-
-}*/
 
 unsafe impl<T: Clone + Default> Sync for Strawberry<T> {
 

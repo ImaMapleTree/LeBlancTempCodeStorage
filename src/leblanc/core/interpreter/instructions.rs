@@ -1,3 +1,4 @@
+use core::fmt::{Display, Formatter};
 use strum_macros::EnumVariantNames;
 use strum::VariantNames;
 use crate::leblanc::rustblanc::Hexable;
@@ -41,9 +42,9 @@ pub enum InstructionBase {
     BinaryXor,
 
     Equality(u8),
-    Comparator_If,
-    Comparator_ElseIf,
-    Comparator_Else,
+    ComparatorIf,
+    ComparatorElseIf,
+    ComparatorElse,
 
     ForLoop,
     WhileLoop,

@@ -1,17 +1,19 @@
 use core::fmt::{Display, Formatter};
+use std::ffi::OsStr;
 use std::ops::Add;
+use serde::{Serialize};
+
 
 static mut STRING_REFS: Vec<String> = Vec::new();
 
-#[derive(Copy, Clone, Eq, Hash, PartialOrd, Ord, Debug)]
+#[derive(Copy, Clone, Eq, Hash, PartialOrd, Ord, Debug, Serialize, Default)]
 pub struct CopyString {
     string: &'static str
 }
 
 impl CopyString {
-    pub fn new<T: Display>(string: T) -> CopyString {
-        let string = string.to_string();
-        let string_ref = unsafe {
+    fn get_string_ref(string: String) -> &'static String {
+        unsafe {
             let prev_ref = STRING_REFS.iter().find(|p| *p == &string);
             match prev_ref {
                 Some(reference) => reference,
@@ -20,11 +22,17 @@ impl CopyString {
                     STRING_REFS.last().unwrap()
                 }
             }
-        };
-
-        CopyString {
-            string: string_ref
         }
+    }
+
+    pub fn new<T: Display>(string: T) -> CopyString {
+        CopyString {
+            string: CopyString::get_string_ref(string.to_string())
+        }
+    }
+
+    pub const fn constant() -> CopyString {
+        CopyString { string: "" }
     }
 
     pub fn str(&self) -> &str {
@@ -32,11 +40,15 @@ impl CopyString {
     }
 }
 
-impl Default for CopyString {
-    fn default() -> Self {
-        CopyString {
-            string: ""
-        }
+impl From<String> for CopyString {
+    fn from(str: String) -> Self {
+        CopyString { string: CopyString::get_string_ref(str) }
+    }
+}
+
+impl From<&String> for CopyString {
+    fn from(str: &String) -> Self {
+        CopyString { string: CopyString::get_string_ref(str.to_owned()) }
     }
 }
 
@@ -59,5 +71,11 @@ impl<T: Display> CopyStringable for T {
 impl<T: Display> PartialEq<T> for CopyString {
     fn eq(&self, other: &T) -> bool {
         self.string == other.to_string()
+    }
+}
+
+impl AsRef<OsStr> for CopyString {
+    fn as_ref(&self) -> &OsStr {
+        self.string.as_ref()
     }
 }

@@ -1,0 +1,138 @@
+
+func addStringAndInt(flex a, flex b) {
+    int i = guard {
+        !int.assignable_from(b) => return "",
+        else => b as int;
+    }
+
+    string str = guard {
+        !string.assignable_from(str) => return "",
+        else => a as string;
+    }
+
+    return str + i.to_string();
+}
+
+
+func noGuards() {
+    if wifi {
+        if login {
+            if admin {
+                seeAdminPanel();
+            } else {
+                return print("Must be an admin");
+            }
+        } else {
+            return print("Must be logged in");
+        }
+    } else {
+        return print("Must have wifi")
+    }
+}
+
+func withJavaGuards() {
+    if (!wifi) {
+        return print("Must have wifi");
+    }
+    if (!login) {
+        return print("Must be logged in");
+    }
+    if (!admin) {
+        return print("Must be an admin");
+    }
+
+    seeAdminPanel();
+}
+
+func withGuards() {
+    guard {
+        !wifi => return print("Must have wifi");
+        !login => return print("Must be logged in");
+        !admin => return print("Must be an admin");
+    }
+
+    seeAdminPanel();
+}
+
+func javaGuard() {
+    List instances = get_instances();
+
+    if (instances == null) {
+        instances = fallback.instances;
+    }
+
+    if (instances == null) return;
+
+    doSomethingWithInstances(instances);
+
+}
+
+
+func leblancGuard() {
+    List instances = get_instances();
+
+    if (instances == null) {
+        instances = fallback.instances;
+    }
+
+    guard (instances == null) => return;
+    return doSomethingWithInstances(instances);
+}
+
+func leblancGuardElse() {
+    List instances = get_instances();
+
+    guard (instances == null) {
+        instances = fallback.instances;
+    } else {
+        return;
+    }
+
+    return doSomethingWithInstances(instances);
+}
+
+func leblancGuardElseShort() {
+    Reflection r = Reflection.of(object);
+    List<flex>> instances = r.get("instances");
+
+    instances = guard (instances == null) => {
+        r.get("wrapper").get("instances");
+    } else: return;
+
+
+    doSomethingWithInstances(instances);
+}
+
+func theUgly(int a) {
+    return guard {
+        a < 100 => 100,
+        a >= 300 => 300,
+        other => a
+    }
+
+
+
+}
+
+
+
+Class Book {
+    property string title;
+    property string author;
+    property int copies;
+    property Person owner;
+
+    func equals(flex other) returns boolean {
+
+        Book book = guard {
+            other == null => return false;
+            !Book.assignable_from(other) => return false;
+
+            otherwise => other as book;
+        }
+
+        guard (book.title != self.title) => return false;
+
+        return book.author == self.author;
+    }
+}

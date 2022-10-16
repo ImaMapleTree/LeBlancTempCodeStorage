@@ -1,0 +1,4 @@
+// Relies on CustomerDetailsReponse
+
+
+using CustomerDetailsResponse from CustomerDetailsResponse;

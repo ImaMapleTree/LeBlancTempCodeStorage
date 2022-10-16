@@ -1,0 +1,10 @@
+func main() {
+    print(fib(2));
+}
+
+func fib(int a) {
+    if a <= 1: return a;
+
+    return fib(a - 2) + fib(a - 1);
+
+}

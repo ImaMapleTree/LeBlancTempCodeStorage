@@ -1,0 +1,8 @@
+service requires dto;
+client requires {
+    dto,
+    service,
+    service.helper
+}
+controller requires service;
+

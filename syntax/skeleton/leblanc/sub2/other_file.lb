@@ -1,0 +1,8 @@
+using test; // From skeleton it knows that sub2 relies on sub1 so it'll search for test in sub1
+using person; // Prioritizes "person" in own folder hierarchy
+using person as per from sub1; // Now imports person from sub1
+using hello_world from sub1.person; // imports specifically "hello_world" from sub1.person
+
+
+using time from inner_dir; // Because sub2 relies on sub1 we don't need to do sub1.inner_dir
+using utils; // utils is exported out of inner_dir so we're happy about this

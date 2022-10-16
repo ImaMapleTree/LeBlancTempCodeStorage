@@ -10,8 +10,9 @@ use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
 use crate::leblanc::core::native_types::LeBlancType::{Arch, Group, Boolean, Char, Class, ConstantFlex, Double, Dynamic, Exception, Flex, Float, Function, Int, Int128, Int64, Module, Null, SelfType, Short, Marker, Promise, Trait, Derived};
+use serde::{Serialize};
 
-pub mod NULL;
+pub mod null;
 pub mod string_type;
 pub mod base_type;
 pub mod block_type;
@@ -32,9 +33,11 @@ pub mod group_type;
 pub mod promise_type;
 pub mod rust_type;
 
+
 static VARIANTS: [&str; 24] = ["flex", "Self", "char", "short", "int", "int64", "int128", "arch", "float", "double", "boolean", "string", "group", "function", "module", "promise", "class", "dynamic", "exception", "marker", "null", "List", "iterator", "class.0"];
 
-#[derive(Eq, Clone, Copy, Debug, Ord, PartialOrd, Hash, Default)]
+//noinspection RsExternalLinter
+#[derive(Eq, Clone, Copy, Debug, Ord, PartialOrd, Hash, Default, Serialize)]
 pub enum LeBlancType {
     Class(CopyString), // User defined class with ID
     Flex,
@@ -155,8 +158,8 @@ impl LeBlancType {
             Dynamic => "dynamic",
             Exception => "exception",
             ConstantFlex(_) => "int",
-            Derived(Derive) => {
-                match Derive {
+            Derived(derive) => {
+                match derive {
                     DerivedType::TypedList(_) => "list",
                     DerivedType::List => "list",
                     DerivedType::Iterator => "iterator",
@@ -190,7 +193,7 @@ impl LeBlancType {
             Float => f32::from_str(string.as_str()).unwrap().to_hex(128),
             Double => f64::from_str(string.as_str()).unwrap().to_hex(128),
             Boolean => bool::from_str(string.as_str()).unwrap().to_hex(128),
-            _String => string[1..string.len()-1].to_string().to_hex(128),
+            _string => string[1..string.len()-1].to_string().to_hex(128),
             _ => string.to_hex(128)
         }
     }

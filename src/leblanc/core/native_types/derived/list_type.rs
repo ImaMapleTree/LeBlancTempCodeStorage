@@ -1,14 +1,9 @@
 use core::fmt::{Display, Formatter};
 use std::cmp::Ordering;
 use fxhash::{FxHashMap, FxHashSet};
-
-
-use alloc::rc::Rc;
-use std::cell::RefCell;
 use std::collections::BTreeSet;
 use std::sync::Arc;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::Mutex;
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_list::{_internal_list_append_, _internal_list_iterate_, _internal_list_length_};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
@@ -133,15 +128,7 @@ impl PartialOrd for LeblancList {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         let self_len = self.internal_vec.len();
         let other_len = other.internal_vec.len();
-        if self_len == other_len {
-            Some(Ordering::Equal)
-        } else if self_len > other_len {
-            Some(Ordering::Greater)
-        } else if self_len < other_len {
-            Some(Ordering::Less)
-        } else {
-            None
-        }
+        self_len.partial_cmp(&other_len)
     }
 }
 

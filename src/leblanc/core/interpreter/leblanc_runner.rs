@@ -45,7 +45,7 @@ impl LeBlancRunner {
     }
 }
 
-pub unsafe fn get_globals() -> &'static Vec<Arc<Strawberry<LeBlancObject>>> {
-    &GLOBALS
+pub unsafe fn get_globals() -> &'static mut Vec<Arc<Strawberry<LeBlancObject>>> {
+    &mut GLOBALS
 }
 

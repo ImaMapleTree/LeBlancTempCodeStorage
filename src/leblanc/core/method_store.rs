@@ -41,6 +41,7 @@ impl MethodShell {
     }
 }
 
+//noinspection RsExternalLinter
 impl Hash for MethodShell {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.context.hash(state);

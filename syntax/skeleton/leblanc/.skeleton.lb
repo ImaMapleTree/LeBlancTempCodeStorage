@@ -1,0 +1,14 @@
+sub2, sub1 requires (
+    sub1,
+    sub2
+)
+
+// can alternatively be expressed as:
+
+
+// while this looks cyclic, it's not, imports just bring functions into context
+sub2 requires sub1;
+sub1 requires sub2;
+
+
+sub2 requires sub1.inner_dir.utils;

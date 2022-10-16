@@ -11,6 +11,11 @@
 #![feature(cell_leak)]
 #![feature(ptr_as_uninit)]
 #![feature(let_else)]
+#![feature(once_cell)]
+#![feature(hash_set_entry)]
+#![feature(try_trait_v2)]
+#![feature(is_some_and)]
+#![feature(path_file_prefix)]
 
 pub mod leblanc;
 pub mod playground;

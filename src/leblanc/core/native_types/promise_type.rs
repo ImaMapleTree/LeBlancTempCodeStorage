@@ -1,10 +1,8 @@
-use alloc::rc::Rc;
 use core::fmt::{Display, Formatter};
-use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 use fxhash::{FxHashMap, FxHashSet};
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_promise::_internal_promise_consume_;
@@ -56,7 +54,7 @@ impl PartialEq for LeblancPromise {
 
 impl PartialOrd for LeblancPromise {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self.eq(&other) {
+        match self.eq(other) {
             true => Some(Ordering::Equal),
             false => None
         }

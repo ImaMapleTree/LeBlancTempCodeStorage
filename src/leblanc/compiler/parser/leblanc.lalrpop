@@ -2,10 +2,11 @@ use std::str::FromStr;
 use crate::leblanc::compiler::parser::constant_evaluation::*;
 use crate::leblanc::compiler::parser::ast;
 use crate::leblanc::compiler::parser::ast::*;
-use crate::leblanc::compiler::parser::ast::make_ast;
 use crate::leblanc::core::native_types::*;
 use crate::leblanc::core::native_types::derived::*;
 use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
+use crate::{make_ast};
+
 
 
 grammar;
@@ -23,9 +24,12 @@ else {
     _ // Everything else
 }
 
-
 pub File: Vec<Component> = {
     <component:Component*> => component
+}
+
+pub SkeletonFile: Vec<Required> = {
+    <clauses:(<Requirements>)*> => clauses
 }
 
 Component: Component = {
@@ -34,20 +38,44 @@ Component: Component = {
     Class,
     Trait,
     Enum,
-    FunctionDeclaration
+    FunctionDeclaration,
+    RequirementStatement
+
+}
+
+RequirementStatement: Component = {
+   <l:@L> "requirements" "{" <required:(<Requirements>)*> "}" <r:@R> => make_ast!(l, r, Component, Cmpnt::Requirements { required } )
+}
+
+Requirements: Required = {
+    <l:@L> <dependees:ChainedIdent> "requires" <required:RequiredComponent> <r:@R> => {
+        make_ast!(l, r, Required, Reqs::Requires { dependees, required })
+    },
+    <l:@L> "export" <exports:ChainedIdent> ";" <r:@R> => {
+        make_ast!(l, r, Required, Reqs::Export { exports })
+    }
+}
+
+RequiredComponent: Vec<Ident> = {
+    <l:@L> "{" <required:ChainedIdent> "}" <r:@R> => {
+        required
+    },
+    <required:ChainedIdent> ";" => {
+        required
+    }
 }
 
 Import: Component = {
-    <l:@L> "using" <name:Word> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::Import { module: name, import: None }),
-    <l:@L> "using" <import:SubImports> "from" <module:Word> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::Import { module, import: Some(import) }),
-    <l:@L> "using" "ext" <extension:Word> "from" <module:Word> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::ExtImport { module, extension }),
-    <l:@L> "using" "extension" <extension:Word> "from" <module:Word> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::ExtImport { module, extension }),
+    <l:@L> "using" <name:ObjIdent> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::Import { module: name.resolve(), import: None }),
+    <l:@L> "using" <import:SubImports> "from" <module:ObjIdent> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::Import { module: module.resolve(), import: Some(import) }),
+    <l:@L> "using" "ext" <extension:ObjIdent> "from" <module:ObjIdent> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::ExtImport { module: module.resolve(), extension: extension.resolve() }),
+    <l:@L> "using" "extension" <extension:ObjIdent> "from" <module:ObjIdent> ";" <r:@R> => make_ast!(l, r, Component, Cmpnt::ExtImport { module: module.resolve(), extension: extension.resolve() }),
 }
 
 SubImports: Vec<String> = {
-    <import:Word> <o: ("," <Word>)*> => {
+    <import:ObjIdent> <o: ("," <Word>)*> => {
         let mut o = o;
-        o.insert(0, import);
+        o.insert(0, import.resolve());
         o
     }
 }
@@ -66,7 +94,7 @@ Class: Component = {
      }
 }
 
-pub ClassTest: Component = {
+ClassTest: Component = {
     <l:@L> "Class" <name:Word> <tr:SuperTraits?> "{" <items:ClassItem*> "}" <r:@R> => {
         Component {
             location: Location::new((l, r)),
@@ -197,9 +225,7 @@ Statement: Statement = {
     ForLoop,
     InfLoop,
     WhileLoop,
-    ConditionalIf,
-    ConditionalElseIf,
-    ConditionalElse,
+    MultiConditional,
     RefStatement
 }
 
@@ -264,6 +290,28 @@ WhileLoop: Statement = {
     <l:@L> "while" <weak:WeakExpression> ":" <statement:ResolveStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::While { condition: weak, statement: Box::new(statement)}),
 }
 
+MultiConditional: Statement = {
+    <l:@L> <ifc:ConditionalIf> <mut elif:(<ConditionalElseIf>)+> <elsec:ConditionalElse> <r:@R> => {
+        let mut conditionals = vec![ifc];
+        conditionals.append(&mut elif);
+        conditionals.push(elsec);
+        make_ast!(l, r, Statement, Stmnt::MultiConditional { conditionals })
+    },
+    <l:@L> <ifc:ConditionalIf> <mut elif:(<ConditionalElseIf>)+> <r:@R> => {
+        let mut conditionals = vec![ifc];
+        conditionals.append(&mut elif);
+        make_ast!(l, r, Statement, Stmnt::MultiConditional { conditionals })
+    },
+    <l:@L> <ifc:ConditionalIf> <elsec:ConditionalElse> <r:@R> => {
+        let mut conditionals = vec![ifc, elsec];
+        make_ast!(l, r, Statement, Stmnt::MultiConditional { conditionals })
+    },
+    <l:@L> <ifc:ConditionalIf> <r:@R> => {
+        let mut conditionals = vec![ifc];
+        make_ast!(l, r, Statement, Stmnt::MultiConditional { conditionals })
+    },
+}
+
 ConditionalIf: Statement = {
     <l:@L> "if" <weak:WeakExpression> <statement:BlockStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Conditional { conditional: Conditional::If { condition: weak, statement: Box::new(statement) } }),
     <l:@L> "if" <weak:WeakExpression> ":" <statement:ResolveStatement> <r:@R> => make_ast!(l, r, Statement, Stmnt::Conditional { conditional: Conditional::If { condition: weak, statement: Box::new(statement) } }),
@@ -326,7 +374,7 @@ RangeExpression: Expression = {
     <l:@L> <start:NotExpression> "to" <bound:NotExpression> <step: ("by" <Lambda>)?> <r:@R> => {
         let step = Box::new(match step {
             Some(s) => s,
-            None => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Whole(1, Some(LeBlancType::Int)) })
+            None => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Whole(1, Some(LeBlancType::Int), Location::new((l, r))) })
         });
         make_ast!(l, r, Expression, Expr::RangeExpression { start: Box::new(start), bound: Box::new(bound), step })
     },
@@ -462,28 +510,22 @@ LowLevelTerm: Expression = {
 
 ListIndex: Expression = {
     <l:@L> <i:LowLevelTerm> "[" <left:WeakExpression> ":" <right:WeakExpression> "]" <r:@R> => {
-        make_ast!(l, r, Expression, Expr::ListIndex { list: Box::new(i), slice: Box::new(Expr::Slice {
-                left: Box::new(left),
-                right: Box::new(right)
-            })
-        })
+        let slice: Expression = make_ast!(l, r, Expression, Expr::Slice {left: Box::new(left), right: Box::new(right)});
+        make_ast!(l, r, Expression, Expr::ListIndex { list: Box::new(i), slice: Box::new(slice)})
     },
     <l:@L> <i:LowLevelTerm> "[" <first:WeakExpression> <indices:CommaExpr> "]" <r:@R> => {
         let mut indices = indices;
         indices.insert(0, first);
-        make_ast!(l, r, Expression, Expr::ListIndex { list: Box::new(i), slice: Box::new(Expr::SeriesIndex {
-                indices
-
-            })
-        })
+        let series_index: Expression = make_ast!(l, r, Expression, Expr::SeriesIndex { indices });
+        make_ast!(l, r, Expression, Expr::ListIndex { list: Box::new(i), slice: Box::new(series_index)})
     },
 }
 
 ConstantTerm: Expression = {
-    <l:@L> <c:Number> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Whole(c, None) }),
-    <l:@L> <c:Float> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Float(c, None) }),
-    <l:@L> <c:StringLiteral> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::String(c) }),
-    <l:@L> <c:Boolean> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Boolean(c) }),
+    <l:@L> <c:Number> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Whole(c, None, Location::new((l, r))) }),
+    <l:@L> <c:Float> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Float(c, None, Location::new((l, r))) }),
+    <l:@L> <c:StringLiteral> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::String(c, Location::new((l, r))) }),
+    <l:@L> <c:Boolean> <r:@R> => make_ast!(l, r, Expression, Expr::Constant { constant: Const::Boolean(c, Location::new((l, r))) }),
 }
 
 
@@ -563,8 +605,8 @@ Float: f64 = {
     <l: r"\d+"> "." <r: r"\d+"> => f64::from_str(&(l.to_string() + "." + &r.to_string())).unwrap()
 }
 
-Number: i128 = {
-    <s:r"\d+"> => i128::from_str(s).unwrap(),
+Number: i64 = {
+    <s:r"\d+"> => i64::from_str(s).unwrap(),
 }
 
 StringLiteral: String = {

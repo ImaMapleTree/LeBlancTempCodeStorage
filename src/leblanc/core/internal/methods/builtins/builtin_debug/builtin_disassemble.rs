@@ -46,24 +46,24 @@ fn _BUILTIN_DISASSEMBLE(_self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<S
         let mut table = Table::new();
         table.set_format(*format::consts::FORMAT_CLEAN);
         for instruction in instructions.iter() {
-            if instruction.line_number != prev_line_number {
-                line_number_format = grow_to_size(&instruction.line_number.to_string(), 8);
-                prev_line_number = instruction.line_number;
+            if instruction.line() != prev_line_number {
+                line_number_format = grow_to_size(&instruction.line().to_string(), 8);
+                prev_line_number = instruction.line();
                 table.add_row(Row::new(vec![Cell::new("").with_hspan(5)]));
             } else {line_number_format = grow_to_size("", 8)}
 
-            let arg_string = match instruction.instruct {
-                InstructionBase::LoadLocal => format!("({})", leblanc_handle.lock().variable_context.as_ref().unwrap().values().find(|context| context.relationship == instruction.arg as u32).unwrap().name),
-                InstructionBase::LoadConstant => format!("({})", leblanc_handle.lock().constants[instruction.arg as usize].lock().data),
-                InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].lock().data.get_inner_method().unwrap().context.name.clone()}),
-                InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),
+            let arg_string = match instruction.to_string().as_str() {
+                "LOAD_VARIABLE" => format!("({})", leblanc_handle.lock().variable_context.as_ref().unwrap().values().find(|context| context.relationship == instruction.bytes()[0] as u32).unwrap().name),
+                "LOAD_CONSTANT" => format!("({})", leblanc_handle.lock().constants[instruction.bytes()[0] as usize].lock().data),
+                /*InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].lock().data.get_inner_method().unwrap().context.name.clone()}),
+                InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),*/
                 _ => "".to_string()
             };
             table.add_row(Row::new(vec![
                 Cell::new(&line_number_format),
                 Cell::new(&instruct_count.to_string()),
-                Cell::new(&(instruction.instruct.to_string())),
-                Cell::new(&instruction.arg.to_string()),
+                Cell::new(&(instruction.bytes()[0].to_string())),
+                Cell::new(&instruction.bytes()[0].to_string()),
                 Cell::new(&arg_string)
             ]));
             instruct_count += 2;

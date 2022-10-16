@@ -10,6 +10,8 @@
 #![feature(ptr_const_cast)]
 #![feature(cell_leak)]
 #![feature(ptr_as_uninit)]
+#![feature(try_trait_v2)]
+#![feature(path_file_prefix)]
 
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
@@ -40,6 +42,15 @@ use std::time::Instant;
 use clicolors_control::set_colors_enabled;
 use crate::leblanc::compiler::compile_types::CompilationMode;
 use crate::leblanc::core::native_types::LeBlancType;
+use mimalloc::MiMalloc;
+use sharedlib::{Data, FuncTracked, Lib, LibRc, LibTracked, LibUnsafe, Symbol};
+use crate::leblanc::core::module::CoreModule;
+use crate::leblanc::compiler::compile_types::full_reader::read_file;
+use crate::leblanc::compiler::generator::CodeGenerator;
+use crate::leblanc::core::interpreter::run;
+use crate::leblanc::core::leblanc_object::LeBlancObject;
+use crate::leblanc::core::native_types::string_type::leblanc_object_string;
+use crate::leblanc::rustblanc::path::ZCPath;
 
 
 pub mod leblanc;
@@ -47,22 +58,15 @@ pub mod playground;
 
 static INTERACTIVE: bool = false;
 
-use mimalloc::MiMalloc;
-use sharedlib::{Data, FuncTracked, Lib, LibRc, LibTracked, LibUnsafe, Symbol};
-use crate::leblanc::core::module::CoreModule;
-use crate::leblanc::compiler::{compile};
-use crate::leblanc::compiler::compile_types::full_reader::read_file;
-use crate::leblanc::core::interpreter::run;
-use crate::leblanc::core::leblanc_object::LeBlancObject;
-use crate::leblanc::core::native_types::string_type::leblanc_object_string;
 
-#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
+
+/*#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;*/
 
 
 fn main() -> io::Result<()> {
     let _DEBUG = true;
-    //playground::playground();
+    playground::playground();
 
     /*if INTERACTIVE {
         start();
@@ -71,13 +75,21 @@ fn main() -> io::Result<()> {
 
 
     set_colors_enabled(true);
-    compile("test.lb".to_string());
+    let mut generator = CodeGenerator::default();
+
+    generator.compile(ZCPath::new("test/test.lb"));
+    //println!("{:#?}", generator.file_system);
+    //println!("{:#?}", generator.type_map);
+    //println!("{:#?}", generator.func_map);
+    if generator.reporter.has_errors() {
+        generator.reporter.report();
+    }
 
    //compile("test.lb".to_string(), CompilationMode::Full);
 
 
-    //let bc = read_file("test.lb".to_string());
-    //run(bc);
+    let bc = read_file("test/test.lb".to_string());
+    run(bc);
 
     let elapsed = now.elapsed();
     println!("Total Elapsed: {}", elapsed.as_secs_f64());

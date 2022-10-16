@@ -36,7 +36,7 @@ pub struct RustObject {
 }
 
 impl PartialEq for RustObject {
-    fn eq(&self, other: &Self) -> bool {
+    fn eq(&self, _other: &Self) -> bool {
         true
     }
 }

@@ -1,0 +1,12 @@
+using BaseClient from client;
+using SqlDatabase from sql_interactions;
+
+// A very lazy way to define sub-modular dependencies
+// This is normally only done in very small projects where creating and maintaining a separate .skeleton file
+// would be unnecessary work
+requirements {
+    client, sql_interactions requires {
+        client,
+        sql_interactions
+    }
+}

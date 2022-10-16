@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 use std::fmt::{Display, Formatter};
-use std::hash::{Hash, Hasher};
+use std::hash::{Hash};
 
 #[derive(Eq, PartialEq, Ord, Hash, PartialOrd, Debug, Copy, Clone)]
 pub enum MethodTag {

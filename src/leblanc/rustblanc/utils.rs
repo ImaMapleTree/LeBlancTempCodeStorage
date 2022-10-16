@@ -46,12 +46,16 @@ pub struct Timings {
 }
 
 impl Timings {
+    //noinspection ALL
+    //noinspection ALL
     pub fn setup(&mut self) {
         if self.map.is_none() {
             self.map = Some(HashMap::new());
         }
     }
 
+    //noinspection ALL
+    //noinspection ALL
     pub fn lock(&mut self, name: String) {
         let zero_timing = Timing{count: 0, locked_calls: 0, time: 0.0, locks: 0};
         let mut timing = *self.map.as_ref().unwrap().get(&name).unwrap_or(&zero_timing);
@@ -59,6 +63,8 @@ impl Timings {
         self.map.as_mut().unwrap().insert(name, timing);
     }
 
+    //noinspection ALL
+    //noinspection ALL
     pub fn add_timing(&mut self, name: String, duration: f64) {
         let zero_timing = Timing{count: 0, locked_calls: 0, time: 0.0, locks: 0};
         let mut timing = *self.map.as_ref().unwrap().get(&name).unwrap_or(&zero_timing);
@@ -74,6 +80,8 @@ impl Timings {
         self.map.as_mut().unwrap().insert(name, timing);
     }
 
+    //noinspection ALL
+    //noinspection ALL
     pub fn print_timing(&self) {
         let mut table = Table::new();
         table.set_titles(Row::new(vec![
@@ -125,6 +133,8 @@ pub struct Timing {
 }
 
 impl Timing {
+    //noinspection ALL
+    //noinspection ALL
     pub fn zero() -> Timing {
         Timing {
             count: 0,

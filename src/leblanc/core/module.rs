@@ -1,10 +1,6 @@
-use alloc::rc::Rc;
-use std::alloc::{alloc, GlobalAlloc, Layout};
-use std::cell::RefCell;
 use std::fmt::{Display, Formatter};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
-use mimalloc::MiMalloc;
+use std::sync::{Arc};
 use crate::leblanc::compiler::compile_types::partial_function::PartialFunction;
 
 use crate::leblanc::core::leblanc_object::LeBlancObject;

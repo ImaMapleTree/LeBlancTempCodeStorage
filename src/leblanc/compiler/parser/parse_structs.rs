@@ -2,7 +2,6 @@ use alloc::rc::Rc;
 use core::fmt::{Display, Formatter};
 use core::slice::Iter;
 use std::cell::RefCell;
-use std::collections::HashSet;
 use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy)]

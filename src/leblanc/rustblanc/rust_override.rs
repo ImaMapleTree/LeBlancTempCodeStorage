@@ -239,3 +239,22 @@ impl Hexable for String {
         String::from_utf8_lossy(&bytes).to_string()
     }
 }
+
+pub trait OptionEquality<T> {
+    fn ieq(&self, other: &Option<T>) -> bool;
+
+    fn ieq_not_none(&self, other: &Option<T>) -> bool;
+}
+
+impl<T> OptionEquality<T> for Option<T>
+where T: PartialEq
+{
+    fn ieq(&self, other: &Option<T>) -> bool {
+        self.is_none() == other.is_none() ||
+            (self.is_some() == other.is_some() && (self.as_ref().unwrap() == other.as_ref().unwrap()))
+    }
+
+    fn ieq_not_none(&self, other: &Option<T>) -> bool {
+        (self.is_some() == other.is_some() && (self.as_ref().unwrap() == other.as_ref().unwrap()))
+    }
+}

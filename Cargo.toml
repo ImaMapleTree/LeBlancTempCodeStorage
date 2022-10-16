@@ -3,20 +3,21 @@
 name = "leblanc"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 #[lib]
 #name = "leblanc"
 #path = "src/lib.rs"
 
-[[bin]]
-name = "leblanc"
-path = "src/main.rs"
-doc = false
+#[[bin]]
+#name = "leblanc"
+#path = "src/main.rs"
+#doc = false
 
 
 [build-dependencies]
 lalrpop = "0.19.8"
-winres = "0.1"
+winres = "0.1.12"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -50,6 +51,11 @@ quote = "1.0.20"
 libloading = "0.7.3"
 sharedlib = "7.0.0"
 typed-arena = "2.0.1"
+serde = {version = "1.0.145", features = ["derive"]}
+serde_json = "1.0.85"
+derivative = "2.2.0"
+strfmt = "0.2.2"
+
 
 
 #[target.'cfg(target_env = "x86_64-unknown-linux-gnu")']
