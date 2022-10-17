@@ -33,6 +33,7 @@ use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::core::native_types::promise_type::{ArcLeblancPromise, LeblancPromise};
 use crate::leblanc::core::native_types::rust_type::RustObject;
 use crate::leblanc::rustblanc::Appendable;
+use crate::leblanc::rustblanc::types::LBObject;
 
 
 static mut NULL: Option<Arc<Strawberry<LeBlancObject>>> = None;
@@ -44,7 +45,7 @@ static mut MARKER: Option<Arc<Strawberry<LeBlancObject>>> = None;
 static mut NO_ARGS: [Arc<Strawberry<LeBlancObject>>; 0] = [];
 
 pub trait Callable {
-    fn call(&mut self, method_name: &str, arguments: &mut [Arc<Strawberry<LeBlancObject>>]) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>>;
+    fn call(&mut self, method_name: &str, arguments: Vec<LBObject>) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>>;
     fn call_name(&mut self, method_name: &str) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>>;
 }
 
@@ -96,6 +97,10 @@ impl LeBlancObject {
                 }
             }
         }
+    }
+
+    pub fn unsafe_null_quick() -> LBObject {
+        return unsafe { NULL.as_ref().unwrap().clone() }
     }
 
 
@@ -197,7 +202,7 @@ impl LeBlancObject {
     }
 
     pub fn copy_rc(&mut self, other: &mut Arc<Strawberry<LeBlancObject>>) {
-        let other = other.lock();
+        let other = other.read();
         self.members = other.members.clone();
         self.methods.clone_from(&other.methods);
         self.data = other.data.clone();
@@ -249,7 +254,7 @@ impl LeBlancObject {
 impl PartialEq for LeBlancObject {
     fn eq(&self, other: &Self) -> bool {
         if self.data != other.data { return false }
-        if !self.members.lock().eq(&other.members.lock()) { return false }
+        if !self.members.read().eq(&other.members.read()) { return false }
         self.typing == other.typing
     }
 }
@@ -309,14 +314,14 @@ impl Reflect for LeBlancObject {
 
 impl Reflect for Arc<Strawberry<LeBlancObject>> {
     fn reflect(&self) -> Box<dyn Any + 'static> {
-        return self.lock().reflect();
+        return self.read().reflect();
     }
 }
 
 pub fn passed_args_to_types(args: &Vec<Arc<Strawberry<LeBlancObject>>>) -> Vec<LeBlancArgument> {
     let mut arg_types = Vec::new();
     for i in 0..args.len() {
-        arg_types.append_item( args[i].lock().to_leblanc_arg(i as u32));
+        arg_types.append_item( args[i].read().to_leblanc_arg(i as u32));
     }
     arg_types
 
@@ -354,28 +359,28 @@ impl Display for LeBlancObjectData {
 }
 
 impl Callable for Arc<Strawberry<LeBlancObject>> {
-    fn call(&mut self, method_name: &str, arguments: &mut [Arc<Strawberry<LeBlancObject>>]) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>> {
+    fn call(&mut self, method_name: &str, arguments: Vec<LBObject>) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>> {
         let argument_vec = arguments.to_vec();
         let args = passed_args_to_types(&argument_vec);
 
 
         //let self_clone = Arc::clone(self);
-        let method = self.lock().methods.iter().filter(|m| {
+        let method = self.read().methods.iter().filter(|m| {
             m.matches(method_name.to_string(), &args)
         }).next().cloned();
         if method.is_none() {
-            return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.lock().typing),vec![]).create_mutex());
+            return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.read().typing), vec![]).create_mutex());
         }
         Ok(method.unwrap().run( self.clone(), arguments))
     }
 
     fn call_name(&mut self, method_name: &str) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>> {
-        if self.lock().typing == LeBlancType::Null { return Err(LeblancError::new("OperationOnNullException".to_string(), "".to_string(), vec![]).create_mutex())}
-        let handle = match self.lock().methods.iter().find(|m| m.context.name == method_name) {
-            None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.lock().typing),vec![]).create_mutex()),
+        if self.read().typing == LeBlancType::Null { return Err(LeblancError::new("OperationOnNullException".to_string(), "".to_string(), vec![]).create_mutex())}
+        let handle = match self.read().methods.iter().find(|m| m.context.name == method_name) {
+            None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.read().typing), vec![]).create_mutex()),
             Some(some) => some.handle
         };
-        Ok(unsafe { handle(self.clone(), &mut NO_ARGS) })
+        Ok(unsafe { handle(self.clone(), NO_ARGS.to_vec()) })
     }
 }
 
@@ -386,7 +391,7 @@ pub trait Stringify {
 
 impl Stringify for Arc<Strawberry<LeBlancObject>> {
     fn to_string(&self) -> String {
-        self.clone().lock().data.to_string()
+        self.clone().read().data.to_string()
     }
 }
 
@@ -404,10 +409,9 @@ impl LeBlancObjectData {
         }
     }
     pub fn get_inner_method(&self) -> Option<&Method> {
-        match self {
-            LeBlancObjectData::Function(function) => Some(function),
-            _ => None
-        }
+        if let LeBlancObjectData::Function(func) = self {
+            Some(func)
+        } else { None }
     }
     pub fn as_i128(&self) -> i128 {
         match self {
@@ -491,7 +495,7 @@ impl QuickUnwrap<LeBlancObject> for Arc<Strawberry<LeBlancObject>> {
     }
 
     fn clone_if_locked(&self) -> Arc<Strawberry<LeBlancObject>> {
-        let lock_attempt = self.try_lock();
+        let lock_attempt = self.try_read();
         let cloned = self.clone();
         match lock_attempt {
             Some(_) => cloned,

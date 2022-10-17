@@ -54,7 +54,7 @@ impl CodeGenerator {
                     },
                     Some(index) => {
                         let instruct = if index >= BUILTIN_METHODS as usize {
-                            CALL_NORMAL(0, bytes![index, argument_count])
+                            CALL_NORMAL(0, bytes![index - BUILTIN_METHODS as usize + 1, argument_count])
                         } else {
                             CALL_BUILTIN(0, bytes![index, argument_count])
                         };

@@ -108,7 +108,7 @@ impl ToLeblanc for LeblancList {
 
 impl Display for LeblancList {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().lock().data.to_string()).collect::<Vec<String>>().join(", "))
+        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().read().data.to_string()).collect::<Vec<String>>().join(", "))
     }
 }
 
@@ -116,7 +116,7 @@ impl PartialEq for LeblancList {
     fn eq(&self, other: &Self) -> bool {
         if self.internal_vec.len() != other.internal_vec.len() { return false }
         for i in 0..self.internal_vec.len() {
-            if self.internal_vec[i].lock().data != other.internal_vec[i].lock().data {
+            if self.internal_vec[i].read().data != other.internal_vec[i].read().data {
                 return false;
             }
         }

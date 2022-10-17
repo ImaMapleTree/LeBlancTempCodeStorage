@@ -5,6 +5,7 @@ use std::cell::RefCell;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+use crate::leblanc::core::leblanc_handle::LeblancHandle;
 
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Reflect, RustDataCast};
 use crate::leblanc::core::method::Method;
@@ -12,7 +13,7 @@ use crate::leblanc::core::native_types::error_type::LeblancError;
 use crate::leblanc::core::native_types::LeBlancType;
 
 static mut GLOBALS: Vec<Arc<Strawberry<LeBlancObject>>> = vec![];
-
+static mut HANDLES: Vec<LeblancHandle> = vec![];
 
 pub struct LeBlancRunner {
     globals: Vec<Arc<Strawberry<LeBlancObject>>>,
@@ -29,13 +30,13 @@ impl LeBlancRunner {
         println!("Running");
         unsafe { GLOBALS = self.globals.to_vec(); }
         println!("Running2");
-        let main_object = self.globals.iter_mut().filter(|g| g.lock().typing == LeBlancType::Function).find(|g| g.reflect().downcast_ref::<Box<Method>>().unwrap().context.name == "main");
+        let main_object = self.globals.iter_mut().filter(|g| g.read().typing == LeBlancType::Function).find(|g| g.reflect().downcast_ref::<Box<Method>>().unwrap().context.name == "main");
         println!("Running3");
 
         let main_elapsed = Instant::now();
-        let f = main_object.unwrap().call("main", &mut []).unwrap();
-        if f.lock().typing == LeBlancType::Exception {
-            let borrowed = f.lock();
+        let f = main_object.unwrap().call("main", vec![]).unwrap();
+        if f.read().typing == LeBlancType::Exception {
+            let borrowed = f.read();
             let error: &LeblancError = borrowed.data.ref_data().unwrap();
             error.print_stack_trace();
         }
@@ -47,5 +48,9 @@ impl LeBlancRunner {
 
 pub unsafe fn get_globals() -> &'static mut Vec<Arc<Strawberry<LeBlancObject>>> {
     &mut GLOBALS
+}
+
+pub fn get_handles() -> &'static mut Vec<LeblancHandle> {
+    unsafe { &mut HANDLES }
 }
 

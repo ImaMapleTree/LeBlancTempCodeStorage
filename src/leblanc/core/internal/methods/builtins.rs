@@ -18,6 +18,8 @@ use crate::leblanc::compiler::generator::generator_types::FunctionSignature;
 use crate::leblanc::core::internal::methods::builtins::builtin_debug::{_BUILTIN_DEBUG_METHOD_, _BUILTIN_DEBUG_OBJECT_};
 use crate::leblanc::core::internal::methods::builtins::builtin_debug::builtin_disassemble::{_BUILTIN_DISASSEMBLE_METHOD_, _BUILTIN_DISASSEMBLE_OBJECT_};
 use crate::leblanc::core::internal::methods::builtins::builtin_type::{_BUILTIN_TYPE_METHOD_, _BUILTIN_TYPE_OBJECT_};
+use crate::leblanc::core::interpreter::leblanc_runner::get_handles;
+use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::lazy_store::LazyStore;
 
@@ -43,6 +45,7 @@ pub fn create_partial_functions() -> Vec<PartialFunction> {
 }
 
 pub fn create_lazy_functions() -> LazyStore<FunctionSignature> {
+    get_handles().push(LeblancHandle::null());
     lazystore![
         FunctionSignature::from_method(_BUILTIN_PRINT_METHOD_(), vec![LeBlancType::Null]),
         FunctionSignature::from_method(_BUILTIN_DISASSEMBLE_METHOD_(), vec![LeBlancType::Null]),

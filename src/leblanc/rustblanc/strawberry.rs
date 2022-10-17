@@ -1,22 +1,26 @@
 
-use parking_lot::lock_api::MutexGuard;
-use parking_lot::{Mutex, RawMutex};
+use parking_lot::lock_api::{MutexGuard, RwLockReadGuard};
+use parking_lot::{Mutex, RawMutex, RawRwLock, RwLock};
 
 #[derive(Debug)]
 pub struct Strawberry<T: Clone + Default> {
-    mutex: Mutex<T>,
+    mutex: RwLock<T>,
 }
 
 impl<T: Clone + Default> Strawberry<T> {
     pub fn new(data: T) -> Strawberry<T> {
-        let mutex = Mutex::new(data);
+        let mutex = RwLock::new(data);
         Strawberry {
             mutex,
         }
     }
 
-    pub fn lock(&self) -> MutexGuard<'_, RawMutex, T> {
-        self.mutex.lock()
+    pub fn read(&self) -> RwLockReadGuard<'_, RawRwLock, T> {
+        self.mutex.read()
+    }
+
+    pub fn write(&self) -> RwLockReadGuard<'_, RawRwLock, T> {
+        self.mutex.read()
     }
 
     pub fn locked(&self) -> bool {
@@ -36,8 +40,8 @@ impl<T: Clone + Default> Strawberry<T> {
         unsafe {&mut *self.mutex.data_ptr()}
     }
 
-    pub fn try_lock(&self) -> Option<MutexGuard<'_, RawMutex, T>> {
-        self.mutex.try_lock()
+    pub fn try_read(&self) -> Option<RwLockReadGuard<'_, RawRwLock, T>> {
+        self.mutex.try_read()
     }
 }
 

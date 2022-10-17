@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use crate::leblanc::compiler::bytecode::LeblancBytecode;
 use crate::leblanc::compiler::parser::import_manager;
 use crate::leblanc::core::internal::methods::builtins::create_builtin_function_objects;
-use crate::leblanc::core::interpreter::leblanc_runner::LeBlancRunner;
+use crate::leblanc::core::interpreter::leblanc_runner::{get_handles, LeBlancRunner};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::method::Method;
@@ -24,14 +24,18 @@ pub mod execution_context;
 
 
 pub fn run(mut bytecode: LeblancBytecode) {
+    get_handles().clear();
+    get_handles().push(LeblancHandle::null());
     let mut globals = create_builtin_function_objects();
 
     for mut function in bytecode.body().functions() {
         let arguments = &function.arguments();
         let name = function.name();
-        let leblanc_handle = LeblancHandle::from_function_bytecode(function);
+        let index = get_handles().len();
+        let leblanc_handle = LeblancHandle::from_function_bytecode(function, index);
+        get_handles().push(leblanc_handle);
         let method_store = MethodStore::new(name.clone(), LeBlancArgument::from_positional(arguments));
-        let method = Method::of_leblanc_handle(method_store, leblanc_handle, BTreeSet::new());
+        let method = Method::of_leblanc_handle(method_store, index, BTreeSet::new());
         let mut lbo = internal_method(method);
         lbo.context.file = CopyString::new(bytecode.file_header().get_file_name());
         if name != "__GLOBAL__" {

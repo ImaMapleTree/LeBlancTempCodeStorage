@@ -21,13 +21,13 @@ pub struct ArcLeblancPromise {
 
 impl PartialEq for ArcLeblancPromise {
     fn eq(&self, other: &Self) -> bool {
-        self.inner.lock().eq(&other.inner.lock())
+        self.inner.read().eq(&other.inner.read())
     }
 }
 
 impl PartialOrd for ArcLeblancPromise {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.inner.lock().partial_cmp(&other.inner.lock())
+        self.inner.read().partial_cmp(&other.inner.read())
     }
 }
 
@@ -48,7 +48,7 @@ pub struct LeblancPromise {
 
 impl PartialEq for LeblancPromise {
     fn eq(&self, other: &Self) -> bool {
-        self.result.as_ref().unwrap().lock().eq(&other.result.as_ref().unwrap().lock())
+        self.result.as_ref().unwrap().read().eq(&other.result.as_ref().unwrap().read())
     }
 }
 
@@ -67,7 +67,7 @@ impl LeblancPromise {
             false => Err(LeblancError::new("PromiseNotFulfilledException".to_string(), "Attempted to consume a non-complete promise.".to_string(), vec![]).create_mutex()),
             true => {
                 self.consumed = true;
-                let res = Ok(self.result.as_ref().unwrap().lock().clone().to_mutex());
+                let res = Ok(self.result.as_ref().unwrap().read().clone().to_mutex());
                 self.result = None;
                 res
             }
@@ -167,7 +167,7 @@ impl Display for LeblancPromise {
         let s = if self.consumed {
             String::from("ConsumedPromise")
         } else if self.complete {
-            format!("CompletedPromise({:#?})", self.result.as_ref().unwrap().lock().data).replace('\n', "").replace("(    ", "(").replace(",)", ")")
+            format!("CompletedPromise({:#?})", self.result.as_ref().unwrap().read().data).replace('\n', "").replace("(    ", "(").replace(",)", ")")
         } else {
             String::from("Promise")
         };
@@ -177,7 +177,7 @@ impl Display for LeblancPromise {
 
 impl Display for ArcLeblancPromise {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.inner.lock())
+        write!(f, "{}", self.inner.read())
     }
 }
 

@@ -16,6 +16,7 @@
 #![feature(try_trait_v2)]
 #![feature(is_some_and)]
 #![feature(path_file_prefix)]
+#![feature(unsized_locals, unsized_fn_params)]
 
 pub mod leblanc;
 pub mod playground;

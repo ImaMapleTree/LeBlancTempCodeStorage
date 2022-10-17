@@ -13,6 +13,7 @@ use std::sync::{Arc, Mutex};
 use arrayvec::ArrayVec;
 use smol_str::SmolStr;
 use crate::leblanc::compiler::bytecode::function_bytes::FunctionBytecode;
+use crate::leblanc::core::interpreter::execution_context::ExecutionContext;
 use crate::leblanc::core::interpreter::instruction_execution2::execute_instruction2;
 
 
@@ -78,20 +79,19 @@ impl LeblancHandle {
             current_instruct: 0,
             null: true,
             is_async: false,
-            global_index: usize::MAX
+            global_index: 0
         }
     }
 
-    pub fn from_function_bytecode(mut bytecode: FunctionBytecode) -> LeblancHandle {
+    pub fn from_function_bytecode(mut bytecode: FunctionBytecode, index: usize) -> LeblancHandle {
         let mut instructs2: Vec<Instruction2> = vec![];
         bytecode.instruction_lines().into_iter().map(|line| line.to_instructions2()).for_each(|mut l| instructs2.append(&mut l));
-        println!("Handle Instructions: {:#?}", instructs2);
         let constants: Vec<Arc<Strawberry<LeBlancObject>>> = bytecode.constants().into_iter().map(|constant| Arc::new(Strawberry::new(constant.to_leblanc_object()))).collect::<Vec<Arc<Strawberry<LeBlancObject>>>>();
         let variable_context = bytecode.variables();
         let name = SmolStr::new(bytecode.name());
         let context_length = variable_context.len();
-        println!("Context length: {:#?}", context_length);
         let variables = vec![LeBlancObject::unsafe_null(); context_length];
+        println!("{} ===> {}", name, index);
         LeblancHandle {
             name,
             constants: Arc::new(constants),
@@ -101,17 +101,12 @@ impl LeblancHandle {
             current_instruct: 0,
             null: false,
             is_async: false,
-            global_index: unsafe { get_globals() }.len()
+            global_index: index
         }
     }
 
-    pub fn execute(&mut self, inputs: &mut [LBObject]) -> LBObject {
-        /*inputs.iter_mut().enumerate().for_each(|(i, item)| {
-            self.variables[i] = take(item)
-        });*/
-
-
-        LeBlancObject::unsafe_null()
+    pub fn execute(&self, inputs: Vec<LBObject>) -> LBObject {
+        ExecutionContext::new(self.global_index, self.instructions.len(), inputs).execute()
     }
 
     fn cascade_error(&self, err: LBObject) -> LBObject {
@@ -188,7 +183,7 @@ impl LeblancHandle {
         self.execute_range(self.current_instruct, self.instructions.len()).arc_unwrap()
     }
 
-    pub fn execute_lambda(&mut self, inputs: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
+    pub fn execute_lambda(&mut self, inputs: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
         LeBlancObject::unsafe_null()
         /*inputs.clone_into(&mut self.variables);
         let mut stack = ArrayVec::<_, 80>::new();
@@ -259,6 +254,7 @@ impl LeblancHandle {
     }
 
     pub fn full_clone(&self) -> LeblancHandle {
+        println!("full_clone");
         LeblancHandle {
             name: self.name.clone(),
             constants: Arc::new(self.constants.iter().map(|v| v.clone().arc_unwrap().to_mutex()).collect()),
@@ -275,6 +271,7 @@ impl LeblancHandle {
 
 impl Clone for LeblancHandle {
     fn clone(&self) -> Self {
+        println!("clone");
         LeblancHandle {
             name: self.name.clone(),
             constants: self.constants.clone(),
@@ -291,7 +288,7 @@ impl Clone for LeblancHandle {
 
 
 pub fn dump_stack_trace(error: Arc<Strawberry<LeBlancObject>>, stack_trace: Vec<Instruction>) -> Arc<Strawberry<LeBlancObject>> {
-    let mut borrowed =  error.lock();
+    let mut borrowed =  error.read();
     let lbe: &mut LeblancError = borrowed.data.mut_data().unwrap();
     lbe.add_prior_trace(stack_trace);
     drop(borrowed);

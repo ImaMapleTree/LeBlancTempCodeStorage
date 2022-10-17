@@ -114,7 +114,7 @@ fn _INSTRUCT_INPLACE_ADD_(_handle: &mut LeblancHandle, _arg: &Instruction, stack
     if error { return Err(arg1); }
 
 
-    let result = target.lock().methods.iter().cloned().find(|m| m.has_tag(MethodTag::InPlaceAddition));
+    let result = target.read().methods.iter().cloned().find(|m| m.has_tag(MethodTag::InPlaceAddition));
         //.filter(|m| m.matches("_".to_string(), vec![tos2.lock().to_leblanc_arg(0)]))
         //.next().unwrap_or(Method::error()).run(tos1.clone(), &mut [tos2.clone()]);
 
@@ -129,8 +129,8 @@ fn _INSTRUCT_BINARY_ADD_(_handle: &mut LeblancHandle, _arg: &Instruction, stack:
     let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    let ntargeter = targeter.lock();
-    let ntarget = target.lock();
+    let ntargeter = targeter.read();
+    let ntarget = target.read();
 
 
     if can_add_self(&ntargeter.typing) && can_add_self(&ntarget.typing) {
@@ -170,8 +170,8 @@ fn _INSTRUCT_BINARY_SUBTRACT_(_handle: &mut LeblancHandle, _arg: &Instruction, s
     let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    let ntargeter = targeter.lock();
-    let ntarget = target.lock();
+    let ntargeter = targeter.read();
+    let ntarget = target.read();
 
     if can_add_self(&ntargeter.typing) && can_add_self(&ntarget.typing) {
         stack.push(leblanc_object_int((ntarget.data.as_i128() - ntargeter.data.as_i128()) as i32).to_mutex());
@@ -199,8 +199,8 @@ fn _INSTRUCT_BINARY_MODULO_(_handle: &mut LeblancHandle, _arg: &Instruction, sta
     let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    let ntargeter = targeter.lock();
-    let ntarget = target.lock();
+    let ntargeter = targeter.read();
+    let ntarget = target.read();
 
     if can_add_self(&ntargeter.typing) && can_add_self(&ntarget.typing) {
         stack.push(leblanc_object_int((ntarget.data.as_i128() % ntargeter.data.as_i128()) as i32).to_mutex());
@@ -228,7 +228,7 @@ fn _INSTRUCT_BINARY_AND_(_handle: &mut LeblancHandle, _arg: &Instruction, stack:
     let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    stack.push((*target.lock().data.ref_data().unwrap() && *targeter.lock().data.ref_data().unwrap()).create_mutex());
+    stack.push((*target.read().data.ref_data().unwrap() && *targeter.read().data.ref_data().unwrap()).create_mutex());
     Ok(())
 }
 
@@ -237,7 +237,7 @@ fn _INSTRUCT_BINARY_OR_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: 
     let target = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let targeter =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    stack.push((*target.lock().data.ref_data().unwrap() || *targeter.lock().data.ref_data().unwrap()).create_mutex());
+    stack.push((*target.read().data.ref_data().unwrap() || *targeter.read().data.ref_data().unwrap()).create_mutex());
     Ok(())
 }
 
@@ -361,7 +361,7 @@ fn _INSTRUCT_CALL_CLASS_METHOD_(_handle: &mut LeblancHandle, arg: &Instruction, 
     let mut object = deprecated_safe_stack_pop(stack, error);
     //println!("object: {:#?}", object);
     if error { return Err(object); }
-    match object.call(method_name.lock().data.to_string().as_str(), &mut arguments) {
+    match object.call(method_name.read().data.to_string().as_str(), &mut arguments) {
         Ok(result) => stack.push(result),
         Err(err) => return Err(err)
     }
@@ -386,12 +386,12 @@ fn _INSTRUCT_CREATE_RANGE_(_handle: &mut LeblancHandle, _arg: &Instruction, stac
 #[cfg(feature = "example")]
 fn _INSTRUCT_LIST_SETUP_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Result<(), Arc<Strawberry<LeBlancObject>>> {
     let mut item = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
-    let mut typing = item.lock().typing;
+    let mut typing = item.read().typing;
     let mut item_list = vec![];
     while typing != LeBlancType::Marker {
         item_list.push(item);
         item = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
-        typing = item.lock().typing;
+        typing = item.read().typing;
     }
     item_list.reverse();
     stack.push(LeblancList::new(item_list, ).create_mutex());
@@ -434,19 +434,19 @@ fn _INSTRUCT_FOR_LOOP_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mu
 
     let loop_start = handle.current_instruct;
 
-    if iterable.lock().typing != LeBlancType::Derived(DerivedType::Iterator) {
+    if iterable.read().typing != LeBlancType::Derived(DerivedType::Iterator) {
         iterable = match iterable.call_name("iterate") {
             Ok(iter) => iter,
             Err(err) => return Err(err)
         }
     }
 
-    let mut borrowed_iterable = iterable.lock();
+    let mut borrowed_iterable = iterable.read();
     let inner_iterator: &mut LeblancIterator = borrowed_iterable.data.mut_data().unwrap();
 
     while inner_iterator.has_next() {
         let variable = inner_iterator.next();
-        iter_variable.lock().move_data(variable.arc_unwrap());
+        iter_variable.read().move_data(variable.arc_unwrap());
         let _loop_result = handle.execute_range(loop_start+1, loop_start+1 + arg.arg as u64 );
         //println!("Hahahaha");
         //variable.lock().swap_rc(&mut iter_variable.lock());
@@ -466,9 +466,9 @@ fn _INSTRUCT_EQUALITY_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &m
     let tos1 = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     //println!("Good bye cruel world");
 
-    let tos1 = tos1.lock();
+    let tos1 = tos1.read();
     let tos2_clone = tos2.clone_if_locked();
-    let tos2_borrow = tos2_clone.lock();
+    let tos2_borrow = tos2_clone.read();
 
     stack.push(match arg.arg {
         0 => (tos1.data == tos2_borrow.data),
@@ -492,7 +492,7 @@ fn _INSTRUCT_COMPARATOR_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
     };
 
     let block_start = handle.current_instruct;
-    if arg.instruct == ComparatorElse || *truth.lock().data.ref_data().unwrap() {
+    if arg.instruct == ComparatorElse || *truth.read().data.ref_data().unwrap() {
         let jump_result = handle.execute_range(block_start + 1, block_start + 1 + arg.arg as u64);
         stack.push(jump_result);
         handle.current_instruct -= 1;
@@ -510,14 +510,14 @@ fn _INSTRUCT_ELEMENT_ACCESS_(_handle: &mut LeblancHandle, _arg: &Instruction, st
     let list_like = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let accessor = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    let mut borrowed = list_like.lock();
+    let mut borrowed = list_like.read();
     let list: &mut LeblancList = borrowed.data.mut_data().unwrap();
 
-    let accessor_type = accessor.lock().typing;
+    let accessor_type = accessor.read().typing;
     if accessor_type == LeBlancType::Derived(DerivedType::Slice) {
 
     } else {
-        let index = accessor.lock().data.as_i128() as usize;
+        let index = accessor.read().data.as_i128() as usize;
         stack.push(match list.internal_vec.get(index) {
             None => return Err(LeblancError::new("IndexOutOfBoundsException".to_string(), format!("Cannot access an element at index: {} when object length is: {}", index, list.internal_vec.len()), vec![]).create_mutex()),
             Some(e) => e.clone(),
@@ -533,14 +533,14 @@ fn _INSTRUCT_ELEMENT_STORE_(_handle: &mut LeblancHandle, _arg: &Instruction, sta
     let accessor = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let value = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
 
-    let mut borrowed = list_like.lock();
+    let mut borrowed = list_like.read();
     let list: &mut LeblancList = borrowed.data.mut_data().unwrap();
 
-    let accessor_type = accessor.lock().typing;
+    let accessor_type = accessor.read().typing;
     if accessor_type == LeBlancType::Derived(DerivedType::Slice) {
 
     } else {
-        let index = accessor.lock().data.as_i128() as usize;
+        let index = accessor.read().data.as_i128() as usize;
         list.internal_vec[index] = value;
     }
     Ok(())
@@ -550,7 +550,7 @@ fn _INSTRUCT_ELEMENT_STORE_(_handle: &mut LeblancHandle, _arg: &Instruction, sta
 fn _INSTRUCT_GROUP_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: &mut ArrayVec<Arc<Strawberry<LeBlancObject>>, 80>) -> Result<(), Arc<Strawberry<LeBlancObject>>> {
     let target =  match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
     let group = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
-    let mut group_borrow = group.lock();
+    let mut group_borrow = group.read();
 
     if group_borrow.typing == LeBlancType::Null {
         let group = leblanc_object_group(LeblancGroup::default());

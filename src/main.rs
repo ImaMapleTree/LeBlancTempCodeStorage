@@ -12,9 +12,12 @@
 #![feature(ptr_as_uninit)]
 #![feature(try_trait_v2)]
 #![feature(path_file_prefix)]
+#![feature(unsized_locals, unsized_fn_params)]
 
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
+#![allow(incomplete_features)]
+
 
 //#![allow(clippy::all)]
 
@@ -35,7 +38,7 @@ extern crate core;
 //
 
 use alloc::rc::Rc;
-use std::io;
+use std::{env, io};
 use std::path::Path;
 
 use std::time::Instant;
@@ -65,8 +68,9 @@ static GLOBAL: MiMalloc = MiMalloc;*/
 
 
 fn main() -> io::Result<()> {
+    println!("{}", env::consts::OS);
     let _DEBUG = true;
-    playground::playground();
+    //playground::playground();
 
     /*if INTERACTIVE {
         start();

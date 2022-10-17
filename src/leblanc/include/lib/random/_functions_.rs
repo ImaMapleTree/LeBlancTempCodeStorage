@@ -10,6 +10,7 @@ use rand_chacha::rand_core::{RngCore, SeedableRng};
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::native_types::base_type::ToLeblanc;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 static mut RNG_GENERATOR: Option<ChaCha8Rng> = None;
 
@@ -25,12 +26,12 @@ fn random_number() -> f64 {
     (generator.next_u64() as f64).div(u64::MAX as f64)
 }
 
-pub fn _random_no_arg_(_self: Arc<Strawberry<LeBlancObject>>, _args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
+pub fn _random_no_arg_(_self: Arc<Strawberry<LeBlancObject>>, _args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
     random_number().create_mutex()
 }
 
-pub fn _random_one_arg_(_self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
-    let borrowed = args[0].lock();
+pub fn _random_one_arg_(_self: Arc<Strawberry<LeBlancObject>>, args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
+    let borrowed = args[0].read();
     let value = borrowed.data.as_i128();
 
     let random_value = random_number().mul(value as u64 as f64);
@@ -40,9 +41,9 @@ pub fn _random_one_arg_(_self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<S
     }.to_mutex()
 }
 
-pub fn _random_two_arg_(_self: Arc<Strawberry<LeBlancObject>>, args: &mut [Arc<Strawberry<LeBlancObject>>]) -> Arc<Strawberry<LeBlancObject>> {
-    let borrowed1 = args[0].lock();
-    let borrowed2 = args[1].lock();
+pub fn _random_two_arg_(_self: Arc<Strawberry<LeBlancObject>>, args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
+    let borrowed1 = args[0].read();
+    let borrowed2 = args[1].read();
     let lower_bound = borrowed1.data.as_i128();
     let upper_bound = borrowed2.data.as_i128();
 

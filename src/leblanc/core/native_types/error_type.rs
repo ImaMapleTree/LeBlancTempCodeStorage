@@ -138,7 +138,7 @@ struct FuncDetails {
 fn get_func_details(func_number: u32) -> FuncDetails {
     unsafe {
         let function: Arc<Strawberry<LeBlancObject>> = get_globals()[func_number as usize].clone();
-        let borrow = function.lock();
+        let borrow = function.read();
         let inner_method = borrow.data.get_inner_method().unwrap();
         FuncDetails {
             name: inner_method.context.name.clone(),

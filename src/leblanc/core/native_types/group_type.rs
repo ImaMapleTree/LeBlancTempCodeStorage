@@ -24,6 +24,7 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::promise_type::{LeblancPromise};
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, Debug, Default)]
 pub struct PromiseCell {
@@ -34,7 +35,7 @@ pub struct PromiseCell {
 impl PartialEq for PromiseCell {
     fn eq(&self, other: &Self) -> bool {
         if self.echo != other.echo { return false }
-        self.promise.lock().eq(&other.promise.lock())
+        self.promise.read().eq(&other.promise.read())
     }
 }
 
@@ -58,7 +59,7 @@ impl PartialEq for LeblancGroup {
         let self_length = self.promises.len();
         if self_length!= other.promises.len() { return false }
         for i in 0..self_length {
-            if !self.promises[i].lock().eq(&other.promises[i].lock()) {return false}
+            if !self.promises[i].read().eq(&other.promises[i].read()) {return false}
         }
         return true;
     }
@@ -76,57 +77,57 @@ impl PartialOrd for LeblancGroup {
 impl LeblancGroup {
     pub fn promise(&mut self, returnable: Arc<Strawberry<LeBlancObject>>) -> Arc<Strawberry<LeblancPromise>> {
         let promise = Arc::new(Strawberry::new(LeblancPromise::default()));
-        let cell = PromiseCell::new((*returnable).lock().clone(), promise.clone());
+        let cell = PromiseCell::new((*returnable).read().clone(), promise.clone());
         self.promises.push(Arc::new(Strawberry::new(cell)));
         promise
     }
 
-    pub fn apply(&mut self, function: Arc<Strawberry<LeBlancObject>>, other_args: &mut [Arc<Strawberry<LeBlancObject>>]) {
+    pub fn apply(&mut self, function: Arc<Strawberry<LeBlancObject>>, other_args: Vec<LBObject>) {
         self.promises.iter_mut().for_each(|prom| {
-            let mut mutex = prom.lock();
-            let consumed = mutex.promise.lock().consumed;
+            let mut mutex = prom.read();
+            let consumed = mutex.promise.read().consumed;
             if !consumed {
-                mutex.promise.lock().result = {
+                mutex.promise.read().result = {
                     let mut args = other_args.to_vec();
                     args.insert(0, take(&mut mutex.echo).to_mutex());
-                    let result = function.lock().data.get_mut_inner_method().unwrap().clone().run(function.clone(), &mut args);
+                    let result = function.read().data.get_mut_inner_method().unwrap().clone().run(function.clone(), args);
                     Some(result)
                 };
-                mutex.promise.lock().complete = true
+                mutex.promise.read().complete = true
             }
         })
     }
 
-    pub fn pipe(&mut self, args: &mut [Arc<Strawberry<LeBlancObject>>]) {
+    pub fn pipe(&mut self, args: Vec<LBObject>) {
         self.promises.iter_mut().for_each(|prom| {
-            let mut mutex = prom.lock();
-            let consumed = mutex.promise.lock().consumed;
+            let mut mutex = prom.read();
+            let consumed = mutex.promise.read().consumed;
             let truth = !consumed && if self.strict_type.is_some() { self.strict_type.unwrap() == mutex.echo.typing } else { true };
             if truth {
-                mutex.promise.lock().result = {
-                    let result = mutex.echo.data.get_mut_inner_method().unwrap().run(LeBlancObject::unsafe_null(), args);
+                mutex.promise.read().result = {
+                    let result = mutex.echo.data.get_mut_inner_method().unwrap().run(LeBlancObject::unsafe_null(), args.clone());
                     Some(result)
                 };
-                mutex.promise.lock().complete = true
+                mutex.promise.read().complete = true
             }
         })
     }
 
-    pub fn pipe_async(&mut self, args: &mut [Arc<Strawberry<LeBlancObject>>]) {
+    pub fn pipe_async(&mut self, args: Vec<LBObject>) {
         let mut consumers = vec![];
         let mut futures_functions = vec![];
         self.promises.iter_mut().for_each(|prom| {
-            let consumed = prom.lock().promise.lock().consumed;
-            let truth = !consumed && if self.strict_type.is_some() { self.strict_type.unwrap() == prom.lock().echo.typing } else { true };
+            let consumed = prom.read().promise.read().consumed;
+            let truth = !consumed && if self.strict_type.is_some() { self.strict_type.unwrap() == prom.read().echo.typing } else { true };
             if truth {
-                futures_functions.push(prom.lock().echo.data.get_mut_inner_method().unwrap().clone());
+                futures_functions.push(prom.read().echo.data.get_mut_inner_method().unwrap().clone());
                 consumers.push(prom);
             }
         });
         //let args = args.to_vec();
 
         let mut nargs = args.to_vec();
-        let real_futures: Vec<JoinHandle<Arc<Strawberry<LeBlancObject>>>> = futures_functions.into_iter().map(|a| a.leblanc_handle.lock().full_clone()).map(|mut f| {
+        let real_futures: Vec<JoinHandle<Arc<Strawberry<LeBlancObject>>>> = futures_functions.into_iter().map(|a| a.leblanc_handle.full_clone()).map(|mut f| {
             let nargs_clone = nargs.clone();
             async_std::task::spawn(async move {
                 f.execute_async(nargs_clone).await}
@@ -138,10 +139,10 @@ impl LeblancGroup {
             .collect()});
         while !consumers.is_empty() {
             let prom = consumers.pop().unwrap();
-            let mutex = prom.lock();
+            let mutex = prom.read();
             let result = tasks.pop().unwrap();
-            mutex.promise.lock().result = Some(result);
-            mutex.promise.lock().complete = true;
+            mutex.promise.read().result = Some(result);
+            mutex.promise.read().complete = true;
         }
         println!("N");
     }
@@ -191,13 +192,13 @@ impl RustDataCast<LeblancGroup> for LeBlancObjectData {
 
 impl Display for PromiseCell {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "PromiseCell(Promise={}, Promised={})", self.promise.lock().to_string(), self.echo.data.to_string())
+        write!(f, "PromiseCell(Promise={}, Promised={})", self.promise.read().to_string(), self.echo.data.to_string())
     }
 }
 
 impl Display for LeblancGroup {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "Group[{}]", self.promises.iter().cloned().map(|p| p.lock().to_string()).collect::<Vec<String>>().join(",\n"))
+        write!(f, "Group[{}]", self.promises.iter().cloned().map(|p| p.read().to_string()).collect::<Vec<String>>().join(",\n"))
     }
 }
 
