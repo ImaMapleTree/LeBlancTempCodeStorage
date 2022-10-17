@@ -1,5 +1,5 @@
 
-use parking_lot::lock_api::{MutexGuard, RwLockReadGuard};
+use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
 use parking_lot::{Mutex, RawMutex, RawRwLock, RwLock};
 
 #[derive(Debug)]
@@ -19,8 +19,8 @@ impl<T: Clone + Default> Strawberry<T> {
         self.mutex.read()
     }
 
-    pub fn write(&self) -> RwLockReadGuard<'_, RawRwLock, T> {
-        self.mutex.read()
+    pub fn write(&self) -> RwLockWriteGuard<'_, RawRwLock, T> {
+        self.mutex.write()
     }
 
     pub fn locked(&self) -> bool {

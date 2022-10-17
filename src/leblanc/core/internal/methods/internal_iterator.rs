@@ -12,17 +12,17 @@ use crate::leblanc::rustblanc::types::LBObject;
 
 
 pub fn _internal_iterator_next(_self: Arc<Strawberry<LeBlancObject>>, _arguments: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
-    let mut borrowed = _self.read();
+    let mut borrowed = _self.write();
     let iterator: &mut LeblancIterator = borrowed.data.mut_data().unwrap();
     iterator.next()
 }
 
 pub fn _internal_iterator_to_list_(_self: Arc<Strawberry<LeBlancObject>>, _arguments: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
-    Arc::new(Strawberry::new(leblanc_object_list(<LeBlancObjectData as RustDataCast<LeblancIterator>>::mut_data(&mut _self.read().data).unwrap().to_list())))
+    Arc::new(Strawberry::new(leblanc_object_list(<LeBlancObjectData as RustDataCast<LeblancIterator>>::mut_data(&mut _self.write().data).unwrap().to_list())))
 }
 
 pub fn _internal_iterator_filter_(_self: Arc<Strawberry<LeBlancObject>>, _arguments: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
-    let mut borrowed = _self.read();
+    let mut borrowed = _self.write();
     let iterator: &mut LeblancIterator = borrowed.data.mut_data().unwrap();
 
     match iterator.transformed() {
@@ -40,7 +40,7 @@ pub fn _internal_iterator_filter_(_self: Arc<Strawberry<LeBlancObject>>, _argume
 }
 
 pub fn _internal_iterator_reverse_(_self: Arc<Strawberry<LeBlancObject>>, _arguments: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
-    let mut borrowed = _self.read();
+    let mut borrowed = _self.write();
     let iterator: &mut LeblancIterator = borrowed.data.mut_data().unwrap();
     iterator.reverse();
     drop(borrowed);
@@ -48,7 +48,7 @@ pub fn _internal_iterator_reverse_(_self: Arc<Strawberry<LeBlancObject>>, _argum
 }
 
 pub fn _internal_iterator_map_(_self: Arc<Strawberry<LeBlancObject>>, _arguments: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
-    let mut borrowed = _self.read();
+    let mut borrowed = _self.write();
     let iterator: &mut LeblancIterator = borrowed.data.mut_data().unwrap();
 
     match iterator.transformed() {

@@ -50,7 +50,9 @@ use sharedlib::{Data, FuncTracked, Lib, LibRc, LibTracked, LibUnsafe, Symbol};
 use crate::leblanc::core::module::CoreModule;
 use crate::leblanc::compiler::compile_types::full_reader::read_file;
 use crate::leblanc::compiler::generator::CodeGenerator;
+use crate::leblanc::core::interpreter::leblanc_runner::get_handles;
 use crate::leblanc::core::interpreter::run;
+use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::native_types::string_type::leblanc_object_string;
 use crate::leblanc::rustblanc::path::ZCPath;
@@ -68,9 +70,9 @@ static GLOBAL: MiMalloc = MiMalloc;*/
 
 
 fn main() -> io::Result<()> {
-    println!("{}", env::consts::OS);
+    get_handles().push(LeblancHandle::null());
     let _DEBUG = true;
-    //playground::playground();
+    playground::playground();
 
     /*if INTERACTIVE {
         start();

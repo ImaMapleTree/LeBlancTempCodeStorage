@@ -31,7 +31,7 @@ pub fn _internal_expose_(_self: Arc<Strawberry<LeBlancObject>>, _arguments: Vec<
         VariableContext::empty(),
     );
 
-    expose_object.members.read().insert("name".to_string(), leblanc_object_string(_self.read().name_of()));
+    expose_object.members.write().insert("name".to_string(), leblanc_object_string(_self.read().name_of()));
 
     let variable_class_meta = ClassMeta::default("VariableContext".to_string(), 1);
     let variable_state = LeBlancObject::new(
@@ -42,12 +42,12 @@ pub fn _internal_expose_(_self: Arc<Strawberry<LeBlancObject>>, _arguments: Vec<
         VariableContext::empty()
     );
 
-    variable_state.members.read().insert("name".to_string(), leblanc_object_string(_self.read().context.name.to_string()));
-    variable_state.members.read().insert("state".to_string(), leblanc_object_string(_self.read().context.state.to_string()));
-    variable_state.members.read().insert("lineNumber".to_string(), leblanc_object_string(_self.read().context.line_number.to_string()));
-    variable_state.members.read().insert("file".to_string(), leblanc_object_string(_self.read().context.file.to_string()));
+    variable_state.members.write().insert("name".to_string(), leblanc_object_string(_self.read().context.name.to_string()));
+    variable_state.members.write().insert("state".to_string(), leblanc_object_string(_self.read().context.state.to_string()));
+    variable_state.members.write().insert("lineNumber".to_string(), leblanc_object_string(_self.read().context.line_number.to_string()));
+    variable_state.members.write().insert("file".to_string(), leblanc_object_string(_self.read().context.file.to_string()));
 
-    expose_object.members.read().insert("variableContext".to_string(), variable_state);
+    expose_object.members.write().insert("variableContext".to_string(), variable_state);
 
 
     expose_object.to_mutex()

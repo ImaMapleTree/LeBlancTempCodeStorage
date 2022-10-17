@@ -288,7 +288,7 @@ impl Clone for LeblancHandle {
 
 
 pub fn dump_stack_trace(error: Arc<Strawberry<LeBlancObject>>, stack_trace: Vec<Instruction>) -> Arc<Strawberry<LeBlancObject>> {
-    let mut borrowed =  error.read();
+    let mut borrowed =  error.write();
     let lbe: &mut LeblancError = borrowed.data.mut_data().unwrap();
     lbe.add_prior_trace(stack_trace);
     drop(borrowed);

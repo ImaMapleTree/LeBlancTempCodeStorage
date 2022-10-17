@@ -84,31 +84,31 @@ impl LeblancGroup {
 
     pub fn apply(&mut self, function: Arc<Strawberry<LeBlancObject>>, other_args: Vec<LBObject>) {
         self.promises.iter_mut().for_each(|prom| {
-            let mut mutex = prom.read();
+            let mutex = prom.underlying_pointer();
             let consumed = mutex.promise.read().consumed;
             if !consumed {
-                mutex.promise.read().result = {
+                mutex.promise.write().result = {
                     let mut args = other_args.to_vec();
                     args.insert(0, take(&mut mutex.echo).to_mutex());
-                    let result = function.read().data.get_mut_inner_method().unwrap().clone().run(function.clone(), args);
+                    let result = function.read().data.get_inner_method().unwrap().run(function.clone(), args);
                     Some(result)
                 };
-                mutex.promise.read().complete = true
+                mutex.promise.write().complete = true
             }
         })
     }
 
     pub fn pipe(&mut self, args: Vec<LBObject>) {
         self.promises.iter_mut().for_each(|prom| {
-            let mut mutex = prom.read();
+            let mutex = prom.underlying_pointer();
             let consumed = mutex.promise.read().consumed;
             let truth = !consumed && if self.strict_type.is_some() { self.strict_type.unwrap() == mutex.echo.typing } else { true };
             if truth {
-                mutex.promise.read().result = {
-                    let result = mutex.echo.data.get_mut_inner_method().unwrap().run(LeBlancObject::unsafe_null(), args.clone());
+                mutex.promise.write().result = {
+                    let result = mutex.echo.data.get_inner_method().unwrap().run(LeBlancObject::unsafe_null(), args.clone());
                     Some(result)
                 };
-                mutex.promise.read().complete = true
+                mutex.promise.write().complete = true
             }
         })
     }
@@ -120,7 +120,7 @@ impl LeblancGroup {
             let consumed = prom.read().promise.read().consumed;
             let truth = !consumed && if self.strict_type.is_some() { self.strict_type.unwrap() == prom.read().echo.typing } else { true };
             if truth {
-                futures_functions.push(prom.read().echo.data.get_mut_inner_method().unwrap().clone());
+                futures_functions.push(prom.read().echo.data.get_inner_method().unwrap().clone());
                 consumers.push(prom);
             }
         });
@@ -141,8 +141,8 @@ impl LeblancGroup {
             let prom = consumers.pop().unwrap();
             let mutex = prom.read();
             let result = tasks.pop().unwrap();
-            mutex.promise.read().result = Some(result);
-            mutex.promise.read().complete = true;
+            mutex.promise.write().result = Some(result);
+            mutex.promise.write().complete = true;
         }
         println!("N");
     }

@@ -37,6 +37,6 @@ pub fn _internal_inplace_add_(_self: Arc<Strawberry<LeBlancObject>>, arguments: 
     let n2: i64 = unsafe {*(arguments[0].reflect().downcast_ref_unchecked())};
     println!("n1: {} | n2: {}", n1, n2);
 
-    _self.read().data = LeBlancObjectData::Int64(n1 + n2);
+    _self.write().data = LeBlancObjectData::Int64(n1 + n2);
     arguments[0].clone()
 }

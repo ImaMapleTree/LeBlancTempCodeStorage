@@ -45,7 +45,6 @@ pub fn create_partial_functions() -> Vec<PartialFunction> {
 }
 
 pub fn create_lazy_functions() -> LazyStore<FunctionSignature> {
-    get_handles().push(LeblancHandle::null());
     lazystore![
         FunctionSignature::from_method(_BUILTIN_PRINT_METHOD_(), vec![LeBlancType::Null]),
         FunctionSignature::from_method(_BUILTIN_DISASSEMBLE_METHOD_(), vec![LeBlancType::Null]),

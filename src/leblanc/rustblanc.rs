@@ -15,6 +15,7 @@ pub mod path;
 pub mod lb_file;
 pub mod outcome;
 pub mod macros;
+pub mod blueberry;
 
 
 pub trait Appendable<T> {

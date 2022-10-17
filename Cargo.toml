@@ -30,7 +30,7 @@ strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 chrono = "0.4.19"
 hex = "0.4.3"
-prettytable-rs = "0.8.0"
+prettytable-rs = "0.9.0"
 mimalloc = { version = "*", default-features = false }
 parking_lot = "0.12.1"
 fxhash = "0.2.1"
@@ -66,5 +66,4 @@ codegen-units = 255
 lto = true
 panic = "abort"
 codegen-units = 1
-debug = true
 

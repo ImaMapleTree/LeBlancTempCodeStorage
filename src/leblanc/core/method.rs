@@ -107,7 +107,7 @@ impl Method {
     }
 
     #[inline(always)]
-    pub fn run(&mut self, _self: Arc<Strawberry<LeBlancObject>>, args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
+    pub fn run(&self, _self: Arc<Strawberry<LeBlancObject>>, args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
         match self.method_type {
             MethodType::DefinedMethod => self.leblanc_handle.execute(args),
             MethodType::LinkedMethod => (self.c_handle)(_self, args).unwrap()._clone().to_mutex(),
