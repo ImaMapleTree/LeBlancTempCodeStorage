@@ -7,6 +7,7 @@ use crate::leblanc::core::leblanc_object::{LeBlancObject, RustDataCast};
 
 use crate::leblanc::core::native_types::derived::iterator_type::{LeblancIterable};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Debug, Clone)]
 pub struct TransformedIterator {
@@ -38,7 +39,7 @@ impl TransformedIterator {
 }
 
 impl LeblancIterable for TransformedIterator {
-    fn lb_next(&mut self) -> Arc<Strawberry<LeBlancObject>> {
+    fn lb_next(&mut self) -> LBObject {
         self.inner_iterator.lb_next()
     }
 
@@ -56,7 +57,7 @@ impl LeblancIterable for TransformedIterator {
         for transformation in &mut self.transformations {
             match transformation {
                 Filter(handle) => {
-                    iterator = Box::new(iterator.filter(|i| *handle.execute_lambda(vec![i.clone()]).read().data.ref_data().unwrap()));
+                    iterator = Box::new(iterator.filter(|i| *handle.execute_lambda(vec![i.clone()]).reference().data.ref_data().unwrap()));
                 }
                 Map(handle) => {
                     iterator = Box::new(iterator.map(|i| handle.execute_lambda(vec![i])));
@@ -64,10 +65,10 @@ impl LeblancIterable for TransformedIterator {
             }
         }
 
-        LeblancList::new(iterator.collect::<Vec<Arc<Strawberry<LeBlancObject>>>>())
+        LeblancList::new(iterator.collect::<Vec<LBObject>>())
     }
 
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Strawberry<LeBlancObject>>>> {
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=LBObject>> {
         todo!()
     }
 

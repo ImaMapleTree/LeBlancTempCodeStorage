@@ -11,7 +11,7 @@ func main() {
         }
         print("You got it good job!");
         print("Play again?");
-        play_again = read() == "y";
+        play_again = reference() == "y";
     }
     print("You quit!");
 }

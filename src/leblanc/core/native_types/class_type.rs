@@ -1,14 +1,16 @@
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
+use fxhash::FxHashMap;
 use parking_lot::Mutex;
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_default_data::unsafe_empty_members;
+use crate::leblanc::core::leblanc_default_data::EMPTY_MEMBERS;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::base_type::base_methods;
 use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct ClassMeta {
@@ -24,7 +26,7 @@ pub fn leblanc_object_custom(meta: ClassMeta) -> LeBlancObject {
         LeBlancObjectData::Class(Box::new(meta)),
         LeBlancType::Class(name),
         base_methods,
-        unsafe_empty_members(),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -72,7 +74,7 @@ pub struct ClassMetaBuilder {
     supertypes: Vec<ClassMeta>,
     parse_id: u32,
     methods: Vec<Method>,
-    members: Vec<Arc<Strawberry<LeBlancObject>>>
+    members: Vec<LBObject>
 }
 
 impl ClassMetaBuilder {

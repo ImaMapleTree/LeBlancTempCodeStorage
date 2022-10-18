@@ -5,57 +5,65 @@ use crate::leblanc::core::interpreter::instructions2::Instruction2;
 use crate::leblanc::core::interpreter::leblanc_runner::{get_globals, get_handles};
 use crate::leblanc::core::leblanc_handle::{ExecutionSignal, LeblancHandle};
 use crate::leblanc::core::leblanc_object::LeBlancObject;
+use crate::leblanc::include::lib::leblanc_colored::{Color, colorize};
+use crate::leblanc::rustblanc::blueberry::{Blueberry, BlueberryVec, Quantum};
 
 use crate::leblanc::rustblanc::types::{LBObject, LeBlancStack};
+
+static DEBUG: bool = true;
 
 pub struct ExecutionContext {
     pub handle_ref: &'static mut LeblancHandle,
     pub instruction_pointer: usize,
     pub instruct_total: usize,
-    pub variables: Vec<LBObject>,
-    pub stack: LeBlancStack
+    pub variables: BlueberryVec<LeBlancObject>,
 }
 
 impl ExecutionContext {
-    pub fn new(handle_index: usize, instruction_total: usize, inputs: Vec<LBObject>) -> Self {
-        //let mut variables = vec![LeBlancObject::unsafe_null_quick(); get_handles().get_mut(handle_index).unwrap().variables.len()];
-        /*inputs.iter_mut().enumerate().for_each(|(i, item)| {
-            variables[i] = take(item)
-        });*/
-        let variables = inputs;
+    pub fn new(handle_index: usize, instruction_total: usize, context_length: usize, mut inputs: Vec<LBObject>) -> Self {
+        //println!("Inputs: {:?}", inputs);
+        //println!("Inputs: {:?}", inputs);
+        let variables = BlueberryVec::from(inputs);
+        //println!("Variables: {:?}", variables);
+
+        //let variables = BlueberryVec::from(inputs.iter().map(|o| o.reference().clone()).collect::<Vec<LeBlancObject>>());
 
         ExecutionContext {
             handle_ref: get_handles().get_mut(handle_index).unwrap(),
             instruction_pointer: 0,
             instruct_total: instruction_total,
             variables,
-            stack: LeBlancStack::new()
         }
     }
 
-    pub fn get_constant(&self, id: usize) -> Option<&LBObject> {
+    pub fn get_constant(&mut self, id: usize) -> Option<Blueberry<'_, LeBlancObject>> {
         self.handle_ref.constants.get(id)
     }
 
+    #[inline]
     pub fn execute(&mut self) -> LBObject {
         while self.instruction_pointer < self.instruct_total {
             let instruct = self.handle_ref.instructions[self.instruction_pointer];
             self.instruction_pointer += 1;
 
+            //self.debug(instruct);
             let iexec = execute_instruction2(instruct)(self, instruct);
-            //self.debug(instruction);
             if let Err(error) = iexec {
                 if let Instruction2::RETURN(..) = instruct {
-                    return error;
+                    return self.handle_ref.stack.pop().unwrap();
                 }
                 return self.cascade_error(error)
             }
         }
-        self.stack.pop().unwrap_or_else(LeBlancObject::unsafe_null)
+        self.handle_ref.stack.pop().unwrap()
     }
 
     fn cascade_error(&self, err: LBObject) -> LBObject {
         println!("Errored: {:#?}", err);
         err
+    }
+
+    fn debug(&self, instruction: Instruction2) {
+        if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.handle_ref.name.to_string(), Color::Blue), instruction);}
     }
 }

@@ -20,12 +20,13 @@ use crate::leblanc::core::native_types::base_type::internal_method;
 
 
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::blueberry::Quantum;
 use crate::leblanc::rustblanc::types::LBObject;
 
 static mut STDOUT: Option<io::Stdout> = None;
 
-fn _BUILTIN_DISASSEMBLE(_self: Arc<Strawberry<LeBlancObject>>, args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
-    let method = args[0].read().data.get_inner_method().unwrap().clone();
+fn _BUILTIN_DISASSEMBLE(_self: LBObject, args: Vec<LBObject>) -> LBObject {
+    let method = args[0].reference().data.get_inner_method().unwrap().clone();
     let dis_rust_func = if args.len() > 1 {
         *args[1].reflect().downcast_ref::<bool>().unwrap()
     } else {
@@ -34,7 +35,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Arc<Strawberry<LeBlancObject>>, args: Vec<LBObjec
 
     let mut output = String::new();
 
-    if matches!(method.method_type, MethodType::InternalMethod | MethodType::LinkedMethod) {
+    if matches!(method.method_type, MethodType::InternalMethod) {
         if dis_rust_func {
             println!("Disassembling builtin");
         }
@@ -55,7 +56,7 @@ fn _BUILTIN_DISASSEMBLE(_self: Arc<Strawberry<LeBlancObject>>, args: Vec<LBObjec
 
             let arg_string = match instruction.to_string().as_str() {
                 "LOAD_VARIABLE" => format!("({})", leblanc_handle.variable_context.as_ref().unwrap().values().find(|context| context.relationship == instruction.bytes()[0] as u32).unwrap().name),
-                "LOAD_CONSTANT" => format!("({})", leblanc_handle.constants[instruction.bytes()[0] as usize].read().data),
+                "LOAD_CONSTANT" => format!("({})", leblanc_handle.constants.get(instruction.bytes()[0] as usize).unwrap().data),
                 /*InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].lock().data.get_inner_method().unwrap().context.name.clone()}),
                 InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),*/
                 _ => "".to_string()

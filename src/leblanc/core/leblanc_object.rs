@@ -33,20 +33,23 @@ use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::core::native_types::promise_type::{ArcLeblancPromise, LeblancPromise};
 use crate::leblanc::core::native_types::rust_type::RustObject;
 use crate::leblanc::rustblanc::Appendable;
+use crate::leblanc::rustblanc::blueberry::Quantum;
+use crate::leblanc::rustblanc::heap::HeapRef;
 use crate::leblanc::rustblanc::types::LBObject;
+use crate::playground::HEAP;
 
 
-static mut NULL: Option<Arc<Strawberry<LeBlancObject>>> = None;
+static mut NULL: Option<LBObject> = None;
 
-static mut ERROR: Option<Arc<Strawberry<LeBlancObject>>> = None;
+static mut ERROR: Option<LBObject> = None;
 
-static mut MARKER: Option<Arc<Strawberry<LeBlancObject>>> = None;
+static mut MARKER: Option<LBObject> = None;
 
-static mut NO_ARGS: [Arc<Strawberry<LeBlancObject>>; 0] = [];
+static mut NO_ARGS: Vec<LBObject> = vec![];
 
 pub trait Callable {
-    fn call(&mut self, method_name: &str, arguments: Vec<LBObject>) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>>;
-    fn call_name(&mut self, method_name: &str) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>>;
+    fn call(&mut self, method_name: &str, arguments: Vec<LBObject>) -> Result<LBObject, LBObject>;
+    fn call_name(&mut self, method_name: &str) -> Result<LBObject, LBObject>;
 }
 
 pub trait Reflect {
@@ -64,12 +67,12 @@ pub struct LeBlancObject {
     pub data: LeBlancObjectData,
     pub typing: LeBlancType,
     pub methods: Arc<FxHashSet<Method>>,
-    pub members: Arc<Strawberry<FxHashMap<String, LeBlancObject>>>,
+    pub members: FxHashMap<String, LeBlancObject>,
     pub context: VariableContext
 }
 
 impl LeBlancObject {
-    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<FxHashSet<Method>>, members: Arc<Strawberry<FxHashMap<String, LeBlancObject>>>, context: VariableContext) -> LeBlancObject {
+    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<FxHashSet<Method>>, members: FxHashMap<String, LeBlancObject>, context: VariableContext) -> LeBlancObject {
         LeBlancObject {data, typing, methods, members, context}
     }
 
@@ -80,12 +83,16 @@ impl LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Null,
             methods: Arc::new(FxHashSet::default()),
-            members: Arc::new(Strawberry::new(FxHashMap::default())),
+            members: FxHashMap::default(),
             context: VariableContext::empty()
         }
     }
 
-    pub fn unsafe_null() -> Arc<Strawberry<LeBlancObject>> {
+    pub fn null2() -> HeapRef<'static, LeBlancObject> {
+        HEAP.underlying_pointer().alloc_with(LeBlancObject::null)
+    }
+
+    pub fn unsafe_null() -> LBObject {
         return unsafe {
             match NULL.as_ref() {
                 None => {
@@ -104,42 +111,17 @@ impl LeBlancObject {
     }
 
 
-
-    pub fn marker() -> LeBlancObject {
-        LeBlancObject {
-            data: LeBlancObjectData::Null,
-            typing: LeBlancType::Marker,
-            methods: Arc::new(FxHashSet::default()),
-            members: Arc::new(Strawberry::new(FxHashMap::default())),
-            context: VariableContext::empty()
-        }
-    }
-
-    pub fn unsafe_marker() -> Arc<Strawberry<LeBlancObject>> {
-        return unsafe {
-            match MARKER.as_ref() {
-                None => {
-                    MARKER = Some(LeBlancObject::marker().to_mutex());
-                    MARKER.as_ref().unwrap().clone()
-                }
-                Some(marker) => {
-                    marker.clone()
-                }
-            }
-        }
-    }
-
     pub fn error() -> LeBlancObject {
         LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Exception,
             methods: Arc::new(FxHashSet::default()),
-            members: Arc::new(Strawberry::new(FxHashMap::default())),
+            members: FxHashMap::default(),
             context: VariableContext::empty()
         }
     }
 
-    pub fn unsafe_error() -> Arc<Strawberry<LeBlancObject>> {
+    pub fn unsafe_error() -> LBObject {
         return unsafe {
             match ERROR.as_ref() {
                 None => {
@@ -201,8 +183,8 @@ impl LeBlancObject {
         self.typing = other.typing;
     }
 
-    pub fn copy_rc(&mut self, other: &mut Arc<Strawberry<LeBlancObject>>) {
-        let other = other.read();
+    pub fn copy_rc(&mut self, other: &mut LBObject) {
+        let other = other.reference();
         self.members = other.members.clone();
         self.methods.clone_from(&other.methods);
         self.data = other.data.clone();
@@ -227,7 +209,7 @@ impl LeBlancObject {
             object_data,
             cast,
             self.methods.clone(),
-            Arc::new(Strawberry::new(FxHashMap::default())),
+            FxHashMap::default(),
             VariableContext::empty()
         )
     }
@@ -246,15 +228,15 @@ impl LeBlancObject {
         }
     }
 
-    pub fn to_mutex(self) -> Arc<Strawberry<LeBlancObject>> {
-        Arc::new(Strawberry::new(self))
+    pub fn to_mutex(self) -> LBObject {
+        Quantum::from(self)
     }
 }
 
 impl PartialEq for LeBlancObject {
     fn eq(&self, other: &Self) -> bool {
         if self.data != other.data { return false }
-        if !self.members.read().eq(&other.members.read()) { return false }
+        if !self.members.eq(&other.members) { return false }
         self.typing == other.typing
     }
 }
@@ -312,16 +294,16 @@ impl Reflect for LeBlancObject {
     }
 }
 
-impl Reflect for Arc<Strawberry<LeBlancObject>> {
+impl Reflect for LBObject {
     fn reflect(&self) -> Box<dyn Any + 'static> {
-        return self.read().reflect();
+        self.reference().reflect()
     }
 }
 
-pub fn passed_args_to_types(args: &Vec<Arc<Strawberry<LeBlancObject>>>) -> Vec<LeBlancArgument> {
+pub fn passed_args_to_types(args: &Vec<LBObject>) -> Vec<LeBlancArgument> {
     let mut arg_types = Vec::new();
     for i in 0..args.len() {
-        arg_types.append_item( args[i].read().to_leblanc_arg(i as u32));
+        arg_types.append_item( args[i].reference().to_leblanc_arg(i as u32));
     }
     arg_types
 
@@ -358,26 +340,26 @@ impl Display for LeBlancObjectData {
     }
 }
 
-impl Callable for Arc<Strawberry<LeBlancObject>> {
-    fn call(&mut self, method_name: &str, arguments: Vec<LBObject>) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>> {
+impl Callable for LBObject {
+    fn call(&mut self, method_name: &str, arguments: Vec<LBObject>) -> Result<LBObject, LBObject> {
         let argument_vec = arguments.to_vec();
         let args = passed_args_to_types(&argument_vec);
 
 
         //let self_clone = Arc::clone(self);
-        let method = self.read().methods.iter().filter(|m| {
+        let method = self.reference().methods.iter().filter(|m| {
             m.matches(method_name.to_string(), &args)
         }).next().cloned();
         if method.is_none() {
-            return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.read().typing), vec![]).create_mutex());
+            return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.reference().typing), vec![]).create_mutex());
         }
         Ok(method.unwrap().run( self.clone(), arguments))
     }
 
-    fn call_name(&mut self, method_name: &str) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>> {
-        if self.read().typing == LeBlancType::Null { return Err(LeblancError::new("OperationOnNullException".to_string(), "".to_string(), vec![]).create_mutex())}
-        let handle = match self.read().methods.iter().find(|m| m.context.name == method_name) {
-            None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.read().typing), vec![]).create_mutex()),
+    fn call_name(&mut self, method_name: &str) -> Result<LBObject, LBObject> {
+        if self.reference().typing == LeBlancType::Null { return Err(LeblancError::new("OperationOnNullException".to_string(), "".to_string(), vec![]).create_mutex())}
+        let handle = match self.reference().methods.iter().find(|m| m.context.name == method_name) {
+            None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.reference().typing), vec![]).create_mutex()),
             Some(some) => some.handle
         };
         Ok(unsafe { handle(self.clone(), NO_ARGS.to_vec()) })
@@ -389,9 +371,9 @@ pub trait Stringify {
     fn to_string(&self) -> String;
 }
 
-impl Stringify for Arc<Strawberry<LeBlancObject>> {
+impl Stringify for LBObject {
     fn to_string(&self) -> String {
-        self.clone().read().data.to_string()
+        self.clone().reference().data.to_string()
     }
 }
 
@@ -467,6 +449,12 @@ impl LeBlancObjectData {
     }
 }*/
 
+impl From<LeBlancObject> for Quantum<LeBlancObject> {
+    fn from(lbo: LeBlancObject) -> Self {
+        Quantum::new(lbo)
+    }
+}
+
 impl Clone for LeBlancObject {
     fn clone(&self) -> Self {
         self._clone()
@@ -489,17 +477,19 @@ pub trait QuickUnwrap<T: Clone + Default> {
     fn clone_if_locked(&self) -> Arc<Strawberry<T>>;
 }
 
-impl QuickUnwrap<LeBlancObject> for Arc<Strawberry<LeBlancObject>> {
+/*impl QuickUnwrap<LeBlancObject> for LBObject {
     fn arc_unwrap(self) -> LeBlancObject {
         self.force_unwrap()
     }
 
-    fn clone_if_locked(&self) -> Arc<Strawberry<LeBlancObject>> {
-        let lock_attempt = self.try_read();
+    fn clone_if_locked(&self) -> LBObject {
+        let lock_attempt = self.try_reference();
         let cloned = self.clone();
         match lock_attempt {
             Some(_) => cloned,
             None => cloned.arc_unwrap().to_mutex()
         }
     }
-}
+}*/
+
+unsafe impl Sync for LeBlancObject {}

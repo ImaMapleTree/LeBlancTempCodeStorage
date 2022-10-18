@@ -7,9 +7,6 @@ use std::sync::{Arc, Mutex};
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
 use crate::leblanc::rustblanc::utils::{decode_hex, encode_hex};
-use strum::{EnumIter, IntoEnumIterator};
-use strum_macros::EnumVariantNames;
-use strum::VariantNames;
 use crate::lazystore;
 use crate::leblanc::core::internal::methods::builtins::builtin_print::{_BUILTIN_PRINT_METHOD_, _BUILTIN_PRINT_OBJECT_};
 use crate::leblanc::core::leblanc_object::LeBlancObject;
@@ -22,16 +19,11 @@ use crate::leblanc::core::interpreter::leblanc_runner::get_handles;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::lazy_store::LazyStore;
+use crate::leblanc::rustblanc::types::LBObject;
 
 pub mod builtin_print;
 pub mod builtin_debug;
 pub mod builtin_type;
-
-#[derive(Debug, PartialEq, Eq, EnumVariantNames, strum_macros::Display, EnumIter)]
-pub enum BuiltinFunctions {
-    Print,
-    Disassemble
-}
 
 pub static BUILTIN_METHODS: i8 = 4;
 
@@ -53,23 +45,9 @@ pub fn create_lazy_functions() -> LazyStore<FunctionSignature> {
     ]
 }
 
-pub fn create_builtin_function_objects() -> Vec<Arc<Strawberry<LeBlancObject>>> {
+pub fn create_builtin_function_objects() -> Vec<LBObject> {
     vec![_BUILTIN_PRINT_OBJECT_().to_mutex(),
          _BUILTIN_DISASSEMBLE_OBJECT_().to_mutex(),
          _BUILTIN_DEBUG_OBJECT_().to_mutex(),
          _BUILTIN_TYPE_OBJECT_().to_mutex()]
-}
-
-impl Hexable for BuiltinFunctions {
-    fn to_hex(&self, bytes: usize) -> Hexadecimal {
-        let variants: &[&'static str] = BuiltinFunctions::VARIANTS;
-        encode_hex(&(variants.iter().position(|s| *s.to_string() == self.to_string()).unwrap() as u32).to_be_bytes()[4-bytes..4])
-    }
-
-    fn from_hex(hex: &Hexadecimal) -> Self {
-        let mut bytes = decode_hex(hex).unwrap();
-        while bytes.len() < 4 { bytes.insert(0, 0) };
-        let instruct_number = u32::from_be_bytes(<[u8; 4]>::try_from(bytes).unwrap());
-        BuiltinFunctions::iter().enumerate().find(|&(i, _)| i == instruct_number as usize).unwrap().1
-    }
 }

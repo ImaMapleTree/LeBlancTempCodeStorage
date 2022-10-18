@@ -9,10 +9,11 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{internal_method, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::blueberry::Quantum;
 use crate::leblanc::rustblanc::types::LBObject;
 
-fn _BUILTIN_TYPE_(_self: Arc<Strawberry<LeBlancObject>>, args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
-    args[0].read().typing.to_string().create_mutex()
+fn _BUILTIN_TYPE_(_self: LBObject, args: Vec<LBObject>) -> LBObject {
+    args[0].reference().typing.to_string().create_mutex()
 }
 
 pub fn _BUILTIN_TYPE_METHOD_() -> Method {

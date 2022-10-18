@@ -17,6 +17,7 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::include::lib::leblanc_colored::{Color, ColorBright, colorize, ColorString};
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, PartialEq, Eq, Debug, PartialOrd, Hash)]
 pub struct LeblancError {
@@ -39,7 +40,7 @@ pub fn leblanc_object_error(error: LeblancError) -> LeBlancObject {
         LeBlancObjectData::Error(Box::new(error)),
         LeBlancType::Exception,
         Arc::new(hash_set),
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -54,7 +55,7 @@ impl ToLeblanc for LeblancError {
     fn create(&self) -> LeBlancObject {
         leblanc_object_error(self.clone())
     }
-    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
+    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
 }
 
 
@@ -137,8 +138,8 @@ struct FuncDetails {
 
 fn get_func_details(func_number: u32) -> FuncDetails {
     unsafe {
-        let function: Arc<Strawberry<LeBlancObject>> = get_globals()[func_number as usize].clone();
-        let borrow = function.read();
+        let function: LBObject = get_globals()[func_number as usize].clone();
+        let borrow = function.reference();
         let inner_method = borrow.data.get_inner_method().unwrap();
         FuncDetails {
             name: inner_method.context.name.clone(),

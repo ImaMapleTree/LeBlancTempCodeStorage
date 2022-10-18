@@ -17,6 +17,9 @@
 #![feature(is_some_and)]
 #![feature(path_file_prefix)]
 #![feature(unsized_locals, unsized_fn_params)]
+#![feature(pointer_byte_offsets)]
+#![feature(sync_unsafe_cell)]
+#![feature(ptr_internals)]
 
 pub mod leblanc;
 pub mod playground;

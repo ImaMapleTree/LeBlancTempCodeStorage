@@ -15,7 +15,7 @@ pub fn leblanc_object_char(ch: char) -> LeBlancObject {
         LeBlancObjectData::Char(ch),
         LeBlancType::Char,
         base_methods,
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }

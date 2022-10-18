@@ -13,10 +13,13 @@
 #![feature(try_trait_v2)]
 #![feature(path_file_prefix)]
 #![feature(unsized_locals, unsized_fn_params)]
+#![feature(pointer_byte_offsets)]
+#![feature(ptr_internals)]
 
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 #![allow(incomplete_features)]
+
 
 
 //#![allow(clippy::all)]
@@ -43,10 +46,10 @@ use std::path::Path;
 
 use std::time::Instant;
 use clicolors_control::set_colors_enabled;
+use lazy_static::lazy_static;
 use crate::leblanc::compiler::compile_types::CompilationMode;
 use crate::leblanc::core::native_types::LeBlancType;
 use mimalloc::MiMalloc;
-use sharedlib::{Data, FuncTracked, Lib, LibRc, LibTracked, LibUnsafe, Symbol};
 use crate::leblanc::core::module::CoreModule;
 use crate::leblanc::compiler::compile_types::full_reader::read_file;
 use crate::leblanc::compiler::generator::CodeGenerator;
@@ -65,22 +68,23 @@ static INTERACTIVE: bool = false;
 
 
 
-/*#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;*/
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 
 fn main() -> io::Result<()> {
     get_handles().push(LeblancHandle::null());
     let _DEBUG = true;
+    let now = Instant::now();
     playground::playground();
 
     /*if INTERACTIVE {
         start();
     }*/
-    let now = Instant::now();
 
 
-    set_colors_enabled(true);
+
+    /*set_colors_enabled(true);
     let mut generator = CodeGenerator::default();
 
     generator.compile(ZCPath::new("test/test.lb"));
@@ -95,7 +99,7 @@ fn main() -> io::Result<()> {
 
 
     let bc = read_file("test/test.lb".to_string());
-    run(bc);
+    run(bc);*/
 
     let elapsed = now.elapsed();
     println!("Total Elapsed: {}", elapsed.as_secs_f64());

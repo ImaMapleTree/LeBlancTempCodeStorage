@@ -10,13 +10,13 @@ mod _functions_;
 
 pub fn io_core_module() -> CoreModule {
     CoreModule::new("io".to_string(), vec![
-        ModuleMethod::new(io_stdin_read(), vec![LeBlancType::String]),
+        ModuleMethod::new(io_stdin_reference(), vec![LeBlancType::String]),
         ModuleMethod::new(io_stdin_prompt(), vec![LeBlancType::String]),
         ModuleMethod::new(io_stdin_read_int(), vec![LeBlancType::Int]),
     ])
 }
 
-pub fn io_stdin_read() -> Method {
+pub fn io_stdin_reference() -> Method {
     Method::new(
         MethodStore::no_args("read".to_string()),
         _stdin_read_,

@@ -3,7 +3,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use lalrpop_util::lalrpop_mod;
-use sharedlib::{FuncTracked, FuncUnsafe, LibRc, LibUnsafe, Symbol};
 use crate::leblanc::compiler::file_system::module::CompileModule;
 use crate::leblanc::compiler::generator::CodeGenerator;
 use crate::leblanc::compiler::parser::ast::{Component, push_byte_location, set_file};

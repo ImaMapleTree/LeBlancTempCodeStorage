@@ -24,6 +24,7 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::promise_type::{LeblancPromise};
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::blueberry::Quantum;
 use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, Debug, Default)]
@@ -75,22 +76,22 @@ impl PartialOrd for LeblancGroup {
 }
 
 impl LeblancGroup {
-    pub fn promise(&mut self, returnable: Arc<Strawberry<LeBlancObject>>) -> Arc<Strawberry<LeblancPromise>> {
+    pub fn promise(&mut self, returnable: LBObject) -> Arc<Strawberry<LeblancPromise>> {
         let promise = Arc::new(Strawberry::new(LeblancPromise::default()));
-        let cell = PromiseCell::new((*returnable).read().clone(), promise.clone());
+        let cell = PromiseCell::new(returnable.to_owned(), promise.clone());
         self.promises.push(Arc::new(Strawberry::new(cell)));
         promise
     }
 
-    pub fn apply(&mut self, function: Arc<Strawberry<LeBlancObject>>, other_args: Vec<LBObject>) {
+    pub fn apply(&mut self, function: LBObject, other_args: Vec<LBObject>) {
         self.promises.iter_mut().for_each(|prom| {
             let mutex = prom.underlying_pointer();
             let consumed = mutex.promise.read().consumed;
             if !consumed {
                 mutex.promise.write().result = {
                     let mut args = other_args.to_vec();
-                    args.insert(0, take(&mut mutex.echo).to_mutex());
-                    let result = function.read().data.get_inner_method().unwrap().run(function.clone(), args);
+                    args.insert(0, Quantum::new(take(&mut mutex.echo)));
+                    let result = function.reference().data.get_inner_method().unwrap().run(function.clone(), args);
                     Some(result)
                 };
                 mutex.promise.write().complete = true
@@ -127,13 +128,13 @@ impl LeblancGroup {
         //let args = args.to_vec();
 
         let mut nargs = args.to_vec();
-        let real_futures: Vec<JoinHandle<Arc<Strawberry<LeBlancObject>>>> = futures_functions.into_iter().map(|a| a.leblanc_handle.full_clone()).map(|mut f| {
+        let real_futures: Vec<JoinHandle<LBObject>> = futures_functions.into_iter().map(|a| a.leblanc_handle.clone()).map(|mut f| {
             let nargs_clone = nargs.clone();
             async_std::task::spawn(async move {
                 f.execute_async(nargs_clone).await}
         )}).collect();
         //map(async_std::task::spawn).collect();
-        let mut tasks: Vec<Arc<Strawberry<LeBlancObject>>> = block_on(async {join_all(real_futures)
+        let mut tasks: Vec<LBObject> = block_on(async {join_all(real_futures)
             .await
             .into_iter()
             .collect()});
@@ -207,7 +208,7 @@ pub fn leblanc_object_group(group: LeblancGroup) -> LeBlancObject {
         LeBlancObjectData::Group(group),
         LeBlancType::Group,
         group_methods(),
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }

@@ -12,6 +12,7 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::derived::iterator_type::{leblanc_object_iterator, LeblancIterable};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, PartialEq)]
 pub struct LeblancInternalRangeGenerator {
@@ -25,7 +26,7 @@ pub struct LeblancInternalRangeGenerator {
 }
 
 impl LeblancIterable for LeblancInternalRangeGenerator {
-    fn lb_next(&mut self) -> Arc<Strawberry<LeBlancObject>> {
+    fn lb_next(&mut self) -> LBObject {
         match &mut self.step_type {
             PositiveStep | NegativeStep => {
                 swap(&mut self.value, &mut self.next_value);
@@ -33,7 +34,7 @@ impl LeblancIterable for LeblancInternalRangeGenerator {
             }
             FunctionStep(method) => {
                 swap(&mut self.value, &mut self.next_value);
-                self.next_value.data = method.run(self.step.clone().to_mutex(), vec![self.value.clone().to_mutex()]).read().cast(self.boundary_type).data}
+                self.next_value.data = method.run(self.step.clone().to_mutex(), vec![self.value.clone().to_mutex()]).reference().cast(self.boundary_type).data}
             ConditionalStep => { }
         }
         //println!("{}", self.value.to_string());
@@ -64,14 +65,14 @@ impl LeblancIterable for LeblancInternalRangeGenerator {
 
     fn transformed(&mut self) -> Option<&mut TransformedIterator> { None }
 
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Strawberry<LeBlancObject>>>> { Box::new(self.clone()) }
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=LBObject>> { Box::new(self.clone()) }
 }
 
 impl LeblancInternalRangeGenerator {
-    pub fn new(value: Arc<Strawberry<LeBlancObject>>, boundary: Arc<Strawberry<LeBlancObject>>, step: Arc<Strawberry<LeBlancObject>>) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>> {
-        let value = value.read().clone();
-        let boundary = boundary.read().clone();
-        let mut step = step.read().clone();
+    pub fn new(value: LBObject, boundary: LBObject, step: LBObject) -> Result<LBObject, LBObject> {
+        let value = value.reference();
+        let boundary = boundary.to_owned();
+        let mut step = step.to_owned();
         let step_type = match step.typing {
             LeBlancType::Int | LeBlancType::Int64 | LeBlancType::Int128 | LeBlancType::Short | LeBlancType::Float |
             LeBlancType::Double | LeBlancType::Arch => if step.data.as_i128() >= 0 { PositiveStep } else { NegativeStep },
@@ -135,7 +136,7 @@ impl Debug for LeblancInternalRangeGenerator {
 }
 
 impl Iterator for LeblancInternalRangeGenerator {
-    type Item = Arc<Strawberry<LeBlancObject>>;
+    type Item = LBObject;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.has_next() {

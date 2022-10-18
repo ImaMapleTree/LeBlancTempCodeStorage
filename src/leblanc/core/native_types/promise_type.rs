@@ -13,6 +13,7 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::error_type::LeblancError;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Debug, Clone, Default)]
 pub struct ArcLeblancPromise {
@@ -41,14 +42,14 @@ impl ArcLeblancPromise {
 
 #[derive(Debug, Clone, Default)]
 pub struct LeblancPromise {
-    pub result: Option<Arc<Strawberry<LeBlancObject>>>,
+    pub result: Option<LBObject>,
     pub complete: bool,
     pub consumed: bool,
 }
 
 impl PartialEq for LeblancPromise {
     fn eq(&self, other: &Self) -> bool {
-        self.result.as_ref().unwrap().read().eq(&other.result.as_ref().unwrap().read())
+        self.result.as_ref().unwrap().reference().eq(&other.result.as_ref().unwrap().reference())
     }
 }
 
@@ -62,12 +63,12 @@ impl PartialOrd for LeblancPromise {
 }
 
 impl LeblancPromise {
-    pub fn consume(&mut self) -> Result<Arc<Strawberry<LeBlancObject>>, Arc<Strawberry<LeBlancObject>>> {
+    pub fn consume(&mut self) -> Result<LBObject, LBObject> {
         match self.complete {
             false => Err(LeblancError::new("PromiseNotFulfilledException".to_string(), "Attempted to consume a non-complete promise.".to_string(), vec![]).create_mutex()),
             true => {
                 self.consumed = true;
-                let res = Ok(self.result.as_ref().unwrap().read().clone().to_mutex());
+                let res = Ok(LBObject::from(self.result.as_ref().unwrap().to_owned()));
                 self.result = None;
                 res
             }
@@ -84,7 +85,7 @@ impl ToLeblanc for LeblancPromise {
         leblanc_object_promise(ArcLeblancPromise::from(Arc::new(Strawberry::new(self.clone()))))
     }
 
-    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> {
+    fn create_mutex(&self) -> LBObject {
         self.create().to_mutex()
     }
 }
@@ -94,7 +95,7 @@ impl ToLeblanc for Arc<Strawberry<LeblancPromise>> {
         leblanc_object_promise(ArcLeblancPromise::from(self.clone()))
     }
 
-    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> {
+    fn create_mutex(&self) -> LBObject {
         self.create().to_mutex()
     }
 }
@@ -104,7 +105,7 @@ impl ToLeblanc for ArcLeblancPromise {
         leblanc_object_promise(self.clone())
     }
 
-    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> {
+    fn create_mutex(&self) -> LBObject {
         self.create().to_mutex()
     }
 }
@@ -114,7 +115,7 @@ pub fn leblanc_object_promise(promise: ArcLeblancPromise) -> LeBlancObject {
         LeBlancObjectData::Promise(promise),
         LeBlancType::Promise,
         promise_methods(),
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -167,7 +168,7 @@ impl Display for LeblancPromise {
         let s = if self.consumed {
             String::from("ConsumedPromise")
         } else if self.complete {
-            format!("CompletedPromise({:#?})", self.result.as_ref().unwrap().read().data).replace('\n', "").replace("(    ", "(").replace(",)", ")")
+            format!("CompletedPromise({:#?})", self.result.as_ref().unwrap().reference().data).replace('\n', "").replace("(    ", "(").replace(",)", ")")
         } else {
             String::from("Promise")
         };

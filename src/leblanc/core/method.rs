@@ -18,6 +18,7 @@ use std::mem::take;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 use crate::leblanc::core::interpreter::leblanc_runner::get_handles;
+use crate::leblanc::rustblanc::blueberry::Quantum;
 use crate::leblanc::rustblanc::types::{LBFunctionHandle, LBObject};
 
 pub struct Method {
@@ -25,7 +26,6 @@ pub struct Method {
     pub leblanc_handle: &'static mut LeblancHandle,
     pub arc_handle: Option<LeblancHandle>,
     pub handle: LBFunctionHandle,
-    pub c_handle: fn(Arc<Strawberry<LeBlancObject>>, Vec<LBObject>) -> Option<&'static mut LeBlancObject>,
     pub tags: BTreeSet<MethodTag>,
     pub method_type: MethodType,
 }
@@ -40,20 +40,7 @@ impl Method {
             arc_handle: None,
             handle,
             tags,
-            c_handle: null_c_func,
             method_type: MethodType::InternalMethod
-        }
-    }
-
-    pub fn c_method(context: MethodStore, c_handle: fn(Arc<Strawberry<LeBlancObject>>, Vec<LBObject>) -> Option<&'static mut LeBlancObject>, tags: BTreeSet<MethodTag>) -> Method {
-        Method {
-            context,
-            leblanc_handle: get_handles().get_mut(0).unwrap(),
-            arc_handle: None,
-            handle: null_func,
-            tags,
-            c_handle,
-            method_type: MethodType::LinkedMethod
         }
     }
 
@@ -65,7 +52,6 @@ impl Method {
             arc_handle: None,
             handle: null_func,
             tags: BTreeSet::new(),
-            c_handle: null_c_func,
             method_type: MethodType::InternalMethod
         }
     }
@@ -77,13 +63,12 @@ impl Method {
             arc_handle: None,
             handle: error_func,
             tags: BTreeSet::new(),
-            c_handle: null_c_func,
             method_type: MethodType::InternalMethod
         }
     }
 
     pub fn is_internal_method(&self) -> bool {
-        matches!(self.method_type, MethodType::LinkedMethod | MethodType::InternalMethod)
+        matches!(self.method_type, MethodType::InternalMethod)
     }
 
     pub fn no_handle(context: MethodStore, tags: BTreeSet<MethodTag>) -> Method {
@@ -97,7 +82,6 @@ impl Method {
             arc_handle: None,
             handle: null_func,
             tags,
-            c_handle: null_c_func,
             method_type: MethodType::DefinedMethod
         }
     }
@@ -107,17 +91,16 @@ impl Method {
     }
 
     #[inline(always)]
-    pub fn run(&self, _self: Arc<Strawberry<LeBlancObject>>, args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
+    pub fn run(&self, _self: LBObject, args: Vec<LBObject>) -> LBObject {
         match self.method_type {
             MethodType::DefinedMethod => self.leblanc_handle.execute(args),
-            MethodType::LinkedMethod => (self.c_handle)(_self, args).unwrap()._clone().to_mutex(),
             MethodType::InternalMethod => (self.handle)(_self, args)
         }
     }
 
 
     #[inline(always)]
-    pub fn run_uncloned(&self, _self: Arc<Strawberry<LeBlancObject>>, args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
+    pub fn run_uncloned(&self, _self: LBObject, args: Vec<LBObject>) -> LBObject {
         (self.handle)(_self, args)
     }
 
@@ -180,7 +163,6 @@ impl Clone for Method {
             handle: self.handle,
             leblanc_handle: get_handles().get_mut(self.leblanc_handle.global_index).unwrap(),
             tags: self.tags.clone(),
-            c_handle: self.c_handle.clone(),
             method_type: self.method_type,
             arc_handle: None
         }
@@ -198,7 +180,7 @@ fn null_func(_self: LBObject, _args: Vec<LBObject>) -> LBObject {LeBlancObject::
 
 fn error_func(_self: LBObject, _args: Vec<LBObject>) -> LBObject{LeBlancObject::unsafe_error()}
 
-fn null_c_func(_self: Arc<Strawberry<LeBlancObject>>, _args: Vec<LBObject>) -> Option<&'static mut LeBlancObject> { panic!("Function Not Implemented") }
+fn null_c_func(_self: LBObject, _args: Vec<LBObject>) -> Option<&'static mut LeBlancObject> { panic!("Function Not Implemented") }
 
 impl Display for Method {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -226,6 +208,5 @@ fn tags_to_string(tags: &BTreeSet<MethodTag>) -> String {
 #[derive(Copy, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MethodType {
     InternalMethod,
-    LinkedMethod,
     DefinedMethod
 }

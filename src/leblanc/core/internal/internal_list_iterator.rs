@@ -6,15 +6,16 @@ use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::native_types::derived::iterator_type::LeblancIterable;
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, Debug)]
 pub struct LeblancVecIterator {
-    vec: Vec<Arc<Strawberry<LeBlancObject>>>,
+    vec: Vec<LBObject>,
     index: usize,
 }
 
 impl LeblancVecIterator {
-    pub fn new(vec: Vec<Arc<Strawberry<LeBlancObject>>>) -> LeblancVecIterator {
+    pub fn new(vec: Vec<LBObject>) -> LeblancVecIterator {
         LeblancVecIterator {
             vec,
             index: 0
@@ -23,7 +24,7 @@ impl LeblancVecIterator {
 }
 
 impl LeblancIterable for LeblancVecIterator {
-    fn lb_next(&mut self) -> Arc<Strawberry<LeBlancObject>> {
+    fn lb_next(&mut self) -> LBObject {
         self.index += 1;
         self.vec[self.index - 1].clone()
     }
@@ -40,7 +41,7 @@ impl LeblancIterable for LeblancVecIterator {
         LeblancList::new(self.vec.clone())
     }
 
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Strawberry<LeBlancObject>>>> {
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=LBObject>> {
         Box::new(self.vec.clone().into_iter())
     }
 

@@ -16,6 +16,8 @@ pub mod lb_file;
 pub mod outcome;
 pub mod macros;
 pub mod blueberry;
+pub mod heap;
+pub mod low;
 
 
 pub trait Appendable<T> {

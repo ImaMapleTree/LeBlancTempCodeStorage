@@ -16,6 +16,7 @@ use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equa
 use crate::leblanc::core::native_types::LeBlancType;
 
 use crate::leblanc::core::native_types::LeBlancType::Flex;
+use crate::leblanc::rustblanc::types::LBObject;
 
 pub fn leblanc_object_string(string: String) -> LeBlancObject {
     let mut hash_set = FxHashSet::default();
@@ -31,7 +32,7 @@ pub fn leblanc_object_string(string: String) -> LeBlancObject {
         LeBlancObjectData::String(SmolStr::new(string)),
         LeBlancType::String,
         Arc::new(hash_set),
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -40,7 +41,7 @@ impl ToLeblanc for String {
     fn create(&self) -> LeBlancObject {
         leblanc_object_string(self.clone())
     }
-    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
+    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
 }
 
 pub fn string_addition_method() -> Method {

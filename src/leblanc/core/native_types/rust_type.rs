@@ -115,7 +115,7 @@ impl RustObjectBuilder {
             data: LeBlancObjectData::Rust(self.data.clone()),
             typing: LeBlancType::Class(name),
             methods: Arc::new(methods),
-            members: Arc::new(Strawberry::new(take(&mut self.members))),
+            members: take(&mut self.members),
             context: VariableContext::empty()
         }
     }

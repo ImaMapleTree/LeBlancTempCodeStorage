@@ -14,9 +14,11 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
 
 use crate::leblanc::core::native_types::LeBlancType;
+
 use crate::leblanc::rustblanc::types::LBObject;
 
-fn _BUILTIN_PRINT_(_self: Arc<Strawberry<LeBlancObject>>, mut args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
+fn _BUILTIN_PRINT_(_self: LBObject, mut args: Vec<LBObject>) -> LBObject {
+    //println!("Args: {:?}", args);
     let arg_length = args.len();
     for i in 0..arg_length {
         let sep = if i == arg_length-1 { "\n" } else { " " };
@@ -32,7 +34,7 @@ fn _BUILTIN_PRINT_(_self: Arc<Strawberry<LeBlancObject>>, mut args: Vec<LBObject
 
 
         //io::copy(&mut result.as_bytes(), &mut STDOUT.as_mut().unwrap()).unwrap();
-    LeBlancObject::unsafe_null()
+    LeBlancObject::null().to_mutex()
 }
 
 pub fn _BUILTIN_PRINT_METHOD_() -> Method {

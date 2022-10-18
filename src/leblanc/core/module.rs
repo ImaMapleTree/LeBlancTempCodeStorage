@@ -7,6 +7,7 @@ use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::base_type::internal_method;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
 pub struct Module {
@@ -41,7 +42,7 @@ impl CoreModule {
     pub fn methods_as_partials(&self) -> Vec<PartialFunction> {
         self.methods.iter().map(|method| PartialFunction::from_method(method.method.clone(), method.returns.clone())).collect()
     }
-    pub fn methods_as_objects(&self) -> Vec<Arc<Strawberry<LeBlancObject>>> {
+    pub fn methods_as_objects(&self) -> Vec<LBObject> {
         self.methods.iter().map(|method| internal_method(method.method.clone()).to_mutex()).collect()
     }
 }

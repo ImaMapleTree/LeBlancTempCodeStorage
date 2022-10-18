@@ -16,6 +16,7 @@ use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::derived::iterator_type::{iterator_methods, LeblancIterable, LeblancIterator};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LeblancGenerator {
@@ -32,7 +33,7 @@ pub fn leblanc_object_generator(leblanc_handle: LeblancHandle) -> LeBlancObject 
         LeBlancObjectData::Iterator(LeblancIterator::new(Box::new(generator))),
         LeBlancType::Derived(DerivedType::Iterator),
         base_methods,
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -44,11 +45,11 @@ impl Display for LeblancGenerator {
 }
 
 impl LeblancIterable for LeblancGenerator {
-    fn lb_next(&mut self) -> Arc<Strawberry<LeBlancObject>> {
+    fn lb_next(&mut self) -> LBObject {
         self.leblanc_handle.execute_from_last_point().to_mutex()
     }
     fn has_next(&self) -> bool {
-        self.leblanc_handle.current_instruct < self.leblanc_handle.instructions.len()
+        0 < self.leblanc_handle.instructions.len()
     }
 
     fn reverse(&mut self) {
@@ -63,7 +64,7 @@ impl LeblancIterable for LeblancGenerator {
         LeblancList::new(vec, )
     }
 
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Strawberry<LeBlancObject>>>> {
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=LBObject>> {
         Box::new(self.clone())
     }
 
@@ -71,7 +72,7 @@ impl LeblancIterable for LeblancGenerator {
 }
 
 impl Iterator for LeblancGenerator {
-    type Item = Arc<Strawberry<LeBlancObject>>;
+    type Item = LBObject;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.has_next() {

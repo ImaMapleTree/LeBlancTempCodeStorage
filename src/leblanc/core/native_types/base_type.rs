@@ -15,12 +15,13 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::core::native_types::LeBlancType::*;
+use crate::leblanc::rustblanc::types::LBObject;
 
 static mut BASE_METHODS: Option<Arc<FxHashSet<Method>>> = None;
 
 pub trait ToLeblanc {
     fn create(&self) -> LeBlancObject;
-    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>>;
+    fn create_mutex(&self) -> LBObject;
 }
 
 
@@ -48,7 +49,7 @@ pub fn internal_method(method: Method) -> LeBlancObject {
         data: LeBlancObjectData::Function(Box::new(method)),
         typing: Function,
         methods: Arc::new(methods),
-        members: Arc::new(Strawberry::new(FxHashMap::default())),
+        members: FxHashMap::default(),
         context: VariableContext::empty()
     }
 }

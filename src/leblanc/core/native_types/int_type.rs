@@ -5,13 +5,14 @@ use alloc::rc::Rc;
 use std::cell::RefCell;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
+use fxhash::FxHashMap;
 
 
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_default_data::unsafe_empty_members;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
     let base_methods = base_methods();
@@ -21,7 +22,7 @@ pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
         LeBlancObjectData::Int(integer),
         LeBlancType::Int,
         base_methods,
-        unsafe_empty_members(),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -43,7 +44,7 @@ pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
 
 impl ToLeblanc for i32 {
     fn create(&self) -> LeBlancObject { leblanc_object_int(*self) }
-    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
+    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
 }
 
 impl RustDataCast<i32> for LeBlancObjectData {

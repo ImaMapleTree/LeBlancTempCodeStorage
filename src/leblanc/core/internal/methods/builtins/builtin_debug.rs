@@ -11,11 +11,12 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::blueberry::Quantum;
 use crate::leblanc::rustblanc::types::LBObject;
 
 pub mod builtin_disassemble;
 
-fn _BUILTIN_DEBUG_(_self: Arc<Strawberry<LeBlancObject>>, mut args: Vec<LBObject>) -> Arc<Strawberry<LeBlancObject>> {
+fn _BUILTIN_DEBUG_(_self: LBObject, mut args: Vec<LBObject>) -> LBObject {
     let arg_length = args.len();
     println!("--------------------------------------------------------");
     println!("----------------------DEBUGGING-------------------------");

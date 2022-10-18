@@ -19,6 +19,7 @@ use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equa
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 pub trait IteratorUtils {
     fn leblanc_iterator_clone(&self) -> Box<dyn LeblancIterable>;
@@ -42,11 +43,11 @@ where
 }
 
 pub trait LeblancIterable: IteratorUtils {
-    fn lb_next(&mut self) -> Arc<Strawberry<LeBlancObject>>;
+    fn lb_next(&mut self) -> LBObject;
     fn has_next(&self) -> bool;
     fn reverse(&mut self);
     fn to_list(&mut self) -> LeblancList;
-    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=Arc<Strawberry<LeBlancObject>>>>;
+    fn to_rust_iter(&mut self) -> Box<dyn Iterator<Item=LBObject>>;
     fn transformed(&mut self) -> Option<&mut TransformedIterator>;
 }
 
@@ -62,7 +63,7 @@ pub fn leblanc_object_iterator(leblanc_iterable: Box<dyn LeblancIterable>) -> Le
         LeBlancObjectData::Iterator(LeblancIterator::new(leblanc_iterable)),
         LeBlancType::Derived(DerivedType::Iterator),
         base_methods,
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -75,7 +76,7 @@ impl LeblancIterator {
         }
     }
 
-    pub fn next(&mut self) -> Arc<Strawberry<LeBlancObject>> { self.iterator.lb_next() }
+    pub fn next(&mut self) -> LBObject { self.iterator.lb_next() }
 
     pub fn has_next(&self) -> bool {
         self.iterator.has_next()
@@ -89,7 +90,7 @@ impl LeblancIterator {
 
     pub fn transformed(&mut self) -> Option<&mut TransformedIterator> { self.iterator.transformed() }
 
-    pub fn to_rust_iterator(&mut self) -> Box<dyn Iterator<Item=Arc<Strawberry<LeBlancObject>>>> { self.iterator.to_rust_iter() }
+    pub fn to_rust_iterator(&mut self) -> Box<dyn Iterator<Item=LBObject>> { self.iterator.to_rust_iter() }
 }
 
 impl Display for LeblancIterator {

@@ -12,6 +12,7 @@ use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
 use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd)]
 pub struct NativeBlock {
@@ -25,7 +26,7 @@ pub fn leblanc_object_block(block: NativeBlock) -> LeBlancObject {
         LeBlancObjectData::Block(block),
         LeBlancType::Group,
         base_methods,
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -35,7 +36,7 @@ impl ToLeblanc for NativeBlock {
     fn create(&self) -> LeBlancObject {
         leblanc_object_block(*self)
     }
-    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
+    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
 }
 
 impl Display for NativeBlock {

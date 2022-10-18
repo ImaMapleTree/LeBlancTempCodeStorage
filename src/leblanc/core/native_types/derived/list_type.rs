@@ -15,10 +15,11 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, Debug)]
 pub struct LeblancList {
-    pub internal_vec: Vec<Arc<Strawberry<LeBlancObject>>>
+    pub internal_vec: Vec<LBObject>
 }
 
 impl LeblancList {
@@ -28,7 +29,7 @@ impl LeblancList {
         }
     }
 
-    pub fn new(internal_vec: Vec<Arc<Strawberry<LeBlancObject>>>) -> LeblancList {
+    pub fn new(internal_vec: Vec<LBObject>) -> LeblancList {
         LeblancList {
             internal_vec
         }
@@ -42,7 +43,7 @@ pub fn leblanc_object_list_empty() -> LeBlancObject {
         LeBlancObjectData::List(LeblancList::empty()),
         LeBlancType::Derived(DerivedType::List),
         base_methods,
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -94,7 +95,7 @@ pub fn leblanc_object_list(list: LeblancList) -> LeBlancObject {
         LeBlancObjectData::List(list),
         LeBlancType::Derived(DerivedType::List),
         base_methods,
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -103,12 +104,12 @@ impl ToLeblanc for LeblancList {
     fn create(&self) -> LeBlancObject {
         leblanc_object_list(self.clone())
     }
-    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
+    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
 }
 
 impl Display for LeblancList {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().read().data.to_string()).collect::<Vec<String>>().join(", "))
+        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().reference().data.to_string()).collect::<Vec<String>>().join(", "))
     }
 }
 
@@ -116,7 +117,7 @@ impl PartialEq for LeblancList {
     fn eq(&self, other: &Self) -> bool {
         if self.internal_vec.len() != other.internal_vec.len() { return false }
         for i in 0..self.internal_vec.len() {
-            if self.internal_vec[i].read().data != other.internal_vec[i].read().data {
+            if self.internal_vec[i].reference().data != other.internal_vec[i].reference().data {
                 return false;
             }
         }

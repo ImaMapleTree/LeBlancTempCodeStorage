@@ -11,6 +11,7 @@ use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 pub fn leblanc_object_double(double: f64) -> LeBlancObject {
     let base_methods = base_methods();
@@ -19,7 +20,7 @@ pub fn leblanc_object_double(double: f64) -> LeBlancObject {
         LeBlancObjectData::Double(double),
         LeBlancType::Double,
         base_methods,
-        Arc::new(Strawberry::new(FxHashMap::default())),
+        FxHashMap::default(),
         VariableContext::empty(),
     )
 }
@@ -44,7 +45,7 @@ impl ToLeblanc for f64 {
     fn create(&self) -> LeBlancObject {
         leblanc_object_double(*self)
     }
-    fn create_mutex(&self) -> Arc<Strawberry<LeBlancObject>> { Arc::new(Strawberry::new(self.create())) }
+    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
 }
 
 impl RustDataCast<f64> for LeBlancObjectData {
