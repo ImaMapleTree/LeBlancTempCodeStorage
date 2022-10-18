@@ -19,7 +19,7 @@ pub struct ClassMeta {
     pub parse_id: u32,
 }
 
-pub fn leblanc_object_custom(meta: ClassMeta) -> LeBlancObject {
+pub fn leblanc_object_custom(meta: ClassMeta) -> LBObject {
     let base_methods = base_methods();
     let name = meta.name;
     LeBlancObject::new(
@@ -102,9 +102,9 @@ impl ClassMetaBuilder {
         ClassMeta::new(self.name.clone().to_cstring(), self.supertypes.clone(), self.parse_id)
     }
 
-    pub fn build_object(&self) -> LeBlancObject {
+    pub fn build_object(&self) -> LBObject {
         let mut obj = leblanc_object_custom(self.build());
-        let mut methods = Arc::unwrap_or_clone(obj.methods);
+        let mut methods = (*(obj.methods)).clone();
         self.methods.iter().cloned().for_each(|m| {methods.insert(m);});
         obj.methods = Arc::new(methods);
         obj

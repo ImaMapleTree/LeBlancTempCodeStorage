@@ -20,7 +20,7 @@ pub fn _stdin_read_(_self: LBObject, _args: Vec<LBObject>) -> LBObject {
 
 
 pub fn _stdin_prompt_(_self: LBObject, _args: Vec<LBObject>) -> LBObject {
-    let locked = _args[0].reference();
+    let locked = &_args[0];
     let s: &SmolStr = locked.data.ref_data().unwrap();
     print!("{}", s);
     stdout().flush().unwrap();

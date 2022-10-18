@@ -7,6 +7,7 @@ use std::cell::RefCell;
 
 use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_math::_internal_add_number_;
+use crate::leblanc::core::interpreter::HEAP;
 use crate::leblanc::core::leblanc_argument::{LeBlancArgument, number_argset};
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
@@ -42,16 +43,17 @@ pub fn base_methods() -> Arc<FxHashSet<Method>> {
     }
 }
 
-pub fn internal_method(method: Method) -> LeBlancObject {
+pub fn internal_method(method: Method) -> LBObject {
     let mut methods = Arc::unwrap_or_clone( base_methods());
     methods.insert(method.clone());
+    HEAP.underlying_pointer().alloc(
     LeBlancObject {
         data: LeBlancObjectData::Function(Box::new(method)),
         typing: Function,
         methods: Arc::new(methods),
         members: FxHashMap::default(),
         context: VariableContext::empty()
-    }
+    })
 }
 
 pub fn base_to_string_method() -> MethodStore {

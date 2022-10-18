@@ -27,7 +27,7 @@ pub struct LeblancError {
 }
 
 
-pub fn leblanc_object_error(error: LeblancError) -> LeBlancObject {
+pub fn leblanc_object_error(error: LeblancError) -> LBObject {
     let mut hash_set = FxHashSet::default();
     hash_set.insert(Method::default(base_to_string_method(), _internal_to_string_));
     hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
@@ -53,9 +53,9 @@ impl Display for LeblancError {
 
 impl ToLeblanc for LeblancError {
     fn create(&self) -> LeBlancObject {
-        leblanc_object_error(self.clone())
+        leblanc_object_error(self.clone())._clone()
     }
-    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
+    fn create_mutex(&self) -> LBObject { leblanc_object_error(self.clone()) }
 }
 
 
@@ -139,11 +139,10 @@ struct FuncDetails {
 fn get_func_details(func_number: u32) -> FuncDetails {
     unsafe {
         let function: LBObject = get_globals()[func_number as usize].clone();
-        let borrow = function.reference();
-        let inner_method = borrow.data.get_inner_method().unwrap();
+        let inner_method = function.data.get_inner_method().unwrap();
         FuncDetails {
             name: inner_method.context.name.clone(),
-            file: borrow.context.file.to_string()
+            file: function.context.file.to_string()
         }
     }
 

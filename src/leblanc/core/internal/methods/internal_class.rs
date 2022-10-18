@@ -19,7 +19,7 @@ use crate::leblanc::rustblanc::types::LBObject;
 pub fn _internal_field_(_self: LBObject, arguments: Vec<LBObject>) -> LBObject {
     let string: String = unsafe {arguments[0].reflect().downcast_ref_unchecked::<String>()}.clone();
 
-    return _self.reference().members.get(string.as_str()).unwrap_or(&LeBlancObject::null()).clone().to_mutex();
+    return _self.members.get(string.as_str()).unwrap_or(&LeBlancObject::null()).clone();
 }
 
 pub fn _internal_expose_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
@@ -32,7 +32,7 @@ pub fn _internal_expose_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject
         VariableContext::empty(),
     );
 
-    expose_object.members.insert("name".to_string(), leblanc_object_string(_self.reference().name_of()));
+    expose_object.members.insert("name".to_string(), leblanc_object_string(_self.name_of()));
 
     let variable_class_meta = ClassMeta::default("VariableContext".to_string(), 1);
     let mut variable_state = LeBlancObject::new(
@@ -43,15 +43,15 @@ pub fn _internal_expose_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject
         VariableContext::empty()
     );
 
-    variable_state.members.insert("name".to_string(), leblanc_object_string(_self.reference().context.name.to_string()));
-    variable_state.members.insert("state".to_string(), leblanc_object_string(_self.reference().context.state.to_string()));
-    variable_state.members.insert("lineNumber".to_string(), leblanc_object_string(_self.reference().context.line_number.to_string()));
-    variable_state.members.insert("file".to_string(), leblanc_object_string(_self.reference().context.file.to_string()));
+    variable_state.members.insert("name".to_string(), leblanc_object_string(_self.context.name.to_string()));
+    variable_state.members.insert("state".to_string(), leblanc_object_string(_self.context.state.to_string()));
+    variable_state.members.insert("lineNumber".to_string(), leblanc_object_string(_self.context.line_number.to_string()));
+    variable_state.members.insert("file".to_string(), leblanc_object_string(_self.context.file.to_string()));
 
     expose_object.members.insert("variableContext".to_string(), variable_state);
 
 
-    expose_object.to_mutex()
+    expose_object
 }
 
 pub fn _internal_to_string_(_self: LBObject, _args: Vec<LBObject>) -> LBObject {

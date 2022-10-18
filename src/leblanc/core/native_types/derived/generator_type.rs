@@ -23,7 +23,7 @@ pub struct LeblancGenerator {
     leblanc_handle: LeblancHandle
 }
 
-pub fn leblanc_object_generator(leblanc_handle: LeblancHandle) -> LeBlancObject {
+pub fn leblanc_object_generator(leblanc_handle: LeblancHandle) -> LBObject {
     let base_methods = iterator_methods();
 
     let generator = LeblancGenerator {leblanc_handle};
@@ -46,7 +46,7 @@ impl Display for LeblancGenerator {
 
 impl LeblancIterable for LeblancGenerator {
     fn lb_next(&mut self) -> LBObject {
-        self.leblanc_handle.execute_from_last_point().to_mutex()
+        self.leblanc_handle.execute_from_last_point()
     }
     fn has_next(&self) -> bool {
         0 < self.leblanc_handle.instructions.len()
@@ -76,7 +76,7 @@ impl Iterator for LeblancGenerator {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.has_next() {
-            true => Some(self.leblanc_handle.execute_from_last_point().to_mutex()),
+            true => Some(self.leblanc_handle.execute_from_last_point()),
             false => None
         }
     }

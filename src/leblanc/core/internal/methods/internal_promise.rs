@@ -8,7 +8,7 @@ use crate::leblanc::rustblanc::blueberry::Quantum;
 use crate::leblanc::rustblanc::types::LBObject;
 
 pub fn _internal_promise_consume_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
-    let mut borrowed = _self.reference();
+    let mut borrowed = _self;
     let promise: &mut ArcLeblancPromise = borrowed.data.mut_data().unwrap();
     let x = promise.inner.write().consume().unwrap(); x
 }

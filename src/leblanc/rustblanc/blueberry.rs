@@ -127,7 +127,7 @@ impl<T: Clone + Debug> BlueberryVec<T> {
         if item.is_owned() {
             self.set(index, item.to_owned())
         } else {
-            self.set_ref(index, item.reference());
+            self.set_ref(index, item.reference);
             Ok(())
         }
     }

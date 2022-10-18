@@ -36,7 +36,7 @@ impl LeblancList {
     }
 }
 
-pub fn leblanc_object_list_empty() -> LeBlancObject {
+pub fn leblanc_object_list_empty() -> LBObject {
     let base_methods = list_methods();
 
     LeBlancObject::new(
@@ -88,7 +88,7 @@ pub fn list_length_method() -> Method {
     )
 }
 
-pub fn leblanc_object_list(list: LeblancList) -> LeBlancObject {
+pub fn leblanc_object_list(list: LeblancList) -> LBObject {
     let base_methods = list_methods();
 
     LeBlancObject::new(
@@ -102,14 +102,14 @@ pub fn leblanc_object_list(list: LeblancList) -> LeBlancObject {
 
 impl ToLeblanc for LeblancList {
     fn create(&self) -> LeBlancObject {
-        leblanc_object_list(self.clone())
+        leblanc_object_list(self.clone())._clone()
     }
-    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
+    fn create_mutex(&self) -> LBObject { leblanc_object_list(self.clone()) }
 }
 
 impl Display for LeblancList {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().reference().data.to_string()).collect::<Vec<String>>().join(", "))
+        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().data.to_string()).collect::<Vec<String>>().join(", "))
     }
 }
 
@@ -117,7 +117,7 @@ impl PartialEq for LeblancList {
     fn eq(&self, other: &Self) -> bool {
         if self.internal_vec.len() != other.internal_vec.len() { return false }
         for i in 0..self.internal_vec.len() {
-            if self.internal_vec[i].reference().data != other.internal_vec[i].reference().data {
+            if self.internal_vec[i].data != other.internal_vec[i].data {
                 return false;
             }
         }

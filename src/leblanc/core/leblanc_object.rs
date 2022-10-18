@@ -21,7 +21,6 @@ use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::module::Module;
 use crate::leblanc::core::native_types::base_type::ToLeblanc;
-use crate::leblanc::core::native_types::block_type::NativeBlock;
 use crate::leblanc::core::native_types::class_type::ClassMeta;
 
 use crate::leblanc::core::native_types::derived::iterator_type::{LeblancIterator};
@@ -36,7 +35,7 @@ use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::blueberry::Quantum;
 use crate::leblanc::rustblanc::heap::HeapRef;
 use crate::leblanc::rustblanc::types::LBObject;
-use crate::playground::HEAP;
+use crate::leblanc::core::interpreter::HEAP;
 
 
 static mut NULL: Option<LBObject> = None;
@@ -67,18 +66,19 @@ pub struct LeBlancObject {
     pub data: LeBlancObjectData,
     pub typing: LeBlancType,
     pub methods: Arc<FxHashSet<Method>>,
-    pub members: FxHashMap<String, LeBlancObject>,
+    pub members: FxHashMap<String, LBObject>,
     pub context: VariableContext
 }
 
 impl LeBlancObject {
-    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<FxHashSet<Method>>, members: FxHashMap<String, LeBlancObject>, context: VariableContext) -> LeBlancObject {
-        LeBlancObject {data, typing, methods, members, context}
+    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<FxHashSet<Method>>, members: FxHashMap<String, LBObject>, context: VariableContext) -> LBObject {
+        HEAP.underlying_pointer().alloc(LeBlancObject {data, typing, methods, members, context})
     }
 
     pub fn is_error(&self) -> bool { self.typing == LeBlancType::Exception }
 
-    pub fn null() -> LeBlancObject {
+    pub fn null() -> LBObject {
+        HEAP.underlying_pointer().alloc(
         LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Null,
@@ -86,17 +86,14 @@ impl LeBlancObject {
             members: FxHashMap::default(),
             context: VariableContext::empty()
         }
-    }
-
-    pub fn null2() -> HeapRef<'static, LeBlancObject> {
-        HEAP.underlying_pointer().alloc_with(LeBlancObject::null)
+        )
     }
 
     pub fn unsafe_null() -> LBObject {
         return unsafe {
             match NULL.as_ref() {
                 None => {
-                    NULL = Some(LeBlancObject::null().to_mutex());
+                    NULL = Some(LeBlancObject::null());
                     NULL.as_ref().unwrap().clone()
                 }
                 Some(null) => {
@@ -111,21 +108,22 @@ impl LeBlancObject {
     }
 
 
-    pub fn error() -> LeBlancObject {
+    pub fn error() -> LBObject {
+        HEAP.underlying_pointer().alloc(
         LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Exception,
             methods: Arc::new(FxHashSet::default()),
             members: FxHashMap::default(),
             context: VariableContext::empty()
-        }
+        })
     }
 
     pub fn unsafe_error() -> LBObject {
         return unsafe {
             match ERROR.as_ref() {
                 None => {
-                    ERROR = Some(LeBlancObject::error().to_mutex());
+                    ERROR = Some(LeBlancObject::error());
                     ERROR.as_ref().unwrap().clone()
                 }
                 Some(error) => {
@@ -135,7 +133,7 @@ impl LeBlancObject {
         }
     }
 
-    pub fn error2() -> LeBlancObject {
+    pub fn error2() -> LBObject {
         leblanc_object_error(LeblancError::default())
     }
 
@@ -184,14 +182,13 @@ impl LeBlancObject {
     }
 
     pub fn copy_rc(&mut self, other: &mut LBObject) {
-        let other = other.reference();
         self.members = other.members.clone();
         self.methods.clone_from(&other.methods);
         self.data = other.data.clone();
         self.typing = other.typing;
     }
 
-    pub fn cast(&self, cast: LeBlancType) -> LeBlancObject {
+    pub fn cast(&self, cast: LeBlancType) -> LBObject {
         let object_data = match cast {
             LeBlancType::Char => LeBlancObjectData::Char(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Short => LeBlancObjectData::Short(unsafe {*self.reflect().downcast_ref_unchecked()}),
@@ -228,9 +225,7 @@ impl LeBlancObject {
         }
     }
 
-    pub fn to_mutex(self) -> LBObject {
-        Quantum::from(self)
-    }
+    pub fn to_mutex(self) -> LBObject { HEAP.underlying_pointer().alloc(self) }
 }
 
 impl PartialEq for LeBlancObject {
@@ -255,7 +250,6 @@ pub enum LeBlancObjectData {
     Double(f64), // internally f64
     Boolean(bool),
     String(SmolStr),
-    Block(NativeBlock),
     Function(Box<Method>),
     Module(Module),
     Class(Box<ClassMeta>), // User defined class with ID
@@ -296,14 +290,14 @@ impl Reflect for LeBlancObject {
 
 impl Reflect for LBObject {
     fn reflect(&self) -> Box<dyn Any + 'static> {
-        self.reference().reflect()
+        self.reflect()
     }
 }
 
 pub fn passed_args_to_types(args: &Vec<LBObject>) -> Vec<LeBlancArgument> {
     let mut arg_types = Vec::new();
     for i in 0..args.len() {
-        arg_types.append_item( args[i].reference().to_leblanc_arg(i as u32));
+        arg_types.append_item( args[i].to_leblanc_arg(i as u32));
     }
     arg_types
 
@@ -323,7 +317,6 @@ impl Display for LeBlancObjectData {
             LeBlancObjectData::Double(data) => data.to_string(),
             LeBlancObjectData::Boolean(data) => data.to_string(),
             LeBlancObjectData::String(data) => data.to_string(),
-            LeBlancObjectData::Block(data) => data.to_string(),
             LeBlancObjectData::Function(data) => data.to_string(),
             LeBlancObjectData::Module(data) => data.to_string(),
             LeBlancObjectData::Class(data) => data.to_string(),
@@ -347,19 +340,19 @@ impl Callable for LBObject {
 
 
         //let self_clone = Arc::clone(self);
-        let method = self.reference().methods.iter().filter(|m| {
+        let method = self.methods.iter().filter(|m| {
             m.matches(method_name.to_string(), &args)
         }).next().cloned();
         if method.is_none() {
-            return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.reference().typing), vec![]).create_mutex());
+            return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.typing), vec![]).create_mutex());
         }
         Ok(method.unwrap().run( self.clone(), arguments))
     }
 
     fn call_name(&mut self, method_name: &str) -> Result<LBObject, LBObject> {
-        if self.reference().typing == LeBlancType::Null { return Err(LeblancError::new("OperationOnNullException".to_string(), "".to_string(), vec![]).create_mutex())}
-        let handle = match self.reference().methods.iter().find(|m| m.context.name == method_name) {
-            None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.reference().typing), vec![]).create_mutex()),
+        if self.typing == LeBlancType::Null { return Err(LeblancError::new("OperationOnNullException".to_string(), "".to_string(), vec![]).create_mutex())}
+        let handle = match self.methods.iter().find(|m| m.context.name == method_name) {
+            None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.typing), vec![]).create_mutex()),
             Some(some) => some.handle
         };
         Ok(unsafe { handle(self.clone(), NO_ARGS.to_vec()) })
@@ -373,7 +366,7 @@ pub trait Stringify {
 
 impl Stringify for LBObject {
     fn to_string(&self) -> String {
-        self.clone().reference().data.to_string()
+        self.clone().data.to_string()
     }
 }
 
@@ -487,7 +480,7 @@ pub trait QuickUnwrap<T: Clone + Default> {
         let cloned = self.clone();
         match lock_attempt {
             Some(_) => cloned,
-            None => cloned.arc_unwrap().to_mutex()
+            None => cloned.arc_unwrap()
         }
     }
 }*/

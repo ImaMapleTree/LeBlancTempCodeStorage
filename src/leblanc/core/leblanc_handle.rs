@@ -51,11 +51,11 @@ pub enum ExecutionSignal {
 #[derive(Debug, Default)]
 pub struct LeblancHandle {
     pub name: SmolStr,
-    pub constants: BlueberryVec<LeBlancObject>,
+    pub constants: Vec<LBObject>,
     pub variable_context: Option<Arc<HashMap<String, VariableContext>>>,
-    pub variables: BlueberryVec<LeBlancObject>,
+    pub variables: Vec<LBObject>,
     pub instructions: Arc<Vec<Instruction2>>,
-    pub stack: BlueberryVec<LeBlancObject>,
+    pub stack: Vec<LBObject>,
     pub is_async: bool,
     pub global_index: usize,
 }
@@ -72,11 +72,11 @@ impl LeblancHandle {
     pub fn null() -> LeblancHandle {
         LeblancHandle {
             name: SmolStr::default(),
-            constants: BlueberryVec::default(),
+            constants: Vec::default(),
             variable_context: None,
-            variables: BlueberryVec::default(),
+            variables: Vec::default(),
             instructions: Arc::new(vec![]),
-            stack: BlueberryVec::with_capacity(1000),
+            stack: Vec::with_capacity(1000),
             is_async: false,
             global_index: 0
         }
@@ -85,11 +85,11 @@ impl LeblancHandle {
     pub fn from_function_bytecode(mut bytecode: FunctionBytecode, index: usize) -> LeblancHandle {
         let mut instructs2: Vec<Instruction2> = vec![];
         bytecode.instruction_lines().into_iter().map(|line| line.to_instructions2()).for_each(|mut l| instructs2.append(&mut l));
-        let constants: BlueberryVec<LeBlancObject> = BlueberryVec::from(bytecode.constants().into_iter().map(|constant| constant.to_leblanc_object()).collect::<Vec<LeBlancObject>>());
+        let constants: Vec<LBObject> = bytecode.constants().into_iter().map(|constant| constant.to_leblanc_object()).collect::<Vec<LBObject>>();
         let variable_context = bytecode.variables();
         let name = SmolStr::new(bytecode.name());
         let context_length = variable_context.len();
-        let variables = BlueberryVec::from(vec![LeBlancObject::default(); context_length]);
+        let variables = vec![LeBlancObject::null(); context_length];
         println!("{} ===> {}", name, index);
         LeblancHandle {
             name,
@@ -97,7 +97,7 @@ impl LeblancHandle {
             variable_context: Some(Arc::new(variable_context)),
             variables,
             instructions: Arc::from(instructs2),
-            stack: BlueberryVec::with_capacity(1000),
+            stack: Vec::with_capacity(1000),
             is_async: false,
             global_index: index
         }
@@ -181,7 +181,7 @@ impl LeblancHandle {
         stack.pop().unwrap_or_else(LeBlancObject::unsafe_null)
     }*/
 
-    pub fn execute_from_last_point(&mut self) -> LeBlancObject {
+    pub fn execute_from_last_point(&mut self) -> LBObject {
         self.execute_range(0, self.instructions.len()).to_owned()
     }
 
@@ -263,9 +263,9 @@ impl Clone for LeblancHandle {
             name: self.name.clone(),
             constants: unsafe {self.constants.clone()},
             variable_context: self.variable_context.clone(),
-            variables: BlueberryVec::from(vec![LeBlancObject::null(); self.variables.len()]),
+            variables: vec![LeBlancObject::null(); self.variables.len()],
             instructions: self.instructions.clone(),
-            stack: BlueberryVec::with_capacity(1000),
+            stack: Vec::with_capacity(1000),
             is_async: self.is_async,
             global_index: self.global_index
         }
@@ -274,7 +274,7 @@ impl Clone for LeblancHandle {
 
 
 pub fn dump_stack_trace(error: LBObject, stack_trace: Vec<Instruction>) -> LBObject {
-    let mut borrowed =  error.reference();
+    let mut borrowed =  error.clone();
     let lbe: &mut LeblancError = borrowed.data.mut_data().unwrap();
     lbe.add_prior_trace(stack_trace);
     drop(borrowed);

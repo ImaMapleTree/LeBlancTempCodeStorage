@@ -16,17 +16,17 @@ pub struct ExecutionContext {
     pub handle_ref: &'static mut LeblancHandle,
     pub instruction_pointer: usize,
     pub instruct_total: usize,
-    pub variables: BlueberryVec<LeBlancObject>,
+    pub variables: Vec<LBObject>,
 }
 
 impl ExecutionContext {
     pub fn new(handle_index: usize, instruction_total: usize, context_length: usize, mut inputs: Vec<LBObject>) -> Self {
         //println!("Inputs: {:?}", inputs);
         //println!("Inputs: {:?}", inputs);
-        let variables = BlueberryVec::from(inputs);
+        let variables = inputs;
         //println!("Variables: {:?}", variables);
 
-        //let variables = BlueberryVec::from(inputs.iter().map(|o| o.reference().clone()).collect::<Vec<LeBlancObject>>());
+        //let variables = BlueberryVec::from(inputs.iter().map(|o| o.clone()).collect::<Vec<LeBlancObject>>());
 
         ExecutionContext {
             handle_ref: get_handles().get_mut(handle_index).unwrap(),
@@ -36,7 +36,7 @@ impl ExecutionContext {
         }
     }
 
-    pub fn get_constant(&mut self, id: usize) -> Option<Blueberry<'_, LeBlancObject>> {
+    pub fn get_constant(&mut self, id: usize) -> Option<&LBObject> {
         self.handle_ref.constants.get(id)
     }
 

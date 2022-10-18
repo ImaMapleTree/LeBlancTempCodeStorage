@@ -29,7 +29,7 @@ use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, Debug, Default)]
 pub struct PromiseCell {
-    echo: LeBlancObject,
+    echo: LBObject,
     promise: Arc<Strawberry<LeblancPromise>>,
 }
 
@@ -41,7 +41,7 @@ impl PartialEq for PromiseCell {
 }
 
 impl PromiseCell {
-    pub fn new(echo: LeBlancObject, promise: Arc<Strawberry<LeblancPromise>>) -> PromiseCell {
+    pub fn new(echo: LBObject, promise: Arc<Strawberry<LeblancPromise>>) -> PromiseCell {
         PromiseCell {
             echo,
             promise
@@ -90,8 +90,8 @@ impl LeblancGroup {
             if !consumed {
                 mutex.promise.write().result = {
                     let mut args = other_args.to_vec();
-                    args.insert(0, Quantum::new(take(&mut mutex.echo)));
-                    let result = function.reference().data.get_inner_method().unwrap().run(function.clone(), args);
+                    args.insert(0, take(&mut mutex.echo));
+                    let result = function.data.get_inner_method().unwrap().run(function.clone(), args);
                     Some(result)
                 };
                 mutex.promise.write().complete = true
@@ -203,7 +203,7 @@ impl Display for LeblancGroup {
     }
 }
 
-pub fn leblanc_object_group(group: LeblancGroup) -> LeBlancObject {
+pub fn leblanc_object_group(group: LeblancGroup) -> LBObject {
     LeBlancObject::new(
         LeBlancObjectData::Group(group),
         LeBlancType::Group,

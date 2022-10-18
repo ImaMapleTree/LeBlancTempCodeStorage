@@ -9,7 +9,7 @@ use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::types::LBObject;
 
-pub fn leblanc_object_short(integer: i16) -> LeBlancObject {
+pub fn leblanc_object_short(integer: i16) -> LBObject {
     let base_methods = base_methods();
 
     LeBlancObject::new(
@@ -24,7 +24,7 @@ pub fn leblanc_object_short(integer: i16) -> LeBlancObject {
 
 impl ToLeblanc for i16 {
     fn create(&self) -> LeBlancObject {
-        leblanc_object_short(*self)
+        leblanc_object_short(*self)._clone()
     }
-    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
+    fn create_mutex(&self) -> LBObject { leblanc_object_short(*self) }
 }

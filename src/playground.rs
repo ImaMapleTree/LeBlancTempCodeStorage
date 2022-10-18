@@ -8,6 +8,7 @@ use std::mem::size_of_val;
 use std::time::Instant;
 use bumpalo::Bump;
 use lazy_static::lazy_static;
+use crate::leblanc::core::interpreter::HEAP;
 use crate::leblanc::core::leblanc_object::{LeBlancObject};
 use crate::leblanc::core::native_types::double_type::leblanc_object_double;
 use crate::leblanc::core::native_types::int_type::leblanc_object_int;
@@ -17,9 +18,7 @@ use crate::leblanc::rustblanc::heap::{Heap, HeapRef};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 
 
-lazy_static! {
-    pub static ref HEAP: Strawberry<Heap<LeBlancObject>> = Strawberry::new(Heap::new_bytes(1280000));
-}
+
 
 fn test() -> LeBlancObject {
     let run_amount = 100;
@@ -34,7 +33,7 @@ fn test() -> LeBlancObject {
     for i in 0..run_amount {
         let now = Instant::now();
         for i in 0..count {
-            v.push(HEAP.underlying_pointer().alloc_with(LeBlancObject::null));
+            v.push(LeBlancObject::null());
             //v3.push(LeBlancObject::null());
             //v2.push(bump.alloc(LeBlancObject::null()));
         }
@@ -59,7 +58,7 @@ fn test() -> LeBlancObject {
         v2.push(bump.alloc(LeBlancObject::null()));
     }*/
 
-    LeBlancObject::null()
+    LeBlancObject::null()._clone()
 
 }
 

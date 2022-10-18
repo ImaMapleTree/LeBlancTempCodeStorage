@@ -76,7 +76,7 @@ fn main() -> io::Result<()> {
     get_handles().push(LeblancHandle::null());
     let _DEBUG = true;
     let now = Instant::now();
-    playground::playground();
+    //playground::playground();
 
     /*if INTERACTIVE {
         start();
@@ -84,7 +84,7 @@ fn main() -> io::Result<()> {
 
 
 
-    /*set_colors_enabled(true);
+    set_colors_enabled(true);
     let mut generator = CodeGenerator::default();
 
     generator.compile(ZCPath::new("test/test.lb"));
@@ -99,7 +99,7 @@ fn main() -> io::Result<()> {
 
 
     let bc = read_file("test/test.lb".to_string());
-    run(bc);*/
+    run(bc);
 
     let elapsed = now.elapsed();
     println!("Total Elapsed: {}", elapsed.as_secs_f64());
@@ -118,7 +118,7 @@ fn main() -> io::Result<()> {
         let mut m = module.exp_methods.get_mut(0).unwrap().clone();
         println!("M: {:#?}", m);
 
-        let lbo = m.method.run(LeBlancObject::unsafe_null(), &mut [leblanc_object_string(String::from("Hello World!")).to_mutex()]).force_unwrap().clone();
+        let lbo = m.method.run(LeBlancObject::unsafe_null(), &mut [leblanc_object_string(String::from("Hello World!"))]).force_unwrap().clone();
 
         println!("I am okay");
         Ok(lbo)

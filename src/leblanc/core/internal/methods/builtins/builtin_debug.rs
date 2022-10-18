@@ -46,6 +46,6 @@ pub fn _BUILTIN_DEBUG_METHOD_() -> Method {
     )
 }
 
-pub fn _BUILTIN_DEBUG_OBJECT_() -> LeBlancObject {
+pub fn _BUILTIN_DEBUG_OBJECT_() -> LBObject {
     internal_method(_BUILTIN_DEBUG_METHOD_())
 }

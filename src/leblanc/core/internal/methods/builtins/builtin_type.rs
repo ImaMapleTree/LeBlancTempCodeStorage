@@ -13,7 +13,7 @@ use crate::leblanc::rustblanc::blueberry::Quantum;
 use crate::leblanc::rustblanc::types::LBObject;
 
 fn _BUILTIN_TYPE_(_self: LBObject, args: Vec<LBObject>) -> LBObject {
-    args[0].reference().typing.to_string().create_mutex()
+    args[0].typing.to_string().create_mutex()
 }
 
 pub fn _BUILTIN_TYPE_METHOD_() -> Method {
@@ -27,6 +27,6 @@ pub fn _BUILTIN_TYPE_METHOD_() -> Method {
     )
 }
 
-pub fn _BUILTIN_TYPE_OBJECT_() -> LeBlancObject {
+pub fn _BUILTIN_TYPE_OBJECT_() -> LBObject {
     internal_method(_BUILTIN_TYPE_METHOD_())
 }

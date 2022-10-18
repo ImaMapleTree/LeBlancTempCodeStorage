@@ -9,6 +9,7 @@ use crate::leblanc::core::native_types::base_type::base_methods;
 use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use crate::leblanc::core::native_types::LeBlancType;
+use crate::leblanc::rustblanc::types::LBObject;
 
 pub trait RustSubTrait{
     fn _clone(&self) -> Box<dyn RustType>;
@@ -74,7 +75,7 @@ pub struct RustObjectBuilder {
     name: CopyString,
     data: RustObject,
     methods: FxHashSet<Method>,
-    members: FxHashMap<String, LeBlancObject>
+    members: FxHashMap<String, LBObject>
 }
 
 impl RustType for String {}

@@ -46,8 +46,8 @@ pub fn create_lazy_functions() -> LazyStore<FunctionSignature> {
 }
 
 pub fn create_builtin_function_objects() -> Vec<LBObject> {
-    vec![_BUILTIN_PRINT_OBJECT_().to_mutex(),
-         _BUILTIN_DISASSEMBLE_OBJECT_().to_mutex(),
-         _BUILTIN_DEBUG_OBJECT_().to_mutex(),
-         _BUILTIN_TYPE_OBJECT_().to_mutex()]
+    vec![_BUILTIN_PRINT_OBJECT_(),
+         _BUILTIN_DISASSEMBLE_OBJECT_(),
+         _BUILTIN_DEBUG_OBJECT_(),
+         _BUILTIN_TYPE_OBJECT_()]
 }

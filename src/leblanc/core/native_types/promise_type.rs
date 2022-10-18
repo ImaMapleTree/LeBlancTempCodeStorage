@@ -49,7 +49,7 @@ pub struct LeblancPromise {
 
 impl PartialEq for LeblancPromise {
     fn eq(&self, other: &Self) -> bool {
-        self.result.as_ref().unwrap().reference().eq(&other.result.as_ref().unwrap().reference())
+        self.result.as_ref().unwrap().eq(&other.result.as_ref().unwrap())
     }
 }
 
@@ -75,42 +75,42 @@ impl LeblancPromise {
         }
     }
 
-    pub fn to_leblanc_object(self) -> LeBlancObject {
+    pub fn to_leblanc_object(self) -> LBObject {
         leblanc_object_promise(ArcLeblancPromise::from(Arc::new(Strawberry::new(self))))
     }
 }
 
 impl ToLeblanc for LeblancPromise {
     fn create(&self) -> LeBlancObject {
-        leblanc_object_promise(ArcLeblancPromise::from(Arc::new(Strawberry::new(self.clone()))))
+        leblanc_object_promise(ArcLeblancPromise::from(Arc::new(Strawberry::new(self.clone()))))._clone()
     }
 
     fn create_mutex(&self) -> LBObject {
-        self.create().to_mutex()
+        leblanc_object_promise(ArcLeblancPromise::from(Arc::new(Strawberry::new(self.clone()))))
     }
 }
 
 impl ToLeblanc for Arc<Strawberry<LeblancPromise>> {
     fn create(&self) -> LeBlancObject {
-        leblanc_object_promise(ArcLeblancPromise::from(self.clone()))
+        leblanc_object_promise(ArcLeblancPromise::from(self.clone()))._clone()
     }
 
     fn create_mutex(&self) -> LBObject {
-        self.create().to_mutex()
+        leblanc_object_promise(ArcLeblancPromise::from(self.clone()))
     }
 }
 
 impl ToLeblanc for ArcLeblancPromise {
     fn create(&self) -> LeBlancObject {
-        leblanc_object_promise(self.clone())
+        leblanc_object_promise(self.clone())._clone()
     }
 
     fn create_mutex(&self) -> LBObject {
-        self.create().to_mutex()
+        leblanc_object_promise(self.clone())
     }
 }
 
-pub fn leblanc_object_promise(promise: ArcLeblancPromise) -> LeBlancObject {
+pub fn leblanc_object_promise(promise: ArcLeblancPromise) -> LBObject {
     LeBlancObject::new(
         LeBlancObjectData::Promise(promise),
         LeBlancType::Promise,
@@ -168,7 +168,7 @@ impl Display for LeblancPromise {
         let s = if self.consumed {
             String::from("ConsumedPromise")
         } else if self.complete {
-            format!("CompletedPromise({:#?})", self.result.as_ref().unwrap().reference().data).replace('\n', "").replace("(    ", "(").replace(",)", ")")
+            format!("CompletedPromise({:#?})", self.result.as_ref().unwrap().data).replace('\n', "").replace("(    ", "(").replace(",)", ")")
         } else {
             String::from("Promise")
         };

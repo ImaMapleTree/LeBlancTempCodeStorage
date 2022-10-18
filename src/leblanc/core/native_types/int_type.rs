@@ -6,6 +6,7 @@ use std::cell::RefCell;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc, Mutex};
 use fxhash::FxHashMap;
+use crate::leblanc::core::interpreter::HEAP;
 
 
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -14,9 +15,8 @@ use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::types::LBObject;
 
-pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
+pub fn leblanc_object_int(integer: i32) -> LBObject {
     let base_methods = base_methods();
-
 
     LeBlancObject::new(
         LeBlancObjectData::Int(integer),
@@ -43,8 +43,8 @@ pub fn leblanc_object_int(integer: i32) -> LeBlancObject {
 }*/
 
 impl ToLeblanc for i32 {
-    fn create(&self) -> LeBlancObject { leblanc_object_int(*self) }
-    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
+    fn create(&self) -> LeBlancObject { leblanc_object_int(*self)._clone() }
+    fn create_mutex(&self) -> LBObject { leblanc_object_int(*self) }
 }
 
 impl RustDataCast<i32> for LeBlancObjectData {

@@ -16,10 +16,10 @@ use crate::leblanc::rustblanc::types::LBObject;
 
 #[derive(Clone, PartialEq)]
 pub struct LeblancInternalRangeGenerator {
-    value: LeBlancObject,
-    next_value: LeBlancObject,
-    boundary: LeBlancObject,
-    step: LeBlancObject,
+    value: LBObject,
+    next_value: LBObject,
+    boundary: LBObject,
+    step: LBObject,
     step_type: RangeGeneratorStepType,
     boundary_type: LeBlancType,
     reverse: bool
@@ -34,11 +34,11 @@ impl LeblancIterable for LeblancInternalRangeGenerator {
             }
             FunctionStep(method) => {
                 swap(&mut self.value, &mut self.next_value);
-                self.next_value.data = method.run(self.step.clone().to_mutex(), vec![self.value.clone().to_mutex()]).reference().cast(self.boundary_type).data}
+                self.next_value.data = method.run(self.step.clone(), vec![self.value.clone()]).cast(self.boundary_type).data.clone()}
             ConditionalStep => { }
         }
         //println!("{}", self.value.to_string());
-        self.value.clone().to_mutex()
+        self.value.clone()
     }
 
     fn has_next(&self) -> bool {
@@ -70,7 +70,7 @@ impl LeblancIterable for LeblancInternalRangeGenerator {
 
 impl LeblancInternalRangeGenerator {
     pub fn new(value: LBObject, boundary: LBObject, step: LBObject) -> Result<LBObject, LBObject> {
-        let value = value.reference();
+        let value = value;
         let boundary = boundary.to_owned();
         let mut step = step.to_owned();
         let step_type = match step.typing {
@@ -83,11 +83,11 @@ impl LeblancInternalRangeGenerator {
                 m.matches("_".to_string(), &vec![value.to_leblanc_arg(0)])
                 }).next().cloned();
                 match matched_method {
-                    None => { return Err(step.to_mutex()) }
+                    None => { return Err(step) }
                     Some(method) => FunctionStep(method)
                  }
             },
-            _ => return Err(step.to_mutex())
+            _ => return Err(step)
         };
         let boundary_type = boundary.typing;
         let value = value.cast(boundary_type);
@@ -100,7 +100,7 @@ impl LeblancInternalRangeGenerator {
             step_type,
             boundary_type,
             reverse: false
-        })).to_mutex())
+        })))
     }
 
     fn conditional_step_fn(&self) -> bool {

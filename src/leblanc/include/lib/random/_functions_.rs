@@ -32,26 +32,26 @@ pub fn _random_no_arg_(_self: LBObject, _args: Vec<LBObject>) -> LBObject {
 }
 
 pub fn _random_one_arg_(_self: LBObject, args: Vec<LBObject>) -> LBObject {
-    let borrowed = args[0].reference();
+    let borrowed = &args[0];
     let value = borrowed.data.as_i128();
 
     let random_value = random_number().mul(value as u64 as f64);
     match borrowed.typing {
-        LeBlancType::Float | LeBlancType::Double => random_value.create(),
-        _ => (random_value.ceil() as i128).create().cast(borrowed.typing)
-    }.to_mutex()
+        LeBlancType::Float | LeBlancType::Double => random_value.create_mutex(),
+        _ => (random_value.ceil() as i64).create().cast(borrowed.typing)
+    }
 }
 
 pub fn _random_two_arg_(_self: LBObject, args: Vec<LBObject>) -> LBObject {
-    let borrowed1 = args[0].reference();
-    let borrowed2 = args[1].reference();
+    let borrowed1 = &args[0];
+    let borrowed2 = &args[1];
     let lower_bound = borrowed1.data.as_i128();
     let upper_bound = borrowed2.data.as_i128();
 
     let random_value = random_number().mul((upper_bound - lower_bound) as u64 as f64).add(lower_bound as u64 as f64);
     match borrowed1.typing {
-        LeBlancType::Float | LeBlancType::Double => random_value.create(),
-        _ => (random_value.ceil() as i128).create().cast(borrowed1.typing)
-    }.to_mutex()
+        LeBlancType::Float | LeBlancType::Double => random_value.create_mutex(),
+        _ => (random_value.ceil() as i64).create().cast(borrowed1.typing)
+    }
 }
 

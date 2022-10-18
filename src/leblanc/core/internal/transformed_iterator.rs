@@ -57,7 +57,7 @@ impl LeblancIterable for TransformedIterator {
         for transformation in &mut self.transformations {
             match transformation {
                 Filter(handle) => {
-                    iterator = Box::new(iterator.filter(|i| *handle.execute_lambda(vec![i.clone()]).reference().data.ref_data().unwrap()));
+                    iterator = Box::new(iterator.filter(|i| *handle.execute_lambda(vec![i.clone()]).data.ref_data().unwrap()));
                 }
                 Map(handle) => {
                     iterator = Box::new(iterator.map(|i| handle.execute_lambda(vec![i])));

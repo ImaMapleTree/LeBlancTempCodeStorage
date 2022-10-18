@@ -31,13 +31,13 @@ impl LeBlancRunner {
         println!("Running");
         unsafe { GLOBALS = self.globals.to_vec(); }
         println!("Running2");
-        let main_object = self.globals.iter_mut().filter(|g| g.reference().typing == LeBlancType::Function).find(|g| g.reflect().downcast_ref::<Box<Method>>().unwrap().context.name == "main");
+        let main_object = self.globals.iter_mut().filter(|g| g.typing == LeBlancType::Function).find(|g| g.reflect().downcast_ref::<Box<Method>>().unwrap().context.name == "main");
         println!("Running3");
 
         let main_elapsed = Instant::now();
         let f = main_object.unwrap().call("main", vec![]).unwrap();
-        if f.reference().typing == LeBlancType::Exception {
-            let borrowed = f.reference();
+        if f.typing == LeBlancType::Exception {
+            let borrowed = f;
             let error: &LeblancError = borrowed.data.ref_data().unwrap();
             error.print_stack_trace();
         }

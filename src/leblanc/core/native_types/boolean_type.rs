@@ -14,7 +14,7 @@ use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::types::LBObject;
 
-pub fn leblanc_object_boolean(boolean: bool) -> LeBlancObject {
+pub fn leblanc_object_boolean(boolean: bool) -> LBObject {
     let base_methods = base_methods();
 
     LeBlancObject::new(
@@ -29,9 +29,9 @@ pub fn leblanc_object_boolean(boolean: bool) -> LeBlancObject {
 
 impl ToLeblanc for bool {
     fn create(&self) -> LeBlancObject {
-        leblanc_object_boolean(*self)
+        leblanc_object_boolean(*self)._clone()
     }
-    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
+    fn create_mutex(&self) -> LBObject { leblanc_object_boolean(*self) }
 }
 
 impl RustDataCast<bool> for LeBlancObjectData {

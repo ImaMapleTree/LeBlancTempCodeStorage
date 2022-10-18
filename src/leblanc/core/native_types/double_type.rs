@@ -13,7 +13,7 @@ use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::types::LBObject;
 
-pub fn leblanc_object_double(double: f64) -> LeBlancObject {
+pub fn leblanc_object_double(double: f64) -> LBObject {
     let base_methods = base_methods();
 
     LeBlancObject::new(
@@ -43,9 +43,9 @@ pub fn leblanc_object_double(double: f64) -> LeBlancObject {
 
 impl ToLeblanc for f64 {
     fn create(&self) -> LeBlancObject {
-        leblanc_object_double(*self)
+        leblanc_object_double(*self)._clone()
     }
-    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
+    fn create_mutex(&self) -> LBObject { leblanc_object_double(*self) }
 }
 
 impl RustDataCast<f64> for LeBlancObjectData {

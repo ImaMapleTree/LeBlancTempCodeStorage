@@ -43,7 +43,7 @@ impl CoreModule {
         self.methods.iter().map(|method| PartialFunction::from_method(method.method.clone(), method.returns.clone())).collect()
     }
     pub fn methods_as_objects(&self) -> Vec<LBObject> {
-        self.methods.iter().map(|method| internal_method(method.method.clone()).to_mutex()).collect()
+        self.methods.iter().map(|method| internal_method(method.method.clone())).collect()
     }
 }
 

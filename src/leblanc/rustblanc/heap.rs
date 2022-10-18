@@ -17,6 +17,7 @@ pub struct Heap<T> {
     available: Vec<Unique<HeapObject<T>>>,
 }
 
+
 unsafe impl<T> Sync for Heap<T> {}
 
 unsafe impl<T> Sync for HeapObject<T>
@@ -29,8 +30,9 @@ pub struct HeapObject<T> {
     heap: Unique<Heap<T>>
 }
 
+#[derive(Debug)]
 pub struct HeapRef<'a, T> {
-    pointer: *mut HeapObject<T>,
+    pointer: Unique<HeapObject<T>>,
     phantom: PhantomData<&'a mut T>,
 }
 
@@ -67,11 +69,11 @@ impl<T: Default + Clone + Debug> Heap<T> {
     {
         if let Some(mut pointer) = self.available.pop() {
             unsafe { pointer.as_mut().rewrite(f()); }
-            HeapRef { pointer: pointer.as_ptr(), phantom: PhantomData }
+            HeapRef { pointer, phantom: PhantomData }
         } else if self.allocated < self.capacity {
             let obj = unsafe { HeapObject::from(f(), self as *mut Heap<T>) };
             unsafe { self.backend.as_ptr().write(obj) }
-            let heap_ref = HeapRef { pointer: self.backend.as_ptr(), phantom: PhantomData};
+            let heap_ref = HeapRef { pointer: self.backend, phantom: PhantomData};
             self.backend = unsafe { Unique::new_unchecked( self.backend.as_ptr().add(1)) };
             self.allocated += 1;
             heap_ref
@@ -171,6 +173,26 @@ impl<T> HeapObject<T> {
     }*/
 }
 
+impl<T> Deref for HeapRef<'_, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { &self.pointer.as_ref().data }
+    }
+}
+
+impl<T: PartialEq> PartialEq for HeapRef<'_, T> {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe { self.pointer.as_ref().data.eq(&other.pointer.as_ref().data) }
+    }
+}
+
+/*impl<T> DerefMut for HeapRef<'_, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { &mut (*self.pointer).data }
+    }
+}
+
 impl<T: Default + Clone> Deref for HeapRef<'_, T> {
     type Target = T;
 
@@ -178,19 +200,19 @@ impl<T: Default + Clone> Deref for HeapRef<'_, T> {
     fn deref(&self) -> &Self::Target {
         unsafe { &(*self.pointer).data }
     }
-}
+}*/
 
 impl<T: Default + Clone> DerefMut for HeapRef<'_, T> {
     #[inline(always)]
     fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { &mut (*self.pointer).data }
+        unsafe {&mut self.pointer.as_mut().data }
     }
 }
 
 impl <T> Clone for HeapRef<'_, T> {
     #[inline(always)]
     fn clone(&self) -> Self {
-        unsafe {(*self.pointer).counter += 1};
+        unsafe {(*self.pointer.as_ptr()).counter += 1};
         HeapRef {
             pointer: self.pointer,
             phantom: PhantomData
@@ -201,9 +223,11 @@ impl <T> Clone for HeapRef<'_, T> {
 impl<T> Default for HeapRef<'_, T> {
     #[inline(always)]
     fn default() -> Self {
-        HeapRef {
-            pointer: null_mut(),
-            phantom: Default::default()
+        unsafe {
+            HeapRef {
+                pointer: Unique::new_unchecked(null_mut()),
+                phantom: Default::default()
+            }
         }
     }
 }
@@ -211,7 +235,7 @@ impl<T> Default for HeapRef<'_, T> {
 impl<T> Drop for HeapRef<'_, T> {
     #[inline(always)]
     fn drop(&mut self) {
-        let deref = unsafe {&mut (*self.pointer)};
+        let deref = unsafe { self.pointer.as_mut() };
         deref.counter -= 1;
         if deref.counter <= 0 {
             deref.available();

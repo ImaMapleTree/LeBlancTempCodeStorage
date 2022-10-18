@@ -13,7 +13,7 @@ use crate::leblanc::rustblanc::blueberry::{BlueberryPush, BlueberryVec, Quantum}
 use crate::leblanc::rustblanc::types::{IExec, IExecResult, LBObject, LeBlancStack};
 
 #[inline]
-fn safe_stack_pop(stack: &mut BlueberryVec<LeBlancObject>) -> Result<LBObject, LBObject> {
+fn safe_stack_pop(stack: &mut Vec<LBObject>) -> Result<LBObject, LBObject> {
     //println!("My stack: {:?}", stack);
     match stack.pop() {
         None => {
@@ -54,9 +54,9 @@ fn iexec_no_ref(context: &mut ExecutionContext, instruct: Instruction2) -> IExec
 #[inline]
 fn iexec_badd_native(context: &mut ExecutionContext, instruct: Instruction2) -> IExecResult {
     let targeter = safe_stack_pop(&mut context.handle_ref.stack)?;
-    let binding1 = targeter.reference();
+    let binding1 = targeter;
     let target = safe_stack_pop(&mut context.handle_ref.stack)?;
-    let binding2 = target.reference();
+    let binding2 = target;
     //println!("Binding 1: {:?} || Binding 2: {:?}", binding1.data, binding2.data);
     //let addition =
 
@@ -69,10 +69,10 @@ fn iexec_badd_native(context: &mut ExecutionContext, instruct: Instruction2) -> 
 fn iexec_bsub_native(context: &mut ExecutionContext, instruct: Instruction2) -> IExecResult {
     let targeter = safe_stack_pop(&mut context.handle_ref.stack)?;
     let target = safe_stack_pop(&mut context.handle_ref.stack)?;
-    //println!("Binding 1: {:?} || Binding 2: {:?}", targeter.reference().data, target.reference().data);
+    //println!("Binding 1: {:?} || Binding 2: {:?}", targeter.data, target.data);
     //println!("TARGET: {:?}", target);
     //println!("TARGETER: {:?}", targeter);
-    let result = leblanc_object_int((target.reference().data.as_i64() - targeter.reference().data.as_i64()) as i32);
+    let result = leblanc_object_int((target.data.as_i64() - targeter.data.as_i64()) as i32);
     //println!("RESULT: {:?}", result); 
 
     context.handle_ref.stack.push(result);
@@ -83,9 +83,9 @@ fn iexec_bsub_native(context: &mut ExecutionContext, instruct: Instruction2) -> 
 #[inline]
 fn iexec_load_const(context: &mut ExecutionContext, instruct: Instruction2) -> IExecResult {
     let result= context.get_constant(instruct.bytes()[0] as usize);
-    if result.is_none() { return Err(LeBlancObject::error().to_mutex()) };
-    let pointer = result.unwrap().pointer();
-    context.handle_ref.stack.push(pointer);
+    if result.is_none() { return Err(LeBlancObject::error()) };
+    let constant = result.unwrap().clone();
+    context.handle_ref.stack.push(constant);
     Ok(())
 }
 
@@ -94,7 +94,7 @@ fn iexec_load_var(context: &mut ExecutionContext, instruct: Instruction2) -> IEx
     let bytes = instruct.bytes();
     let result= context.variables.get(bytes[0] as usize);
     if let Some(lbo) = result {
-        context.handle_ref.stack.push(lbo);
+        context.handle_ref.stack.push(lbo.clone());
     } else {
        context.handle_ref.variables.get(bytes[0] as usize).expect("Death");
     }
@@ -103,7 +103,8 @@ fn iexec_load_var(context: &mut ExecutionContext, instruct: Instruction2) -> IEx
 
 #[inline]
 fn iexec_store_var(context: &mut ExecutionContext, instruct: Instruction2) -> IExecResult {
-    context.variables.set_smart(instruct.bytes()[0] as usize, safe_stack_pop(&mut context.handle_ref.stack)?).expect("Something went really wrong");
+    //context.variables.set_smart(instruct.bytes()[0] as usize, safe_stack_pop(&mut context.handle_ref.stack)?).expect("Something went really wrong");
+    context.variables[instruct.bytes()[0] as usize] = safe_stack_pop(&mut context.handle_ref.stack)?;
     Ok(())
 }
 
@@ -117,10 +118,10 @@ fn iexec_builtin(context: &mut ExecutionContext, instruct: Instruction2) -> IExe
 
 
     //println!("Arguments: {:#?}", arguments);
-    let handle = func.reference().data.get_inner_method().unwrap().handle;
+    let handle = func.data.get_inner_method().unwrap().handle;
     let result = handle(func, arguments);
 
-    let typing = result.reference().typing;
+    let typing = result.typing;
     match typing {
         LeBlancType::Exception => return Err(result),
         _ => { context.handle_ref.stack.push(result.to_owned()); }
@@ -148,7 +149,7 @@ fn iexec_if_le(context: &mut ExecutionContext, instruct: Instruction2) -> IExecR
     let s1 = safe_stack_pop(&mut context.handle_ref.stack)?;
     let s2 = safe_stack_pop(&mut context.handle_ref.stack)?;
     //println!("{:?} >= {:?}", s1.lock().data, s2.lock().data);
-    if s1.reference().data < s2.reference().data {
+    if s1.data < s2.data {
         context.instruction_pointer += instruct.bytes()[0] as usize;
     }
     Ok(())
@@ -158,5 +159,5 @@ fn iexec_if_le(context: &mut ExecutionContext, instruct: Instruction2) -> IExecR
 #[inline]
 fn iexec_return(context: &mut ExecutionContext, instruct: Instruction2) -> IExecResult {
     //println!("Storage: {:?}", context.variables);
-    Err(Quantum::default())
+    Err(LeBlancObject::null())
 }

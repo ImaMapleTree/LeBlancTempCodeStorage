@@ -9,21 +9,21 @@ use crate::leblanc::rustblanc::blueberry::Quantum;
 use crate::leblanc::rustblanc::types::LBObject;
 
 pub fn _internal_group_apply_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
-    let mut borrowed = _self.reference();
+    let mut borrowed = _self;
     let group: &mut LeblancGroup = borrowed.data.mut_data().unwrap();
     group.apply(_arguments[0].clone(), _arguments[1..].to_vec());
     true.create_mutex()
 }
 
 pub fn _internal_group_pipe_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
-    let mut borrowed = _self.reference();
+    let mut borrowed = _self;
     let group: &mut LeblancGroup = borrowed.data.mut_data().unwrap();
     group.pipe(_arguments);
     true.create_mutex()
 }
 
 pub fn _internal_group_pipe_async_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
-    let mut borrowed = _self.reference();
+    let mut borrowed = _self;
     let group: &mut LeblancGroup = borrowed.data.mut_data().unwrap();
     group.pipe_async(_arguments);
     true.create_mutex()

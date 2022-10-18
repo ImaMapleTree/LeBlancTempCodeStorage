@@ -11,8 +11,8 @@ use crate::leblanc::rustblanc::types::LBObject;
 
 
 pub fn _internal_add_number_(_self: LBObject, arguments: Vec<LBObject>) -> LBObject {
-    let n1: i128 = _self.reference().data.as_i128();
-    let n2: i128  = arguments[0].reference().data.as_i128();
+    let n1: i64 = _self.data.as_i64();
+    let n2: i64  = arguments[0].data.as_i64();
     (n1 + n2).create_mutex()
 }
 
@@ -34,11 +34,11 @@ pub fn _internal_add_float_(_self: LBObject, arguments: Vec<LBObject>) -> LBObje
     result.create_mutex()
 }
 
-pub fn _internal_inplace_add_(_self: LBObject, arguments: Vec<LBObject>) -> LBObject {
+pub fn _internal_inplace_add_(mut _self: LBObject, arguments: Vec<LBObject>) -> LBObject {
     let n1: i64 = unsafe {*(_self.reflect().downcast_ref_unchecked())};
     let n2: i64 = unsafe {*(arguments[0].reflect().downcast_ref_unchecked())};
     println!("n1: {} | n2: {}", n1, n2);
 
-    _self.reference().data = LeBlancObjectData::Int64(n1 + n2);
+    _self.data = LeBlancObjectData::Int64(n1 + n2);
     arguments[0].clone()
 }

@@ -24,8 +24,11 @@ pub mod leblanc_runner;
 pub mod instructions2;
 pub mod instruction_execution2;
 pub mod execution_context;
+use crate::leblanc::rustblanc::strawberry::Strawberry;
 
-
+lazy_static! {
+    pub static ref HEAP: Strawberry<Heap<LeBlancObject>> = Strawberry::new(Heap::new_bytes(1280000));
+}
 
 pub fn run(mut bytecode: LeblancBytecode) {
     get_handles().clear();
@@ -43,7 +46,7 @@ pub fn run(mut bytecode: LeblancBytecode) {
         let mut lbo = internal_method(method);
         lbo.context.file = CopyString::new(bytecode.file_header().get_file_name());
         if name != "__GLOBAL__" {
-            globals.push(lbo.to_mutex());
+            globals.push(lbo);
         }
     }
 

@@ -8,6 +8,7 @@ use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
 
 use crate::leblanc::core::internal::methods::internal_math::_internal_inplace_add_;
+use crate::leblanc::core::interpreter::HEAP;
 use crate::leblanc::core::leblanc_argument::number_argset;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
@@ -18,7 +19,7 @@ use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::types::LBObject;
 
-pub fn leblanc_object_int64(integer: i64) -> LeBlancObject {
+pub fn leblanc_object_int64(integer: i64) -> LBObject {
     let mut base_methods = Arc::unwrap_or_clone(base_methods());
     base_methods.insert(inplace_addition());
 
@@ -34,9 +35,9 @@ pub fn leblanc_object_int64(integer: i64) -> LeBlancObject {
 
 impl ToLeblanc for i64 {
     fn create(&self) -> LeBlancObject {
-        leblanc_object_int64(*self)
+        leblanc_object_int64(*self)._clone()
     }
-    fn create_mutex(&self) -> LBObject { LBObject::from(self.create()) }
+    fn create_mutex(&self) -> LBObject { leblanc_object_int64(*self) }
 }
 
 fn inplace_addition() -> Method {

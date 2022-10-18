@@ -56,7 +56,7 @@ pub struct LeblancIterator {
     pub iterator: Box<dyn LeblancIterable>
 }
 
-pub fn leblanc_object_iterator(leblanc_iterable: Box<dyn LeblancIterable>) -> LeBlancObject {
+pub fn leblanc_object_iterator(leblanc_iterable: Box<dyn LeblancIterable>) -> LBObject {
     let base_methods = iterator_methods();
 
     LeBlancObject::new(

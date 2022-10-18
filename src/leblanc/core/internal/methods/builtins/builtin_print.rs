@@ -34,7 +34,7 @@ fn _BUILTIN_PRINT_(_self: LBObject, mut args: Vec<LBObject>) -> LBObject {
 
 
         //io::copy(&mut result.as_bytes(), &mut STDOUT.as_mut().unwrap()).unwrap();
-    LeBlancObject::null().to_mutex()
+    LeBlancObject::null()
 }
 
 pub fn _BUILTIN_PRINT_METHOD_() -> Method {
@@ -48,6 +48,6 @@ pub fn _BUILTIN_PRINT_METHOD_() -> Method {
     )
 }
 
-pub fn _BUILTIN_PRINT_OBJECT_() -> LeBlancObject {
+pub fn _BUILTIN_PRINT_OBJECT_() -> LBObject {
     internal_method(_BUILTIN_PRINT_METHOD_())
 }

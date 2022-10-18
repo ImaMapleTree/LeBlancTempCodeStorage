@@ -26,7 +26,7 @@ use crate::leblanc::rustblanc::types::LBObject;
 static mut STDOUT: Option<io::Stdout> = None;
 
 fn _BUILTIN_DISASSEMBLE(_self: LBObject, args: Vec<LBObject>) -> LBObject {
-    let method = args[0].reference().data.get_inner_method().unwrap().clone();
+    let method = args[0].data.get_inner_method().unwrap().clone();
     let dis_rust_func = if args.len() > 1 {
         *args[1].reflect().downcast_ref::<bool>().unwrap()
     } else {
@@ -93,7 +93,7 @@ pub fn _BUILTIN_DISASSEMBLE_METHOD_() -> Method {
     )
 }
 
-pub fn _BUILTIN_DISASSEMBLE_OBJECT_() -> LeBlancObject {
+pub fn _BUILTIN_DISASSEMBLE_OBJECT_() -> LBObject {
     internal_method(_BUILTIN_DISASSEMBLE_METHOD_())
 }
 
