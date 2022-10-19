@@ -199,7 +199,7 @@ impl LeblancHandle {
 
     }
 
-    #[inline(always)]
+    #[inline]
     pub async fn execute_async(&mut self, inputs: Vec<LBObject>) -> LBObject {
         LeBlancObject::unsafe_null()
         /*self.is_async = true;

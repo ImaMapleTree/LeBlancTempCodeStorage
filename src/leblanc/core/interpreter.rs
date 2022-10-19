@@ -27,7 +27,7 @@ pub mod execution_context;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 
 lazy_static! {
-    pub static ref HEAP: Strawberry<Heap<LeBlancObject>> = Strawberry::new(Heap::new_bytes(1280000));
+    pub static ref HEAP: Strawberry<Heap<LeBlancObject>> = Strawberry::new(Heap::new_bytes(80000));
 }
 
 pub fn run(mut bytecode: LeblancBytecode) {

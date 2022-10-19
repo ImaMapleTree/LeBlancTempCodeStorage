@@ -13,6 +13,7 @@ use fxhash::{FxHashMap, FxHashSet};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 
 use std::task::{Context, Poll};
+use lazy_static::lazy_static;
 
 use smol_str::SmolStr;
 
@@ -33,18 +34,14 @@ use crate::leblanc::core::native_types::promise_type::{ArcLeblancPromise, Leblan
 use crate::leblanc::core::native_types::rust_type::RustObject;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::heap::HeapRef;
 use crate::leblanc::rustblanc::types::LBObject;
 use crate::leblanc::core::interpreter::HEAP;
 
-
-static mut NULL: Option<LBObject> = None;
-
-static mut ERROR: Option<LBObject> = None;
-
-static mut MARKER: Option<LBObject> = None;
-
-static mut NO_ARGS: Vec<LBObject> = vec![];
+lazy_static! {
+    static ref LBNULL: LBObject = LeBlancObject::new(LeBlancObjectData::Null, LeBlancType::Null, Default::default(), Default::default(), VariableContext::empty());
+    static ref LBERROR: LBObject = LeBlancObject::new(LeBlancObjectData::Null, LeBlancType::Exception, Default::default(), Default::default(), VariableContext::empty());
+    static ref NO_ARGS: Vec<LBObject> = vec![];
+}
 
 pub trait Callable {
     fn call(&mut self, method_name: &str, arguments: Vec<LBObject>) -> Result<LBObject, LBObject>;
@@ -82,7 +79,7 @@ impl LeBlancObject {
         LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Null,
-            methods: Arc::new(FxHashSet::default()),
+            methods: LBNULL.methods.clone(),
             members: FxHashMap::default(),
             context: VariableContext::empty()
         }
@@ -90,47 +87,22 @@ impl LeBlancObject {
     }
 
     pub fn unsafe_null() -> LBObject {
-        return unsafe {
-            match NULL.as_ref() {
-                None => {
-                    NULL = Some(LeBlancObject::null());
-                    NULL.as_ref().unwrap().clone()
-                }
-                Some(null) => {
-                    null.clone()
-                }
-            }
-        }
+        LBNULL.clone()
     }
-
-    pub fn unsafe_null_quick() -> LBObject {
-        return unsafe { NULL.as_ref().unwrap().clone() }
-    }
-
 
     pub fn error() -> LBObject {
         HEAP.underlying_pointer().alloc(
         LeBlancObject {
             data: LeBlancObjectData::Null,
             typing: LeBlancType::Exception,
-            methods: Arc::new(FxHashSet::default()),
+            methods: LBERROR.methods.clone(),
             members: FxHashMap::default(),
             context: VariableContext::empty()
         })
     }
 
     pub fn unsafe_error() -> LBObject {
-        return unsafe {
-            match ERROR.as_ref() {
-                None => {
-                    ERROR = Some(LeBlancObject::error());
-                    ERROR.as_ref().unwrap().clone()
-                }
-                Some(error) => {
-                    error.clone()
-                }
-            }
-        }
+        LBERROR.clone()
     }
 
     pub fn error2() -> LBObject {
@@ -288,11 +260,11 @@ impl Reflect for LeBlancObject {
     }
 }
 
-impl Reflect for LBObject {
+/*impl Reflect for LBObject {
     fn reflect(&self) -> Box<dyn Any + 'static> {
-        self.reflect()
+        self.
     }
-}
+}*/
 
 pub fn passed_args_to_types(args: &Vec<LBObject>) -> Vec<LeBlancArgument> {
     let mut arg_types = Vec::new();
@@ -355,7 +327,7 @@ impl Callable for LBObject {
             None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.typing), vec![]).create_mutex()),
             Some(some) => some.handle
         };
-        Ok(unsafe { handle(self.clone(), NO_ARGS.to_vec()) })
+        Ok(handle(self.clone(), vec![]))
     }
 }
 

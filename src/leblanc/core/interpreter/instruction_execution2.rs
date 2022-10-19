@@ -54,13 +54,9 @@ fn iexec_no_ref(context: &mut ExecutionContext, instruct: Instruction2) -> IExec
 #[inline]
 fn iexec_badd_native(context: &mut ExecutionContext, instruct: Instruction2) -> IExecResult {
     let targeter = safe_stack_pop(&mut context.handle_ref.stack)?;
-    let binding1 = targeter;
     let target = safe_stack_pop(&mut context.handle_ref.stack)?;
-    let binding2 = target;
-    //println!("Binding 1: {:?} || Binding 2: {:?}", binding1.data, binding2.data);
-    //let addition =
 
-    context.handle_ref.stack.push(leblanc_object_int((binding2.data.as_i64() + binding1.data.as_i64()) as i32));
+    context.handle_ref.stack.push(leblanc_object_int((targeter.data.as_i64() + target.data.as_i64()) as i32));
 
     Ok(())
 }
@@ -73,7 +69,7 @@ fn iexec_bsub_native(context: &mut ExecutionContext, instruct: Instruction2) -> 
     //println!("TARGET: {:?}", target);
     //println!("TARGETER: {:?}", targeter);
     let result = leblanc_object_int((target.data.as_i64() - targeter.data.as_i64()) as i32);
-    //println!("RESULT: {:?}", result); 
+    //println!("RESULT: {:?}", result);
 
     context.handle_ref.stack.push(result);
     Ok(())
@@ -113,9 +109,10 @@ fn iexec_builtin(context: &mut ExecutionContext, instruct: Instruction2) -> IExe
     let bytes = instruct.bytes();
     let func= unsafe { get_globals() }[bytes[0] as usize].clone();
 
-    let mut arguments = vec![safe_stack_pop(&mut context.handle_ref.stack)?; bytes[1] as usize];
-    arguments.reverse();
-
+    //let mut arguments = vec![safe_stack_pop(&mut context.handle_ref.stack)?; bytes[1] as usize];
+    //arguments.reverse();
+    let stack = &mut context.handle_ref.stack;
+    let arguments = stack.split_off(stack.len() - bytes[1] as usize);
 
     //println!("Arguments: {:#?}", arguments);
     let handle = func.data.get_inner_method().unwrap().handle;
@@ -137,10 +134,9 @@ fn iexec_call_normal(context: &mut ExecutionContext, instruct: Instruction2) -> 
     let mut arguments = vec![safe_stack_pop(&mut context.handle_ref.stack)?; bytes[1] as usize];
     arguments.reverse();
 
-    let mut deferred = handle.defer(arguments);
-    let result = deferred.execute();
+    let result = handle.execute(arguments);
 
-    context.handle_ref.stack.push(result.to_owned());
+    context.handle_ref.stack.push(result);
     Ok(())
 }
 

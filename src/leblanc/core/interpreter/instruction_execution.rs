@@ -241,7 +241,7 @@ fn _INSTRUCT_BINARY_OR_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: 
     Ok(())
 }
 
-#[inline(always)]
+#[inline]
 #[cfg(feature = "example")]
 fn _INSTRUCT_LOAD_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<LBObject, 80>) -> Result<(), LBObject> {
     let result= unsafe { get_globals() }[arg.arg as usize].clone();
@@ -252,7 +252,7 @@ fn _INSTRUCT_LOAD_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stac
     Ok(())
 }
 
-#[inline(always)]
+#[inline]
 #[cfg(feature = "example")]
 fn _INSTRUCT_LOAD_CONSTANT_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<LBObject, 80>) -> Result<(), LBObject> {
     let result= handle.constants.get(arg.arg as usize);
@@ -266,7 +266,7 @@ fn _INSTRUCT_LOAD_CONSTANT_(handle: &mut LeblancHandle, arg: &Instruction, stack
 
 }
 
-#[inline(always)]
+#[inline]
 #[cfg(feature = "example")]
 fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<LBObject, 80>) -> Result<(), LBObject> {
     let result= handle.variables.get(arg.arg as usize);
@@ -290,7 +290,7 @@ fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
     Ok(())
 }
 
-#[inline(always)]
+#[inline]
 #[cfg(feature = "example")]
 fn _INSTRUCT_STORE_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<LBObject, 80>) -> Result<(), LBObject> {
     let result = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
@@ -302,7 +302,7 @@ fn _INSTRUCT_STORE_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: 
     Ok(())
 }
 
-#[inline(always)]
+#[inline]
 #[cfg(feature = "example")]
 fn _CALL_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<LBObject, 80>) -> Result<(), LBObject> {
     let func = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };

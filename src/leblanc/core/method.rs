@@ -90,7 +90,7 @@ impl Method {
         Method::new(context, handle, BTreeSet::new())
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn run(&self, _self: LBObject, args: Vec<LBObject>) -> LBObject {
         match self.method_type {
             MethodType::DefinedMethod => self.leblanc_handle.execute(args),
@@ -99,7 +99,7 @@ impl Method {
     }
 
 
-    #[inline(always)]
+    #[inline]
     pub fn run_uncloned(&self, _self: LBObject, args: Vec<LBObject>) -> LBObject {
         (self.handle)(_self, args)
     }

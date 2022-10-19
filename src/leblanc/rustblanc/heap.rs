@@ -4,6 +4,7 @@ use std::collections::VecDeque;
 use std::intrinsics::{size_of, size_of_val};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
+use std::ptr;
 use std::ptr::{null_mut, Unique};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::leblanc::core::leblanc_object::LeBlancObject;
@@ -37,13 +38,13 @@ pub struct HeapRef<'a, T> {
 }
 
 impl<T: Default + Clone + Debug> Heap<T> {
-    #[inline(always)]
+    #[inline]
     pub fn new_bytes(capacity: usize) -> Heap<T> {
         let element_capacity = (capacity * 1000) / size_of::<HeapObject<T>>();
         Heap::new(element_capacity)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn new(capacity: usize) -> Heap<T> {
         let heap_layout = Layout::from_size_align(size_of::<Heap<T>>(), 1).expect("Unable to allocate aligned memory");
         let mut heap = unsafe { alloc_zeroed(heap_layout) } as *mut Heap<T>;
@@ -57,12 +58,12 @@ impl<T: Default + Clone + Debug> Heap<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn alloc(&mut self, item: T) -> HeapRef<'static, T> {
         self.alloc_with(|| item)
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn alloc_with<F>(&mut self, f: F) -> HeapRef<'static, T>
     where
         F: FnOnce() -> T
@@ -122,7 +123,7 @@ impl<T: Default> HeapObject<T> {
 }
 
 impl<T> HeapObject<T> {
-    #[inline(always)]
+    #[inline]
     fn new(heap: *mut Heap<T>) -> HeapObject<T> {
         let layout = Layout::new::<HeapObject<T>>();
         unsafe {
@@ -133,7 +134,7 @@ impl<T> HeapObject<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     unsafe fn from(data: T, heap: *mut Heap<T>) -> HeapObject<T> {
         HeapObject {
             data,
@@ -142,7 +143,7 @@ impl<T> HeapObject<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn available(&mut self) {
         unsafe {
             let p = Unique::new_unchecked(self as *mut HeapObject<T>);
@@ -150,20 +151,23 @@ impl<T> HeapObject<T> {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     pub fn rewrite(&mut self, data: T) {
         self.data = data;
         self.counter += 1;
     }
 
+    #[inline]
     pub fn get_ptr(&self) -> *const T {
         &self.data as *const T
     }
 
+    #[inline]
     pub fn get_mut_ptr(&mut self) -> *mut T {
         &mut self.data as *mut T
     }
 
+    #[inline]
     pub fn get_mut_ptr_from_const(&self) -> *mut T {
         self.get_ptr() as *mut T
     }
@@ -196,21 +200,21 @@ impl<T: PartialEq> PartialEq for HeapRef<'_, T> {
 impl<T: Default + Clone> Deref for HeapRef<'_, T> {
     type Target = T;
 
-    #[inline(always)]
+    #[inline]
     fn deref(&self) -> &Self::Target {
         unsafe { &(*self.pointer).data }
     }
 }*/
 
 impl<T: Default + Clone> DerefMut for HeapRef<'_, T> {
-    #[inline(always)]
+    #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe {&mut self.pointer.as_mut().data }
     }
 }
 
 impl <T> Clone for HeapRef<'_, T> {
-    #[inline(always)]
+    #[inline]
     fn clone(&self) -> Self {
         unsafe {(*self.pointer.as_ptr()).counter += 1};
         HeapRef {
@@ -221,7 +225,7 @@ impl <T> Clone for HeapRef<'_, T> {
 }
 
 impl<T> Default for HeapRef<'_, T> {
-    #[inline(always)]
+    #[inline]
     fn default() -> Self {
         unsafe {
             HeapRef {
@@ -233,7 +237,7 @@ impl<T> Default for HeapRef<'_, T> {
 }
 
 impl<T> Drop for HeapRef<'_, T> {
-    #[inline(always)]
+    #[inline]
     fn drop(&mut self) {
         let deref = unsafe { self.pointer.as_mut() };
         deref.counter -= 1;

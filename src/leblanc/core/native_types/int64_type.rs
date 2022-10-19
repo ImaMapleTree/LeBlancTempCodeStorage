@@ -6,6 +6,7 @@ use std::cell::RefCell;
 use fxhash::FxHashMap;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::Mutex;
+use lazy_static::lazy_static;
 
 use crate::leblanc::core::internal::methods::internal_math::_internal_inplace_add_;
 use crate::leblanc::core::interpreter::HEAP;
@@ -19,14 +20,28 @@ use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::types::LBObject;
 
-pub fn leblanc_object_int64(integer: i64) -> LBObject {
+lazy_static! {
+    static ref INT_BASE: LBObject = base_int();
+}
+
+pub fn base_int() -> LBObject {
     let mut base_methods = Arc::unwrap_or_clone(base_methods());
     base_methods.insert(inplace_addition());
 
     LeBlancObject::new(
-        LeBlancObjectData::Int64(integer),
+        LeBlancObjectData::Int64(0),
         LeBlancType::Int64,
         Arc::new(base_methods),
+        FxHashMap::default(),
+        VariableContext::empty(),
+    )
+}
+
+pub fn leblanc_object_int64(integer: i64) -> LBObject {
+    LeBlancObject::new(
+        LeBlancObjectData::Int64(integer),
+        LeBlancType::Int64,
+        INT_BASE.methods.clone(),
         FxHashMap::default(),
         VariableContext::empty(),
     )

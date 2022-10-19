@@ -36,6 +36,7 @@ impl ExecutionContext {
         }
     }
 
+    #[inline]
     pub fn get_constant(&mut self, id: usize) -> Option<&LBObject> {
         self.handle_ref.constants.get(id)
     }
