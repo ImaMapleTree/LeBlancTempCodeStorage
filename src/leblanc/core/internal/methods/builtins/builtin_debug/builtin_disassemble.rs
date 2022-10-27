@@ -4,14 +4,16 @@ use std::io;
 
 
 
-use alloc::rc::Rc;
-use std::cell::RefCell;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+
+
+
+
 
 use prettytable::{Cell, format, Row, Table};
-use crate::leblanc::core::interpreter::instructions::InstructionBase;
+use crate::leblanc::core::interpreter::instructions2::fmt_bytes;
 use crate::leblanc::core::interpreter::leblanc_runner::get_globals;
+
+
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, Reflect, Stringify};
 use crate::leblanc::core::method::{Method, MethodType};
@@ -20,12 +22,14 @@ use crate::leblanc::core::native_types::base_type::internal_method;
 
 
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::types::LBObject;
+
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 static mut STDOUT: Option<io::Stdout> = None;
 
-fn _BUILTIN_DISASSEMBLE(_self: LBObject, args: Vec<LBObject>) -> LBObject {
+fn _BUILTIN_DISASSEMBLE(_self: LBObject, args: LBObjArgs) -> LBObject {
+    println!("Disassemble");
     let method = args[0].data.get_inner_method().unwrap().clone();
     let dis_rust_func = if args.len() > 1 {
         *args[1].reflect().downcast_ref::<bool>().unwrap()
@@ -57,18 +61,18 @@ fn _BUILTIN_DISASSEMBLE(_self: LBObject, args: Vec<LBObject>) -> LBObject {
             let arg_string = match instruction.to_string().as_str() {
                 "LOAD_VARIABLE" => format!("({})", leblanc_handle.variable_context.as_ref().unwrap().values().find(|context| context.relationship == instruction.bytes()[0] as u32).unwrap().name),
                 "LOAD_CONSTANT" => format!("({})", leblanc_handle.constants.get(instruction.bytes()[0] as usize).unwrap().data),
-                /*InstructionBase::LoadFunction => format!("({})", unsafe {get_globals()[instruction.arg as usize].lock().data.get_inner_method().unwrap().context.name.clone()}),
-                InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),*/
+                //"LOAD_FUNCTION" => format!("({})", unsafe {get_globals()[instruction.bytes()[0] as usize].data.get_inner_method().unwrap().context.name.clone()}),
+                //InstructionBase::Equality(_) => format!("({})", recover_equality_op(instruction.arg as u8)),*/
                 _ => "".to_string()
             };
             table.add_row(Row::new(vec![
                 Cell::new(&line_number_format),
                 Cell::new(&instruct_count.to_string()),
-                Cell::new(&(instruction.bytes()[0].to_string())),
-                Cell::new(&instruction.bytes()[0].to_string()),
+                Cell::new(&instruction.to_string()),
+                Cell::new(&fmt_bytes(instruction.bytes())),
                 Cell::new(&arg_string)
             ]));
-            instruct_count += 2;
+            instruct_count += 1;
         }
         output = table.to_string();
     }

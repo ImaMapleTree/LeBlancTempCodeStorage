@@ -7,9 +7,10 @@ use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, Rus
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::base_type::base_methods;
 use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
 
 pub trait RustSubTrait{
     fn _clone(&self) -> Box<dyn RustType>;
@@ -74,8 +75,8 @@ impl Clone for Box<dyn RustType> {
 pub struct RustObjectBuilder {
     name: CopyString,
     data: RustObject,
-    methods: FxHashSet<Method>,
-    members: FxHashMap<String, LBObject>
+    methods: HeapRef<'static, FxHashSet<Method>>,
+    members: HeapRef<'static, FxHashMap<String, LBObject>>
 }
 
 impl RustType for String {}
@@ -85,8 +86,8 @@ impl Default for RustObjectBuilder {
         RustObjectBuilder {
             name: CopyString::default(),
             data: RustObject::new(Box::new(String::default())),
-            methods: FxHashSet::default(),
-            members: FxHashMap::default()
+            methods: HeapRef::default(),
+            members: HeapRef::default()
         }
     }
 }
@@ -108,18 +109,18 @@ impl RustObjectBuilder {
         self
     }
 
-    pub fn build(&mut self) -> LeBlancObject {
-        let mut methods = Arc::unwrap_or_clone(base_methods());
+    /*pub fn build(&mut self) -> LeBlancObject {
+        let mut methods=  wild_heap().alloc_with(|| (*base_methods()).clone());
         self.methods.iter().cloned().for_each(|m| {methods.insert(m);});
         let name = self.name;
         LeBlancObject {
             data: LeBlancObjectData::Rust(self.data.clone()),
             typing: LeBlancType::Class(name),
-            methods: Arc::new(methods),
+            methods: methods,
             members: take(&mut self.members),
             context: VariableContext::empty()
         }
-    }
+    }*/
 }
 
 impl RustDataCast<RustObject> for LeBlancObjectData {

@@ -1,5 +1,5 @@
 use std::hash::{Hash, Hasher};
-use crate::leblanc::compiler::parser::ast::{Id, Ident, Location};
+use crate::leblanc::compiler::parser::ast::{Ident};
 use crate::leblanc::core::native_types::LeBlancType;
 
 #[derive(Clone, Debug)]

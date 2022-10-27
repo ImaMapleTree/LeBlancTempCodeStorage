@@ -1,34 +1,38 @@
-use fxhash::{FxHashMap};
 
 
-use alloc::rc::Rc;
-use std::cell::RefCell;
+
+
+
 use std::collections::HashMap;
-use std::future::Future;
-use std::mem::take;
+
+
 use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 
 
-use arrayvec::ArrayVec;
+
 use smol_str::SmolStr;
 use crate::leblanc::compiler::bytecode::function_bytes::FunctionBytecode;
+use crate::leblanc::core::heap::{heap};
 use crate::leblanc::core::interpreter::execution_context::ExecutionContext;
-use crate::leblanc::core::interpreter::instruction_execution2::execute_instruction2;
 
 
-use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
+
+use crate::leblanc::core::interpreter::instructions::{Instruction};
 use crate::leblanc::core::interpreter::instructions2::Instruction2;
-use crate::leblanc::core::interpreter::leblanc_runner::get_globals;
+
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_object::{ArcToRc, LeBlancObject, QuickUnwrap, RustDataCast, Stringify};
+use crate::leblanc::core::leblanc_object::{LeBlancObject, RustDataCast, Stringify};
 use crate::leblanc::core::native_types::error_type::LeblancError;
 use crate::leblanc::include::lib::leblanc_colored::{Color, colorize};
-use crate::leblanc::rustblanc::blueberry::{BlueberryVec, Quantum};
-use crate::leblanc::rustblanc::lazy_store::Lazy;
-use crate::leblanc::rustblanc::types::{LBObject, LeBlancStack};
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+
+
+use crate::leblanc::rustblanc::types::{LBObjArgs, LBObject};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 use crate::leblanc::rustblanc::utils::{Timings};
+use crate::unsafe_vec;
 
 static DEBUG: bool = true;
 static TIME_DEBUG: bool = false;
@@ -53,9 +57,9 @@ pub struct LeblancHandle {
     pub name: SmolStr,
     pub constants: Vec<LBObject>,
     pub variable_context: Option<Arc<HashMap<String, VariableContext>>>,
-    pub variables: Vec<LBObject>,
-    pub instructions: Arc<Vec<Instruction2>>,
-    pub stack: Vec<LBObject>,
+    pub variables: UnsafeVec<LBObject>,
+    pub instructions: Arc<UnsafeVec<Instruction2>>,
+    pub stack: UnsafeVec<LBObject>,
     pub is_async: bool,
     pub global_index: usize,
 }
@@ -74,41 +78,46 @@ impl LeblancHandle {
             name: SmolStr::default(),
             constants: Vec::default(),
             variable_context: None,
-            variables: Vec::default(),
-            instructions: Arc::new(vec![]),
-            stack: Vec::with_capacity(1000),
+            variables: UnsafeVec::default(),
+            instructions: Arc::new(unsafe_vec![]),
+            stack: UnsafeVec::with_capacity(1000),
             is_async: false,
             global_index: 0
         }
     }
 
     pub fn from_function_bytecode(mut bytecode: FunctionBytecode, index: usize) -> LeblancHandle {
-        let mut instructs2: Vec<Instruction2> = vec![];
-        bytecode.instruction_lines().into_iter().map(|line| line.to_instructions2()).for_each(|mut l| instructs2.append(&mut l));
+        let mut instructs2: UnsafeVec<Instruction2> = UnsafeVec::new();
+        bytecode.instruction_lines().into_iter().map(|line| line.to_instructions2()).for_each(|mut l| instructs2.append_vec(&mut l));
         let constants: Vec<LBObject> = bytecode.constants().into_iter().map(|constant| constant.to_leblanc_object()).collect::<Vec<LBObject>>();
         let variable_context = bytecode.variables();
         let name = SmolStr::new(bytecode.name());
         let context_length = variable_context.len();
-        let variables = vec![LeBlancObject::null(); context_length];
-        println!("{} ===> {}", name, index);
+        let variables = unsafe_vec![LeBlancObject::null(); context_length];
         LeblancHandle {
             name,
             constants,
             variable_context: Some(Arc::new(variable_context)),
             variables,
             instructions: Arc::from(instructs2),
-            stack: Vec::with_capacity(1000),
+            stack: UnsafeVec::with_capacity(1000),
             is_async: false,
             global_index: index
         }
     }
 
-    pub fn execute(&self, inputs: Vec<LBObject>) -> LBObject {
-        ExecutionContext::new(self.global_index, self.instructions.len(), self.variables.len(), inputs).execute()
+    #[inline(always)]
+    pub fn execute(&self, mut inputs: LBObjArgs) -> LBObject {
+        if inputs.is_empty() {
+            //inputs = heap().clone_heap_vec(&self.variables);
+            inputs = heap().clone_heap_vec(&self.variables);
+        }
+        ExecutionContext::new(self.global_index, self.instructions.len(), inputs).execute()
     }
 
-    pub fn defer(&self, inputs: Vec<LBObject>) -> ExecutionContext {
-        ExecutionContext::new(self.global_index, self.instructions.len(), self.variables.len(), inputs)
+    #[inline(always)]
+    pub fn defer(&self, inputs: LBObjArgs) -> ExecutionContext {
+        ExecutionContext::new(self.global_index, self.instructions.len(), inputs)
     }
 
     fn cascade_error(&self, err: LBObject) -> LBObject {
@@ -121,7 +130,7 @@ impl LeblancHandle {
         if DEBUG {println!("{} Normal Instruction: {:?}", colorize(self.name.to_string(), Color::Blue), instruction);}
     }
 
-    pub fn execute_range(&mut self, left_bound: usize, right_bound: usize) -> LBObject {
+    pub fn execute_range(&mut self, _left_bound: usize, _right_bound: usize) -> LBObject {
         LeBlancObject::unsafe_null()
         /*self.current_instruct = left_bound;
         let mut instruction = Instruction2::NOREF(0, []);
@@ -182,10 +191,10 @@ impl LeblancHandle {
     }*/
 
     pub fn execute_from_last_point(&mut self) -> LBObject {
-        self.execute_range(0, self.instructions.len()).to_owned()
+        self.execute_range(0, self.instructions.len())
     }
 
-    pub fn execute_lambda(&mut self, inputs: Vec<LBObject>) -> LBObject {
+    pub fn execute_lambda(&mut self, _inputs: LBObjArgs) -> LBObject {
         LeBlancObject::unsafe_null()
         /*inputs.clone_into(&mut self.variables);
         let mut stack = ArrayVec::<_, 80>::new();
@@ -200,7 +209,7 @@ impl LeblancHandle {
     }
 
     #[inline]
-    pub async fn execute_async(&mut self, inputs: Vec<LBObject>) -> LBObject {
+    pub async fn execute_async(&mut self, _inputs: LBObjArgs) -> LBObject {
         LeBlancObject::unsafe_null()
         /*self.is_async = true;
         inputs.clone_into(&mut self.variables);
@@ -263,9 +272,9 @@ impl Clone for LeblancHandle {
             name: self.name.clone(),
             constants: unsafe {self.constants.clone()},
             variable_context: self.variable_context.clone(),
-            variables: vec![LeBlancObject::null(); self.variables.len()],
+            variables: unsafe_vec![LeBlancObject::null(); self.variables.len()],
             instructions: self.instructions.clone(),
-            stack: Vec::with_capacity(1000),
+            stack: UnsafeVec::with_capacity(1000),
             is_async: self.is_async,
             global_index: self.global_index
         }
@@ -279,19 +288,4 @@ pub fn dump_stack_trace(error: LBObject, stack_trace: Vec<Instruction>) -> LBObj
     lbe.add_prior_trace(stack_trace);
     drop(borrowed);
     error
-}
-
-
-impl QuickUnwrap<LeblancHandle> for Arc<Strawberry<LeblancHandle>> {
-    fn arc_unwrap(self) -> LeblancHandle {
-        self.force_unwrap()
-    }
-
-    fn clone_if_locked(&self) -> Arc<Strawberry<LeblancHandle>> {
-        let cloned = self.clone();
-        match self.locked() {
-            false => cloned,
-            true => Arc::new(Strawberry::new(cloned.arc_unwrap()))
-        }
-    }
 }

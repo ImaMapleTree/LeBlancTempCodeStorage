@@ -1,12 +1,12 @@
-use alloc::vec::Drain;
+
 use core::fmt::Debug;
-use core::slice::{Iter, IterMut};
-use std::iter::Map;
+
+
 use std::marker::PhantomData;
-use std::mem;
+
 use std::mem::take;
 use std::ops::{Deref, DerefMut};
-use std::ptr::{addr_of_mut, null_mut};
+use std::ptr::{null_mut};
 
 
 
@@ -56,7 +56,7 @@ impl<'a, T: ?Sized + 'a> Blueberry<'_, T> {
     }
 }
 
-impl<'a, T> From<*mut T> for Blueberry<'_, T> {
+impl<T> From<*mut T> for Blueberry<'_, T> {
     #[inline]
     fn from(data: *mut T) -> Self {
         Blueberry {
@@ -115,7 +115,7 @@ impl<T: Debug> BlueberryVec<T> {
     #[inline]
     pub unsafe fn clone(&self) -> BlueberryVec<T> {
         let owned: Vec<(Option<T>, *mut T)> = self.owned.iter()
-            .map(|(obj, pointer)| (None, *pointer))
+            .map(|(_obj, pointer)| (None, *pointer))
             .collect();
         BlueberryVec { owned }
     }
@@ -259,7 +259,7 @@ impl<T> Quantum<T> {
     }
 }
 
-impl<'a, T: Clone> Quantum<T> {
+impl<T: Clone> Quantum<T> {
     #[inline]
     pub fn to_owned(self) -> T {
         if let Some(inner) = self.owned {

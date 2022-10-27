@@ -1,25 +1,25 @@
 use core::str::FromStr;
 use std::io;
-use std::io::{BufRead, Stdin, stdout, Write};
-use std::sync::Arc;
+use std::io::{BufRead, stdout, Write};
+
 use smol_str::SmolStr;
 
-use crate::leblanc::core::leblanc_object::{LeBlancObject, RustDataCast};
+use crate::leblanc::core::leblanc_object::{RustDataCast};
 use crate::leblanc::core::native_types::base_type::ToLeblanc;
-use crate::leblanc::core::native_types::class_type::{ClassMeta, leblanc_object_custom};
-use crate::leblanc::core::native_types::rust_type::{RustObject, RustObjectBuilder, RustSubTrait, RustType};
-use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use crate::leblanc::rustblanc::types::LBObject;
 
-pub fn _stdin_read_(_self: LBObject, _args: Vec<LBObject>) -> LBObject {
+
+
+
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+
+pub fn _stdin_read_(_self: LBObject, _args: LBObjArgs) -> LBObject {
     let mut line = String::new();
     io::stdin().read_line(&mut line).unwrap();
     line[0..line.len()-1].to_string().create_mutex()
 }
 
 
-pub fn _stdin_prompt_(_self: LBObject, _args: Vec<LBObject>) -> LBObject {
+pub fn _stdin_prompt_(_self: LBObject, _args: LBObjArgs) -> LBObject {
     let locked = &_args[0];
     let s: &SmolStr = locked.data.ref_data().unwrap();
     print!("{}", s);
@@ -27,7 +27,7 @@ pub fn _stdin_prompt_(_self: LBObject, _args: Vec<LBObject>) -> LBObject {
     _stdin_read_(_self, _args)
 }
 
-pub fn _stdin_read_int_(_self: LBObject, _args: Vec<LBObject>) -> LBObject {
+pub fn _stdin_read_int_(_self: LBObject, _args: LBObjArgs) -> LBObject {
     let mut line = String::new();
     io::stdin().read_line(&mut line).unwrap();
     line = line[0..line.len()-1].to_string();

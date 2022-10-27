@@ -98,7 +98,7 @@ impl<T> Try for Outcome<T> {
 }
 
 impl<T> FromResidual for Outcome<T> {
-    fn from_residual(residual: <Self as Try>::Residual) -> Self {
+    fn from_residual(_residual: <Self as Try>::Residual) -> Self {
         Failure
     }
 }

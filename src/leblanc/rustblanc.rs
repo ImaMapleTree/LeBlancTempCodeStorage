@@ -16,8 +16,11 @@ pub mod lb_file;
 pub mod outcome;
 pub mod macros;
 pub mod blueberry;
-pub mod heap;
 pub mod low;
+pub mod unsafe_vec;
+mod unsafe_raw_vec;
+pub mod memory;
+pub mod better_static;
 
 
 pub trait Appendable<T> {

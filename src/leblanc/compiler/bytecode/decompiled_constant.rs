@@ -10,7 +10,7 @@ use crate::leblanc::core::native_types::string_type::leblanc_object_string;
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
 
 #[derive(Debug)]
 pub struct DecompiledConstant {

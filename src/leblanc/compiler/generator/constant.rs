@@ -1,6 +1,6 @@
 use crate::leblanc::compiler::generator::CodeGenerator;
-use crate::leblanc::compiler::generator::context::{CompileInfo, ConstInfo};
-use crate::leblanc::compiler::parser::ast::{Const, Constant};
+use crate::leblanc::compiler::generator::context::{ConstInfo};
+use crate::leblanc::compiler::parser::ast::{Const};
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::rustblanc::lazy_store::Strategy;
 

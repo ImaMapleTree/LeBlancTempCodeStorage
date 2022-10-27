@@ -38,7 +38,7 @@ impl ErrorReporter {
             ParseError::ExtraToken { token } => {
                 (token.0, token.2, String::from("Extra Token"), String::from("Extra Token"))
             },
-            ParseError::User { error } => {
+            ParseError::User { error: _ } => {
                 (0, 0, String::from("N/A"), String::from("N/A"))
             }
         };

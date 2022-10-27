@@ -1,12 +1,12 @@
-use alloc::rc::Rc;
+
 
 use core::fmt::{Display, Formatter};
 
-use std::cell::RefCell;
-use std::sync::Arc;
-use fxhash::{FxHashMap};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::Mutex;
+
+
+use fxhash::{FxHashMap, FxHashSet};
+
+
 use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
@@ -16,7 +16,9 @@ use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::derived::iterator_type::{iterator_methods, LeblancIterable, LeblancIterator};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct LeblancGenerator {
@@ -31,10 +33,8 @@ pub fn leblanc_object_generator(leblanc_handle: LeblancHandle) -> LBObject {
 
     LeBlancObject::new(
         LeBlancObjectData::Iterator(LeblancIterator::new(Box::new(generator))),
-        LeBlancType::Derived(DerivedType::Iterator),
-        base_methods,
-        FxHashMap::default(),
-        VariableContext::empty(),
+       20,
+        UnsafeVec::default()
     )
 }
 

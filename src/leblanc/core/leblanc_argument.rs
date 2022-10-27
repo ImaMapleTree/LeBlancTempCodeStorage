@@ -101,8 +101,8 @@ impl PartialEq for LeBlancArgument {
             return self.typing == other.typing;
         }
         if self.position != other.position { return false; }
-        if !self.required && (other.typing == LeBlancType::Null) { return true }
-        if !other.required && (self.typing == LeBlancType::Null) { return true }
+        if !self.required && (other.typing == Null) { return true }
+        if !other.required && (self.typing == Null) { return true }
         self.typing == other.typing
     }
 }

@@ -122,7 +122,7 @@ impl LBFileTrait for LBFile {
         match glob::glob(&self.path.append(name).to_string()) {
             Err(_) => None,
             Ok(mut results) => {
-                results.find_map(|r| r.map_or_else(|e| None, Some))
+                results.find_map(|r| r.map_or_else(|_e| None, Some))
                     .map(|buf| ZCPath::new(buf.display()).as_file())
             }
         }

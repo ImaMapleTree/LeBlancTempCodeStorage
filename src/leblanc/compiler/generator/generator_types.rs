@@ -1,11 +1,11 @@
 use crate::leblanc::compiler::generator::converters::expr_to_typed_var;
 use crate::leblanc::compiler::parser::ast::{Cmpnt, Component, Location};
-use crate::leblanc::compiler::parser::ast_structs::{Function, Property, TypedVariable};
+use crate::leblanc::compiler::parser::ast_structs::{Function, Property};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
+use crate::leblanc::rustblanc::copystring::{CopyString};
 use crate::leblanc::rustblanc::lazy_store::{Lazy, Strategy};
 use crate::leblanc::rustblanc::path::ZCPath;
 
@@ -90,10 +90,35 @@ impl Lazy for FunctionSignature {
     fn scan(&self, other: &Self, strategy: Strategy) -> bool {
         match strategy {
             Strategy::LAZY => {
-                self.name == other.name && self.args == other.args
+                self.name == other.name
             }
             Strategy::STANDARD => {
-                self.name == other.name && self.args == other.args
+                let max_self_args = match self.args.last() {
+                    Some(item) => item.position + 1,
+                    None => 0
+                };
+                let max_other_args = match other.args.last() {
+                    Some(item) => item.position + 1,
+                    None => 0
+                };
+
+                let mut main_iter = self.args.clone();
+                let mut other_iter = other.args.clone();
+                let (max, main_iter, other_iter) = if max_self_args > max_other_args {
+                    for _ in 0..(max_self_args-max_other_args) as usize { other_iter.push(LeBlancArgument::null((other_iter.len()) as u32))}
+                    (max_self_args, self.args.clone(), other_iter)
+                } else {
+                    for _ in 0..(max_other_args-max_self_args) as usize { main_iter.push(LeBlancArgument::null((main_iter.len()) as u32))}
+                    (max_other_args, other.args.clone(), main_iter)
+                };
+                for i in 0..max {
+                    if !main_iter.iter().any(|arg| arg.position == (i as u32) && other_iter.iter().any(|o| o == arg)) {
+                        return false;
+                    }
+                }
+
+
+                self.name == other.name
                     && ((self.location.file == other.location.file) || self.location.file == ZCPath::new("__BUILTIN__") || other.location.file == ZCPath::new("__BUILTIN__"))
             }
             Strategy::RUST => self == other

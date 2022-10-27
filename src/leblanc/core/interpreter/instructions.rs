@@ -1,4 +1,4 @@
-use core::fmt::{Display, Formatter};
+
 use strum_macros::EnumVariantNames;
 use strum::VariantNames;
 use crate::leblanc::rustblanc::Hexable;

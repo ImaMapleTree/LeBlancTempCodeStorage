@@ -5,15 +5,16 @@ use crate::leblanc::compiler::generator::generator_types::FunctionSignature;
 use crate::leblanc::compiler::parser::ast::{BinaryOperator, Comparator, Expr, Expression, Ident};
 use crate::leblanc::compiler::parser::ast_structs::TypedVariable;
 use crate::leblanc::core::internal::methods::builtins::BUILTIN_METHODS;
-use crate::leblanc::core::interpreter::instructions2::Instruction2;
+
 use crate::leblanc::core::interpreter::instructions2::Instruction2::*;
-use crate::leblanc::core::interpreter::instructions::InstructionBase;
-use crate::leblanc::core::interpreter::instructions::InstructionBase::{LoadConstant, LoadLocal};
+
+
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::Hexable;
+
 use crate::leblanc::rustblanc::lazy_store::Strategy;
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 
 impl CodeGenerator {
@@ -40,9 +41,12 @@ impl CodeGenerator {
 
                 let info = self.resolve_ident_expr(method_name, false)?;
                 let ident = info.get_ident();
-                if ident.is_none() { return Err(()); }
+                if ident.is_none() {
+                    return Err(());
+                }
                 let name = ident.unwrap();
                 let argument_count = arguments.len();
+
 
                 let signature = FunctionSignature::new(&name.resolve(), arguments, vec![], location);
                 let function_index = self.func_map.index(&signature, Strategy::STANDARD);
@@ -85,15 +89,16 @@ impl CodeGenerator {
                 let line = right.location.line;
                 self.determine_expression(left)?;
                 self.determine_expression(right)?;
-                match comparator {
-                    Comparator::Equal => self.instruct_gen.add_instruction(line, EQUALS(0, [])),
-                    Comparator::NotEqual => self.instruct_gen.add_instruction(line, NOT_EQUALS(0, [])),
-                    Comparator::GreaterEqual => self.instruct_gen.add_instruction(line, GREATER_EQUALS(0, [])),
-                    Comparator::LesserEqual => self.instruct_gen.add_instruction(line, LESS_EQUALS(0, [])),
-                    Comparator::Greater => self.instruct_gen.add_instruction(line, GREATER(0, [])),
-                    Comparator::Lesser => self.instruct_gen.add_instruction(line, LESS(0, [])),
-                    Comparator::In => {}
-                }
+               let instruct = match comparator {
+                    Comparator::Equal => EQUALS,
+                    Comparator::NotEqual => NOT_EQUALS,
+                    Comparator::GreaterEqual => GREATER_EQUALS,
+                    Comparator::LesserEqual => LESS_EQUALS,
+                    Comparator::Greater => GREATER,
+                    Comparator::Lesser => LESS,
+                    Comparator::In => NOT_EQUALS,
+                };
+                self.instruct_gen.add_instruction(line, instruct(0, []));
             }
             Expr::List { items } => {
                 if let Err(err) = self.evaluate_expressions(items) { return err; }
@@ -110,11 +115,11 @@ impl CodeGenerator {
                 }
                 return Ok(t)
             }
-            Expr::ArithMulDivModOperation { left, op, right } => {}
-            Expr::ExponentialOperation { left, op, right } => {}
-            Expr::UnaryOperation { term, op } => {}
-            Expr::IncrementDecrementOperation { term, op, postfix } => {}
-            Expr::ListAssignment { list, expr } => {}
+            Expr::ArithMulDivModOperation { left: _, op: _, right: _ } => {}
+            Expr::ExponentialOperation { left: _, op: _, right: _ } => {}
+            Expr::UnaryOperation { term: _, op: _ } => {}
+            Expr::IncrementDecrementOperation { term: _, op: _, postfix: _ } => {}
+            Expr::ListAssignment { list: _, expr: _ } => {}
             Expr::TypedAssignment { idents, expr } => {
                 let mut evaluated: Vec<Ident> = Vec::new();
                 for ident in idents {
@@ -130,7 +135,7 @@ impl CodeGenerator {
                 }
                 if let Some(expression) = expr {
                     let result = self.determine_expression(expression)?;
-                    for ident in evaluated.into_iter() {
+                    for ident in evaluated {
                         let line = ident.location.line;
                         let info = self.validate_type(ident, expression.location, result.get_type(), true)?;
                         let instruct = STORE_VARIABLE(0, bytes![info.id]);
@@ -147,10 +152,10 @@ impl CodeGenerator {
                     self.instruct_gen.add_instruction(location.line, instruct);
                 }
             }
-            Expr::GroupAssignment { assignee, group } => {}
-            Expr::BlockLambda { variables, block } => {}
-            Expr::ExprLambda { variables, expr } => {}
-            Expr::ExceptCatch { errors, variable } => {}
+            Expr::GroupAssignment { assignee: _, group: _ } => {}
+            Expr::BlockLambda { variables: _, block: _ } => {}
+            Expr::ExprLambda { variables: _, expr: _ } => {}
+            Expr::ExceptCatch { errors: _, variable: _ } => {}
             Expr::TypedVariable { typing, variable } => {
                 let info = self.add_type(variable.clone(), *typing)?;
                 let instruct = LOAD_VARIABLE(0, bytes![info.id]);
@@ -158,8 +163,11 @@ impl CodeGenerator {
                 return Ok(info);
             }
             Expr::Ident { ident } => {
-                let info = self.get_type(&ident)?;
-                let instruct = LOAD_VARIABLE(0, bytes![info.id]);
+                let info = self.get_type(ident)?;
+                let instruct = if info.get_type() == LeBlancType::Function {
+                    LOAD_FUNCTION
+                } else { LOAD_VARIABLE };
+                let instruct = instruct(0, bytes![info.id]);
                 self.instruct_gen.add_instruction(ident.location.line, instruct);
                 return Ok(info);
             }

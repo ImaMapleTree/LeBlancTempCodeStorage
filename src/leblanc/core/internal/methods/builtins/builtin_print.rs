@@ -2,11 +2,11 @@ use std::collections::BTreeSet;
 use std::io;
 
 
-use alloc::rc::Rc;
-use std::cell::RefCell;
+
+
 use std::io::Write;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+
+
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Stringify};
 use crate::leblanc::core::method::Method;
@@ -15,18 +15,16 @@ use crate::leblanc::core::native_types::base_type::internal_method;
 
 use crate::leblanc::core::native_types::LeBlancType;
 
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
-fn _BUILTIN_PRINT_(_self: LBObject, mut args: Vec<LBObject>) -> LBObject {
+fn _BUILTIN_PRINT_(_self: LBObject, mut args: LBObjArgs) -> LBObject {
     //println!("Args: {:?}", args);
     let arg_length = args.len();
     for i in 0..arg_length {
         let sep = if i == arg_length-1 { "\n" } else { " " };
         let arg = &mut args[i];
-        let result = match arg.call_name("to_string") {
-            Ok(r) => r.to_string() + sep,
-            Err(err) => return err
-        };
+        let result = arg.data.to_string() + sep;
         write!(io::stdout().lock(), "{}", result).unwrap();
         //io::stdout().write(result.as_bytes()).unwrap();
     }

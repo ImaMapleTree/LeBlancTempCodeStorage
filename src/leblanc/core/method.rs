@@ -6,20 +6,21 @@ use std::hash::{Hash, Hasher};
 
 
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
-use crate::leblanc::core::leblanc_object::{ArcToRc, LeBlancObject, QuickUnwrap};
+use crate::leblanc::core::leblanc_object::{LeBlancObject};
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::method_tag::MethodTag;
 
-use alloc::rc::Rc;
 
-use std::cell::{RefCell};
-use std::mem::take;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+
+
+
+
+
 use crate::leblanc::core::interpreter::leblanc_runner::get_handles;
-use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::types::{LBFunctionHandle, LBObject};
+
+use crate::leblanc::rustblanc::types::{LBFunctionHandle, LBObjArgs, LBObject};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 pub struct Method {
     pub context: MethodStore,
@@ -91,17 +92,17 @@ impl Method {
     }
 
     #[inline]
-    pub fn run(&self, _self: LBObject, args: Vec<LBObject>) -> LBObject {
+    pub fn run(&self, self_ref: LBObject, args: LBObjArgs) -> LBObject {
         match self.method_type {
             MethodType::DefinedMethod => self.leblanc_handle.execute(args),
-            MethodType::InternalMethod => (self.handle)(_self, args)
+            MethodType::InternalMethod => (self.handle)(self_ref, args)
         }
     }
 
 
     #[inline]
-    pub fn run_uncloned(&self, _self: LBObject, args: Vec<LBObject>) -> LBObject {
-        (self.handle)(_self, args)
+    pub fn run_uncloned(&self, self_ref: LBObject, args: LBObjArgs) -> LBObject {
+        (self.handle)(self_ref, args)
     }
 
     pub fn matches(&self, name: String, arguments: &Vec<LeBlancArgument>) -> bool {
@@ -176,9 +177,9 @@ impl PartialOrd for Method {
     }
 }
 
-fn null_func(_self: LBObject, _args: Vec<LBObject>) -> LBObject {LeBlancObject::unsafe_null()}
+fn null_func(_self: LBObject, _args: LBObjArgs) -> LBObject {LeBlancObject::unsafe_null()}
 
-fn error_func(_self: LBObject, _args: Vec<LBObject>) -> LBObject{LeBlancObject::unsafe_error()}
+fn error_func(_self: LBObject, _args: LBObjArgs) -> LBObject{LeBlancObject::unsafe_error()}
 
 fn null_c_func(_self: LBObject, _args: Vec<LBObject>) -> Option<&'static mut LeBlancObject> { panic!("Function Not Implemented") }
 

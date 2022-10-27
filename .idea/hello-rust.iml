@@ -6,9 +6,20 @@
       <sourceFolder url="file://$MODULE_DIR$/leblanc_peg/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/leblanc_derive/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/leblanc_bench/benches" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/leblanc_bench/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/LeBlancVM/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/LeblancCompiler/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/leblanc_vm/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/leblanc_test/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/leblanc_peg/target" />
       <excludeFolder url="file://$MODULE_DIR$/leblanc_derive/target" />
+      <excludeFolder url="file://$MODULE_DIR$/leblanc_bench/target" />
+      <excludeFolder url="file://$MODULE_DIR$/LeBlancVM/target" />
+      <excludeFolder url="file://$MODULE_DIR$/LeblancCompiler/target" />
+      <excludeFolder url="file://$MODULE_DIR$/leblanc_vm/target" />
+      <excludeFolder url="file://$MODULE_DIR$/leblanc_test/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

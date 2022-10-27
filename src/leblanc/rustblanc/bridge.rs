@@ -1,4 +1,4 @@
-use std::ptr::replace;
+/*use std::ptr::replace;
 use crate::leblanc::core::leblanc_object::LeBlancObject;
 use crate::leblanc::core::module::CoreModule;
 
@@ -148,4 +148,4 @@ pub extern fn _swap_current_shared_object(new_object: LeBlancObject) {
     unsafe {
         drop(replace(obj_bridge_getter()().unwrap(), new_object));
     }
-}
+}*/

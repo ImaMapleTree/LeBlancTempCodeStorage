@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use fxhash::{FxHashMap};
+
 use crate::leblanc::compiler::bytecode::byte_limiter::ByteLimit::{Limited, Undefined};
 use crate::leblanc::compiler::bytecode::byte_limiter::ByteRestriction;
 use crate::leblanc::compiler::bytecode::decompiled_constant::DecompiledConstant;

@@ -1,5 +1,5 @@
 use crate::leblanc::compiler::generator::CodeGenerator;
-use crate::leblanc::compiler::generator::context::{CompileInfo, ConditionalInfo};
+use crate::leblanc::compiler::generator::context::{ConditionalInfo};
 use crate::leblanc::compiler::parser::ast::Conditional;
 
 impl CodeGenerator {

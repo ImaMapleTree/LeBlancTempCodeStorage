@@ -1,5 +1,8 @@
 use core::fmt::{Debug, Formatter};
+use std::intrinsics::size_of;
 use std::ops::Add;
+use std::ptr;
+
 use lazy_static::lazy_static;
 use strum_macros::Display;
 use crate::{lazystore, unhex_instruct};
@@ -11,10 +14,10 @@ use crate::leblanc::rustblanc::lazy_store::{Lazy, LazyStore, Strategy};
 lazy_static! {
     static ref INSTRUCTIONS: LazyStore<Instruction2> = lazystore![NOREF(0, []), BADD_NATIVE(0, []), BSUB_NATIVE(0, []),
         LOAD_CONSTANT(1, [0]), LOAD_VARIABLE(1, [0]), STORE_VARIABLE(1, [0]),
-        STORE_CINV(2, [0, 0]), CALL_BUILTIN(2, [0, 0]), CALL_NORMAL(2, [0, 0]),
+        STORE_CINV(2, [0, 0]), LOAD_FUNCTION(1, [0]), CALL_BUILTIN(2, [0, 0]), CALL_NORMAL(2, [0, 0]),
         EQUALS(0, []), NOT_EQUALS(0, []), GREATER_EQUALS(0, []), GREATER(0, []), LESS_EQUALS(0, []), LESS(0, []),
         IF_EQUALS(1, [0]), IF_NOT_EQUALS(1, [0]), IF_GREATER_EQUALS(1, [0]), IF_GREATER(1, [0]), IF_LESS_EQUALS(1, [0]), IF_LESS(1, [0]),
-        RETURN(1, [0])];
+        JUMP(1, [0]), JUMP_BACK(1, [0]), RETURN(1, [0])];
 }
 
 
@@ -43,6 +46,9 @@ pub enum Instruction2 {
 
     // Stores constant in variable (int a = 5)
     STORE_CINV(ILN, [u16; 2]),
+
+    // Loads function to stack but does not call it
+    LOAD_FUNCTION(ILN, [u16; 1]),
 
     // Calls function with no args
     CALL_BUILTIN(ILN, [u16; 2]),
@@ -81,6 +87,12 @@ pub enum Instruction2 {
     IF_LESS(ILN, [u16; 1]),
 
 
+    // Jumps N instructions
+    JUMP(ILN, [u16; 1]),
+
+    // Jumps backward N instructions
+    JUMP_BACK(ILN, [u16; 1]),
+
     // Returns with u16 values
     RETURN(ILN, [u16; 1]),
 }
@@ -113,6 +125,7 @@ impl Instruction2 {
             LOAD_VARIABLE(ln, _) => *ln,
             STORE_VARIABLE(ln, _) => *ln,
             STORE_CINV(ln, _) => *ln,
+            LOAD_FUNCTION(ln, _) => *ln,
             CALL_BUILTIN(ln, _) => *ln,
             CALL_NORMAL(ln, _) => *ln,
             RETURN(ln, _) => *ln,
@@ -128,6 +141,20 @@ impl Instruction2 {
             IF_GREATER(ln, _) => *ln,
             IF_LESS_EQUALS(ln, _) => *ln,
             IF_LESS(ln, _) => *ln,
+            JUMP(ln, _) => *ln,
+            JUMP_BACK(ln, _) => *ln
+        }
+    }
+
+    pub fn bytes2(&self, length: usize) -> &[u16] {
+        unsafe {
+            &*ptr::slice_from_raw_parts(((self as *const Instruction2 as *mut Instruction2).cast::<u16>()).byte_add(2), length)
+        }
+    }
+
+    pub fn byte(&self, index: usize) -> u16 {
+        unsafe {
+            *(self as *const Instruction2 as *const u16).byte_add(2).add(index)
         }
     }
 
@@ -140,6 +167,7 @@ impl Instruction2 {
             LOAD_VARIABLE(_, bytes) => bytes,
             STORE_VARIABLE(_, bytes) => bytes,
             STORE_CINV(_, bytes) => bytes,
+            LOAD_FUNCTION(_, bytes) => bytes,
             CALL_BUILTIN(_, bytes) => bytes,
             CALL_NORMAL(_, bytes) => bytes,
             EQUALS(_, bytes) => bytes,
@@ -155,6 +183,8 @@ impl Instruction2 {
             IF_LESS_EQUALS(_, bytes) => bytes,
             IF_LESS(_, bytes) => bytes,
             RETURN(_, bytes) => bytes,
+            JUMP(_, bytes) => bytes,
+            JUMP_BACK(_, bytes) => bytes
         }
     }
 
@@ -206,21 +236,24 @@ impl From<(u16, Hexadecimal, u32)> for Instruction2 {
             4 => LOAD_VARIABLE(line, [scrape_arg(&mut ahex)]),
             5 => STORE_VARIABLE(line, [scrape_arg(&mut ahex)]),
             6 => STORE_CINV(line, [scrape_arg(&mut ahex), scrape_arg(&mut ahex)]),
-            7 => CALL_BUILTIN(line, [scrape_arg(&mut ahex), scrape_arg(&mut ahex)]),
-            8 => CALL_NORMAL(line, [scrape_arg(&mut ahex), scrape_arg(&mut ahex)]),
-            9 => EQUALS(line, []),
-            10 => NOT_EQUALS(line, []),
-            11 => GREATER_EQUALS(line, []),
-            12 => GREATER(line, []),
-            13 => LESS_EQUALS(line, []),
-            14 => LESS(line, []),
-            15 => IF_EQUALS(line, [scrape_arg(&mut ahex)]),
-            16 => IF_NOT_EQUALS(line, [scrape_arg(&mut ahex)]),
-            17 => IF_GREATER_EQUALS(line, [scrape_arg(&mut ahex)]),
-            18 => IF_GREATER(line, [scrape_arg(&mut ahex)]),
-            19 => IF_LESS_EQUALS(line, [scrape_arg(&mut ahex)]),
-            20 => IF_LESS(line, [scrape_arg(&mut ahex)]),
-            21 => RETURN(line, [scrape_arg(&mut ahex)]),
+            7 => unhex_instruct!(line, LOAD_FUNCTION, ahex),
+            8 => CALL_BUILTIN(line, [scrape_arg(&mut ahex), scrape_arg(&mut ahex)]),
+            9 => CALL_NORMAL(line, [scrape_arg(&mut ahex), scrape_arg(&mut ahex)]),
+            10 => EQUALS(line, []),
+            11 => NOT_EQUALS(line, []),
+            12 => GREATER_EQUALS(line, []),
+            13 => GREATER(line, []),
+            14 => LESS_EQUALS(line, []),
+            15 => LESS(line, []),
+            16 => IF_EQUALS(line, [scrape_arg(&mut ahex)]),
+            17 => IF_NOT_EQUALS(line, [scrape_arg(&mut ahex)]),
+            18 => IF_GREATER_EQUALS(line, [scrape_arg(&mut ahex)]),
+            19 => IF_GREATER(line, [scrape_arg(&mut ahex)]),
+            20 => IF_LESS_EQUALS(line, [scrape_arg(&mut ahex)]),
+            21 => IF_LESS(line, [scrape_arg(&mut ahex)]),
+            22 => unhex_instruct!(line, JUMP, ahex),
+            23 => unhex_instruct!(line, JUMP_BACK, ahex),
+            24 => RETURN(line, [scrape_arg(&mut ahex)]),
             _ => panic!("Unsupported Instruction")
         }
     }
@@ -238,12 +271,12 @@ fn scrape_arg(hex: &mut Hexadecimal) -> u16 {
 }
 
 
-fn fmt_bytes(bytes: &[u16]) -> String {
+pub fn fmt_bytes(bytes: &[u16]) -> String {
     let s = format!("{:?}", bytes);
     if s == "[]" {
         String::from(" ")
     } else {
-        s.replace(['[', ']'], "")
+        s.replace(['[', ']', ','], "")
     }
 }
 
@@ -257,6 +290,7 @@ impl Debug for Instruction2 {
             LOAD_VARIABLE(_, bytes) => write!(f, "LOAD_VARIABLE\t\t{}", fmt_bytes(bytes)),
             STORE_VARIABLE(_, bytes) => write!(f, "STORE_VARIABLE\t\t{}", fmt_bytes(bytes)),
             STORE_CINV(_, bytes) => write!(f, "STORE_CINV\t\t\t{}", fmt_bytes(bytes)),
+            LOAD_FUNCTION(_, bytes) => write!(f, "LOAD_FUNCTION\t\t{}", fmt_bytes(bytes)),
             CALL_BUILTIN(_, bytes) => write!(f, "CALL_BUILTIN\t\t{}", fmt_bytes(bytes)),
             CALL_NORMAL(_, bytes) => write!(f, "CALL_NORMAL\t\t\t{}", fmt_bytes(bytes)),
             EQUALS(_, bytes) => write!(f, "EQUALS\t\t\t{:?}", fmt_bytes(bytes)),
@@ -271,6 +305,8 @@ impl Debug for Instruction2 {
             IF_GREATER(_, bytes) => write!(f, "IF_GREATER\t\t\t{}", fmt_bytes(bytes)),
             IF_LESS_EQUALS(_, bytes) => write!(f, "IF_LESS_EQUALS\t\t{}", fmt_bytes(bytes)),
             IF_LESS(_, bytes) => write!(f, "IF_LESS\t\t\t{}", fmt_bytes(bytes)),
+            JUMP(_, bytes) => write!(f, "JUMP\t\t\t{}", fmt_bytes(bytes)),
+            JUMP_BACK(_, bytes) => write!(f, "JUMP_BACK\t\t\t{}", fmt_bytes(bytes)),
             RETURN(_, bytes) => write!(f, "RETURN\t\t\t\t{}", fmt_bytes(bytes)),
         }
     }

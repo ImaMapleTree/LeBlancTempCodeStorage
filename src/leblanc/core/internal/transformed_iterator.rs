@@ -1,13 +1,14 @@
 use core::fmt::Debug;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc};
+
+
 use crate::leblanc::core::internal::transformed_iterator::IterMutation::{Filter, Map};
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
-use crate::leblanc::core::leblanc_object::{LeBlancObject, RustDataCast};
+use crate::leblanc::core::leblanc_object::{RustDataCast};
 
 use crate::leblanc::core::native_types::derived::iterator_type::{LeblancIterable};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::unsafe_vec;
 
 #[derive(Debug, Clone)]
 pub struct TransformedIterator {
@@ -57,10 +58,10 @@ impl LeblancIterable for TransformedIterator {
         for transformation in &mut self.transformations {
             match transformation {
                 Filter(handle) => {
-                    iterator = Box::new(iterator.filter(|i| *handle.execute_lambda(vec![i.clone()]).data.ref_data().unwrap()));
+                    iterator = Box::new(iterator.filter(|i| *handle.execute_lambda(unsafe_vec![i.clone()]).data.ref_data().unwrap()));
                 }
                 Map(handle) => {
-                    iterator = Box::new(iterator.map(|i| handle.execute_lambda(vec![i])));
+                    iterator = Box::new(iterator.map(|i| handle.execute_lambda(unsafe_vec![i])));
                 }
             }
         }

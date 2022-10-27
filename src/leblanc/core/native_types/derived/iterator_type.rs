@@ -1,13 +1,13 @@
-use alloc::rc::Rc;
+
 use core::fmt::{Display, Formatter};
-use std::cell::RefCell;
-use std::collections::{BTreeSet};
+
+use std::collections::{BTreeSet, HashSet};
 
 use std::sync::Arc;
-use fxhash::{FxHashMap, FxHashSet};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::Mutex;
-use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
+use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
+
+
+use crate::leblanc::core::internal::methods::internal_class::{_internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_iterator::{_internal_iterator_filter_, _internal_iterator_map_, _internal_iterator_next, _internal_iterator_to_list_};
 use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
@@ -19,7 +19,9 @@ use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equa
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 pub trait IteratorUtils {
     fn leblanc_iterator_clone(&self) -> Box<dyn LeblancIterable>;
@@ -61,10 +63,8 @@ pub fn leblanc_object_iterator(leblanc_iterable: Box<dyn LeblancIterable>) -> LB
 
     LeBlancObject::new(
         LeBlancObjectData::Iterator(LeblancIterator::new(leblanc_iterable)),
-        LeBlancType::Derived(DerivedType::Iterator),
-        base_methods,
-        FxHashMap::default(),
-        VariableContext::empty(),
+        20,
+        UnsafeVec::default()
     )
 }
 
@@ -99,18 +99,19 @@ impl Display for LeblancIterator {
     }
 }
 
-pub fn iterator_methods() -> Arc<FxHashSet<Method>> {
-    let mut hash_set = FxHashSet::default();
+pub fn iterator_methods() -> HeapRef<'static, HashSet<Method, FxBuildHasher>> {
+    /*let mut hash_set = wild_heap().alloc_with(FxHashSet::default);
     hash_set.insert(Method::default(base_to_string_method(), _internal_to_string_));
-    hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
+    //hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
     hash_set.insert(Method::default(base_equals_method(), _internal_to_string_));
     hash_set.insert(Method::default(base_clone_method(), _internal_to_string_));
-    hash_set.insert(Method::default(base_field_method(), _internal_field_));
+    //hash_set.insert(Method::default(base_field_method(), _internal_field_));
     hash_set.insert( iterator_next_method());
     hash_set.insert(iterator_to_list());
     hash_set.insert(iterator_filter());
     hash_set.insert(iterator_map());
-    Arc::new(hash_set)
+    hash_set*/
+    HeapRef::default()
 }
 
 pub fn iterator_next_method() -> Method {

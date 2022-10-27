@@ -166,7 +166,7 @@ impl LeBlancType {
             Marker => "marker",
             Null => "null",
             LeBlancType::SuperLambda => "superlambda",
-            LeBlancType::Trait(string, forced) => "trait",
+            LeBlancType::Trait(_string, _forced) => "trait",
         }
     }
 
@@ -239,7 +239,7 @@ impl quote::ToTokens for LeBlancType {
             Function => "Function",
             Module => "Module",
             Dynamic => "Dynamic",
-            Derived(val) => {
+            Derived(_val) => {
                 todo!();
                 "Null"
             }

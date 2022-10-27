@@ -1,6 +1,6 @@
 
-use parking_lot::lock_api::{MutexGuard, RwLockReadGuard, RwLockWriteGuard};
-use parking_lot::{Mutex, RawMutex, RawRwLock, RwLock};
+use parking_lot::lock_api::{RwLockReadGuard, RwLockWriteGuard};
+use parking_lot::{RawRwLock, RwLock};
 
 #[derive(Debug)]
 pub struct Strawberry<T> {
@@ -8,7 +8,7 @@ pub struct Strawberry<T> {
 }
 
 impl<T> Strawberry<T> {
-    pub fn new(data: T) -> Strawberry<T> {
+    pub const fn new(data: T) -> Strawberry<T> {
         let mutex = RwLock::new(data);
         Strawberry {
             mutex,
@@ -28,7 +28,7 @@ impl<T> Strawberry<T> {
     }
 
     //noinspection RsExternalLinter
-    pub fn underlying_pointer(&self) -> &mut T {
+    pub fn pointer(&self) -> &mut T {
         unsafe {&mut *self.mutex.data_ptr()}
     }
 

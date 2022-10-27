@@ -1,11 +1,12 @@
 use std::collections::BTreeSet;
-use std::path::PathBuf;
+
 use lazy_static::lazy_static;
 
 
 use crate::leblanc::compiler::bytecode::LeblancBytecode;
-use crate::leblanc::compiler::parser::import_manager;
-use crate::leblanc::core::internal::methods::builtins::create_builtin_function_objects;
+use crate::leblanc::configuration::HDEF_MB;
+
+use crate::leblanc::core::internal::methods::builtins::{create_builtin_function_methods, create_builtin_function_objects};
 use crate::leblanc::core::interpreter::leblanc_runner::{get_handles, LeBlancRunner};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
@@ -14,26 +15,22 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
 use crate::leblanc::rustblanc::copystring::CopyString;
-use crate::leblanc::rustblanc::heap::{Heap, HeapObject};
-use parking_lot::Mutex;
+use crate::leblanc::rustblanc::memory::heap::TypedHeap;
 
-pub mod instructions;
-pub mod interactive;
-pub mod instruction_execution;
-pub mod leblanc_runner;
+
+pub(crate) mod instructions;
+pub(crate) mod interactive;
+pub(crate) mod instruction_execution;
+pub(crate) mod leblanc_runner;
+pub(crate) mod instruction_execution2;
+pub(crate) mod execution_context;
 pub mod instructions2;
-pub mod instruction_execution2;
-pub mod execution_context;
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 
-lazy_static! {
-    pub static ref HEAP: Strawberry<Heap<LeBlancObject>> = Strawberry::new(Heap::new_bytes(80000));
-}
-
-pub fn run(mut bytecode: LeblancBytecode) {
+pub(crate) fn run(mut bytecode: LeblancBytecode) {
     get_handles().clear();
     get_handles().push(LeblancHandle::null());
-    let mut globals = create_builtin_function_objects();
+    let mut globals = create_builtin_function_methods();
 
     for mut function in bytecode.body().functions() {
         let arguments = &function.arguments();
@@ -41,13 +38,12 @@ pub fn run(mut bytecode: LeblancBytecode) {
         let index = get_handles().len();
         let leblanc_handle = LeblancHandle::from_function_bytecode(function, index);
         get_handles().push(leblanc_handle);
-        let method_store = MethodStore::new(name.clone(), LeBlancArgument::from_positional(arguments));
-        let method = Method::of_leblanc_handle(method_store, index, BTreeSet::new());
-        let mut lbo = internal_method(method);
-        lbo.context.file = CopyString::new(bytecode.file_header().get_file_name());
+        //let method_store = MethodStore::new(name.clone(), LeBlancArgument::from_positional(arguments));
+        //let method = Method::of_leblanc_handle(method_store, index, BTreeSet::new());
+        /*let mut lbo = internal_method(method);
         if name != "__GLOBAL__" {
             globals.push(lbo);
-        }
+        }*/
     }
 
     /*for import in bytecode.file_header().imports() {

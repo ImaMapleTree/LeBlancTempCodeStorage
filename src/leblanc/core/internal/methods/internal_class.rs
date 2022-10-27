@@ -1,11 +1,11 @@
 use fxhash::{FxHashMap};
 
 
-use alloc::rc::Rc;
-use std::cell::RefCell;
-use std::sync::Arc;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::Mutex;
+
+
+
+
+
 
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, Reflect, Stringify};
@@ -13,22 +13,24 @@ use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::class_type::ClassMeta;
 use crate::leblanc::core::native_types::LeBlancType;
 use crate::leblanc::core::native_types::string_type::leblanc_object_string;
-use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
 
-pub fn _internal_field_(_self: LBObject, arguments: Vec<LBObject>) -> LBObject {
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
+
+/*pub fn _internal_field_(_self: LBObject, arguments: LBObjArgs) -> LBObject {
     let string: String = unsafe {arguments[0].reflect().downcast_ref_unchecked::<String>()}.clone();
 
     return _self.members.get(string.as_str()).unwrap_or(&LeBlancObject::null()).clone();
 }
 
-pub fn _internal_expose_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
+pub fn _internal_expose_(_self: LBObject, _arguments: LBObjArgs) -> LBObject {
     let class_meta = ClassMeta::default("ExposedObject".to_string(), 0);
     let mut expose_object = LeBlancObject::new(
         LeBlancObjectData::Class(Box::new(class_meta.clone())),
         LeBlancType::Class(class_meta.name),
         base_methods(),
-        FxHashMap::default(),
+        HeapRef::default(),
         VariableContext::empty(),
     );
 
@@ -39,7 +41,7 @@ pub fn _internal_expose_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject
         LeBlancObjectData::Class(Box::new(variable_class_meta.clone())),
         LeBlancType::Class(variable_class_meta.name),
         base_methods(),
-        FxHashMap::default(),
+        HeapRef::default(),
         VariableContext::empty()
     );
 
@@ -52,8 +54,8 @@ pub fn _internal_expose_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject
 
 
     expose_object
-}
+}*/
 
-pub fn _internal_to_string_(_self: LBObject, _args: Vec<LBObject>) -> LBObject {
+pub fn _internal_to_string_(_self: LBObject, _args: LBObjArgs) -> LBObject {
     _self.to_string().create_mutex()
 }

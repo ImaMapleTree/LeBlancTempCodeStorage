@@ -1,9 +1,10 @@
 use core::fmt::{Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
+use enum_as_inner::EnumAsInner;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::core::native_types::LeBlancType::ConstantFlex;
+
 use serde::{Serialize};
-use crate::leblanc::core::leblanc_object::LeBlancObjectData::Double;
+
 use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::Hexable;
 use crate::leblanc::rustblanc::lazy_store::{Lazy, Strategy};
@@ -19,6 +20,10 @@ static mut FILE: ZCPath = ZCPath::constant();
 
 pub unsafe fn push_byte_location(value: (usize, usize)) {
     BYTE_LOCATION.push(value);
+}
+
+pub unsafe fn clear_byte_location() {
+    BYTE_LOCATION.clear();
 }
 
 pub unsafe fn set_file<T: Display>(file: T) {
@@ -70,7 +75,7 @@ pub struct Located<T> {
     pub data: T,
 }
 
-impl<T> Located<T> {
+impl<T: Debug> Located<T> {
     pub fn new(location: Location, data: T) -> Self {
         Self {
             location,
@@ -79,6 +84,14 @@ impl<T> Located<T> {
     }
 }
 
+impl Default for Component {
+    fn default() -> Self {
+        Located {
+            location: Default::default(),
+            data: Default::default()
+        }
+    }
+}
 
 pub type Component = Located<Cmpnt>;
 pub type Expression = Located<Expr>;
@@ -131,7 +144,7 @@ impl Display for Cmpnt {
 /// ## name: String, type_params: `Option<Vec<String>>`, items: `Vec<Component>`
 ///`EnumItem`
 /// ## name: String, nested: `Vec<LeBlancType>`
-#[derive(Clone, Serialize, Debug)]
+#[derive(Clone, Serialize, Debug, Default, EnumAsInner)]
 #[serde(tag = "type")]
 pub enum Cmpnt {
     Function { header: Box<Component>, body: Statement, tags: Vec<String> },
@@ -144,7 +157,9 @@ pub enum Cmpnt {
     ExtImport { module: String, extension: String },
     Enum { name: String, type_params: Option<Vec<String>>, items: Vec<Component> },
     EnumItem { name: String, nested: Vec<LeBlancType> },
-    Requirements { required: Vec<Required> }
+    Requirements { required: Vec<Required> },
+    #[default]
+    None
 }
 
 
@@ -156,7 +171,7 @@ impl Display for Stmnt {
 }
 
 
-#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug, Default)]
 #[serde(untagged)]
 pub enum Stmnt {
     Global {
@@ -187,7 +202,9 @@ pub enum Stmnt {
     Try { statement: Box<Statement> },
     Except { catch: Option<Expression>, statement: Box<Statement> },
 
-    Return { statement: Box<Statement> }
+    Return { statement: Box<Statement> },
+    #[default]
+    None
 }
 
 impl Display for Conditional {
@@ -346,8 +363,8 @@ impl Display for Id {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         let s = match self {
             Id::Ident { ident } => ident.to_string(),
-            Id::ObjIdent { ident, attr } => (ident.resolve() + "." + &attr.resolve()),
-            Id::EnumIdent { ident, kind } => (ident.resolve() + "." + &kind.resolve()),
+            Id::ObjIdent { ident, attr } => ident.resolve() + "." + &attr.resolve(),
+            Id::EnumIdent { ident, kind } => ident.resolve() + "." + &kind.resolve(),
             Id::TypedListIdent { typing } => typing.to_string()
         };
         write!(f, "{}", s)
@@ -358,8 +375,8 @@ impl Ident {
     pub fn resolve(&self) -> String {
         match &self.data {
             Id::Ident { ident } => ident.to_string(),
-            Id::ObjIdent { ident, attr} => (ident.resolve() + "." + &attr.resolve()),
-            Id::EnumIdent { ident, kind } => (ident.resolve() + "." + &kind.resolve()),
+            Id::ObjIdent { ident, attr} => ident.resolve() + "." + &attr.resolve(),
+            Id::EnumIdent { ident, kind } => ident.resolve() + "." + &kind.resolve(),
             Id::TypedListIdent { typing } => typing.to_string()
         }
     }
@@ -476,20 +493,20 @@ impl Const {
 
     pub fn to_lb_type(&self) -> LeBlancType {
         match self {
-            Const::String(_, location) => LeBlancType::String,
-            Const::Whole(_, opt, location) => {
+            Const::String(_, _location) => LeBlancType::String,
+            Const::Whole(_, opt, _location) => {
                 match opt {
                     None => LeBlancType::Int,
                     Some(lbt) => *lbt
                 }
             }
-            Const::Float(_, opt, location) => {
+            Const::Float(_, opt, _location) => {
                 match opt {
                     None => LeBlancType::Double,
                     Some(lbt) => *lbt,
                 }
             }
-            Const::Boolean(_, location) => LeBlancType::Boolean,
+            Const::Boolean(_, _location) => LeBlancType::Boolean,
         }
     }
 
@@ -514,7 +531,7 @@ impl Const {
 }
 
 impl Lazy for Const {
-    fn scan(&self, other: &Self, strategy: Strategy) -> bool {
+    fn scan(&self, other: &Self, _strategy: Strategy) -> bool {
         self == other
     }
 }

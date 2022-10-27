@@ -1,26 +1,24 @@
 use alloc::rc::Rc;
 use std::any::Any;
-use std::cell::{RefCell, RefMut};
+use std::cell::{RefCell};
 
 use std::fmt::{Debug, Display, Formatter};
-use std::future::Future;
+
 use std::mem::{swap};
-use std::pin::Pin;
 
 
-use std::sync::{Arc, LockResult, MutexGuard, TryLockResult};
+
+use std::sync::{Arc, MutexGuard};
 use fxhash::{FxHashMap, FxHashSet};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 
-use std::task::{Context, Poll};
+
 use lazy_static::lazy_static;
 
 use smol_str::SmolStr;
 
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::method::Method;
-use crate::leblanc::core::module::Module;
 use crate::leblanc::core::native_types::base_type::ToLeblanc;
 use crate::leblanc::core::native_types::class_type::ClassMeta;
 
@@ -30,21 +28,24 @@ use crate::leblanc::core::native_types::error_type::{leblanc_object_error, Lebla
 use crate::leblanc::core::native_types::group_type::LeblancGroup;
 
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::core::native_types::promise_type::{ArcLeblancPromise, LeblancPromise};
+use crate::leblanc::core::native_types::promise_type::{ArcLeblancPromise};
 use crate::leblanc::core::native_types::rust_type::RustObject;
 use crate::leblanc::rustblanc::Appendable;
 use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::types::LBObject;
-use crate::leblanc::core::interpreter::HEAP;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::core::heap::{heap, HEAP};
+use crate::leblanc::core::method::Method;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
+use crate::unsafe_vec;
 
 lazy_static! {
-    static ref LBNULL: LBObject = LeBlancObject::new(LeBlancObjectData::Null, LeBlancType::Null, Default::default(), Default::default(), VariableContext::empty());
-    static ref LBERROR: LBObject = LeBlancObject::new(LeBlancObjectData::Null, LeBlancType::Exception, Default::default(), Default::default(), VariableContext::empty());
-    static ref NO_ARGS: Vec<LBObject> = vec![];
+    static ref LBNULL: LBObject = LeBlancObject::new(LeBlancObjectData::Null, 23, Default::default());
+    static ref LBERROR: LBObject = LeBlancObject::new(LeBlancObjectData::Null, 16, Default::default());
 }
 
 pub trait Callable {
-    fn call(&mut self, method_name: &str, arguments: Vec<LBObject>) -> Result<LBObject, LBObject>;
+    fn call(&mut self, method_name: &str, arguments: LBObjArgs) -> Result<LBObject, LBObject>;
     fn call_name(&mut self, method_name: &str) -> Result<LBObject, LBObject>;
 }
 
@@ -61,43 +62,39 @@ pub trait RustDataCast<T> {
 #[derive(Debug, Default)]
 pub struct LeBlancObject {
     pub data: LeBlancObjectData,
-    pub typing: LeBlancType,
-    pub methods: Arc<FxHashSet<Method>>,
-    pub members: FxHashMap<String, LBObject>,
-    pub context: VariableContext
+    pub typing: u32,
+    pub members: UnsafeVec<LBObject>
 }
 
 impl LeBlancObject {
-    pub fn new(data: LeBlancObjectData, typing: LeBlancType, methods: Arc<FxHashSet<Method>>, members: FxHashMap<String, LBObject>, context: VariableContext) -> LBObject {
-        HEAP.underlying_pointer().alloc(LeBlancObject {data, typing, methods, members, context})
+    #[inline(always)]
+    pub fn new(data: LeBlancObjectData, typing: u32, members: UnsafeVec<LBObject>) -> LBObject {
+        unsafe {HEAP.alloc(LeBlancObject {data, typing, members})}
     }
 
-    pub fn is_error(&self) -> bool { self.typing == LeBlancType::Exception }
+    pub fn is_error(&self) -> bool { self.typing == 16 }
 
     pub fn null() -> LBObject {
-        HEAP.underlying_pointer().alloc(
-        LeBlancObject {
-            data: LeBlancObjectData::Null,
-            typing: LeBlancType::Null,
-            methods: LBNULL.methods.clone(),
-            members: FxHashMap::default(),
-            context: VariableContext::empty()
-        }
+        heap().access().alloc(
+            LeBlancObject {
+                data: LeBlancObjectData::Null,
+                typing: 23,
+                members: UnsafeVec::default()
+            }
         )
     }
 
+    #[inline(always)]
     pub fn unsafe_null() -> LBObject {
         LBNULL.clone()
     }
 
     pub fn error() -> LBObject {
-        HEAP.underlying_pointer().alloc(
+        heap().access().alloc(
         LeBlancObject {
             data: LeBlancObjectData::Null,
-            typing: LeBlancType::Exception,
-            methods: LBERROR.methods.clone(),
-            members: FxHashMap::default(),
-            context: VariableContext::empty()
+            typing: 16,
+            members: UnsafeVec::default()
         })
     }
 
@@ -109,32 +106,30 @@ impl LeBlancObject {
         leblanc_object_error(LeblancError::default())
     }
 
-    pub fn type_of(&self) -> LeBlancType { self.typing }
+    pub fn type_of(&self) -> LeBlancType { LeBlancType::from_enum_id(self.typing as u16) }
 
 
     pub fn name_of(&self) -> String {
         match self.typing {
-            LeBlancType::Class(_) => {
+/*            LeBlancType::Class(_) => {
                 if let LeBlancObjectData::Class(meta) = &self.data {
                     meta.name.to_string()
                 } else {
                     "NOT_IMPLEMENTED".to_string()
                 }
-            }
-            _ => self.typing.as_str().to_string()
+            }*/
+            _ => LeBlancType::from_enum_id(self.typing as u16).to_string()
         }
     }
 
     pub fn copy_data(&mut self, other: &Self) {
         self.members = other.members.clone();
-        self.methods = other.methods.clone();
         self.typing = other.typing;
         self.data = other.data.clone();
     }
 
     pub fn move_data(&mut self, other: Self) {
         self.members = other.members;
-        self.methods = other.methods;
         self.typing = other.typing;
         self.data = other.data;
     }
@@ -148,14 +143,12 @@ impl LeBlancObject {
 
     pub fn swap_rc(&mut self, other: &mut MutexGuard<LeBlancObject>) {
         swap(&mut self.members, &mut other.members);
-        swap(&mut self.methods, &mut other.methods);
         swap(&mut self.data, &mut other.data);
         self.typing = other.typing;
     }
 
     pub fn copy_rc(&mut self, other: &mut LBObject) {
         self.members = other.members.clone();
-        self.methods.clone_from(&other.methods);
         self.data = other.data.clone();
         self.typing = other.typing;
     }
@@ -166,7 +159,6 @@ impl LeBlancObject {
             LeBlancType::Short => LeBlancObjectData::Short(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Int => LeBlancObjectData::Int(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Int64 => LeBlancObjectData::Int64(unsafe {*self.reflect().downcast_ref_unchecked()}),
-            LeBlancType::Int128 => LeBlancObjectData::Int128(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Arch => LeBlancObjectData::Arch(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Float => LeBlancObjectData::Float(unsafe {*self.reflect().downcast_ref_unchecked()}),
             LeBlancType::Double => LeBlancObjectData::Double(unsafe {*self.reflect().downcast_ref_unchecked()}),
@@ -176,34 +168,29 @@ impl LeBlancObject {
         };
         LeBlancObject::new(
             object_data,
-            cast,
-            self.methods.clone(),
-            FxHashMap::default(),
-            VariableContext::empty()
+            cast.enum_id(),
+            self.members.clone(),
         )
     }
 
     pub fn to_leblanc_arg(&self, position: u32) -> LeBlancArgument {
-        LeBlancArgument::default(self.typing, position)
+        LeBlancArgument::default(LeBlancType::from_enum_id(self.typing as u16), position)
     }
 
     pub fn _clone(&self) -> LeBlancObject {
         LeBlancObject {
             data: self.data.clone(),
             typing: self.typing,
-            methods: self.methods.clone(),
             members: self.members.clone(),
-            context: self.context
         }
     }
 
-    pub fn to_mutex(self) -> LBObject { HEAP.underlying_pointer().alloc(self) }
+    pub fn to_mutex(self) -> LBObject { heap().access().alloc(self) }
 }
 
 impl PartialEq for LeBlancObject {
     fn eq(&self, other: &Self) -> bool {
         if self.data != other.data { return false }
-        if !self.members.eq(&other.members) { return false }
         self.typing == other.typing
     }
 }
@@ -216,20 +203,16 @@ pub enum LeBlancObjectData {
     Short(i16),
     Int(i32),
     Int64(i64),
-    Int128(i128),
     Arch(isize),
     Float(f32), //"double32" -- internally f32
     Double(f64), // internally f64
     Boolean(bool),
     String(SmolStr),
-    Function(Box<Method>),
-    Module(Module),
     Class(Box<ClassMeta>), // User defined class with ID
-    Dynamic(&'static LeBlancObjectData),
     Rust(RustObject),
 
-    Promise(ArcLeblancPromise),
-    Group(LeblancGroup),
+    //Promise(ArcLeblancPromise),
+    //Group(LeblancGroup),
 
     List(LeblancList),
     Iterator(LeblancIterator),
@@ -245,13 +228,11 @@ impl Reflect for LeBlancObject {
             LeBlancObjectData::Short(item) => Box::new(*item),
             LeBlancObjectData::Int(item) => Box::new(*item),
             LeBlancObjectData::Int64(item) => Box::new(*item),
-            LeBlancObjectData::Int128(item) => Box::new(*item),
             LeBlancObjectData::Arch(item) => Box::new(*item),
             LeBlancObjectData::Float(item) => Box::new(*item),
             LeBlancObjectData::Double(item) => Box::new(*item),
             LeBlancObjectData::Boolean(item) => Box::new(*item),
             LeBlancObjectData::String(item) => Box::new(item.clone()),
-            LeBlancObjectData::Function(item) => Box::new(item.clone()),
             LeBlancObjectData::List(item) => Box::new(item.clone()),
             LeBlancObjectData::Iterator(item) => Box::new(item.clone()),
             _ => Box::new(0),
@@ -283,19 +264,13 @@ impl Display for LeBlancObjectData {
             LeBlancObjectData::Short(data) => data.to_string(),
             LeBlancObjectData::Int(data) => data.to_string(),
             LeBlancObjectData::Int64(data) => data.to_string(),
-            LeBlancObjectData::Int128(data) => data.to_string(),
             LeBlancObjectData::Arch(data) => data.to_string(),
             LeBlancObjectData::Float(data) => data.to_string(),
             LeBlancObjectData::Double(data) => data.to_string(),
             LeBlancObjectData::Boolean(data) => data.to_string(),
             LeBlancObjectData::String(data) => data.to_string(),
-            LeBlancObjectData::Function(data) => data.to_string(),
-            LeBlancObjectData::Module(data) => data.to_string(),
             LeBlancObjectData::Class(data) => data.to_string(),
-            LeBlancObjectData::Dynamic(data) => data.to_string(),
             LeBlancObjectData::List(data) => data.to_string(),
-            LeBlancObjectData::Promise(data) => data.to_string(),
-            LeBlancObjectData::Group(data) => data.to_string(),
             LeBlancObjectData::Iterator(data) => data.to_string(),
             LeBlancObjectData::Error(data) => data.to_string(),
             LeBlancObjectData::Rust(data) => data.to_string(),
@@ -304,33 +279,6 @@ impl Display for LeBlancObjectData {
         write!(f, "{}", s)
     }
 }
-
-impl Callable for LBObject {
-    fn call(&mut self, method_name: &str, arguments: Vec<LBObject>) -> Result<LBObject, LBObject> {
-        let argument_vec = arguments.to_vec();
-        let args = passed_args_to_types(&argument_vec);
-
-
-        //let self_clone = Arc::clone(self);
-        let method = self.methods.iter().filter(|m| {
-            m.matches(method_name.to_string(), &args)
-        }).next().cloned();
-        if method.is_none() {
-            return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.typing), vec![]).create_mutex());
-        }
-        Ok(method.unwrap().run( self.clone(), arguments))
-    }
-
-    fn call_name(&mut self, method_name: &str) -> Result<LBObject, LBObject> {
-        if self.typing == LeBlancType::Null { return Err(LeblancError::new("OperationOnNullException".to_string(), "".to_string(), vec![]).create_mutex())}
-        let handle = match self.methods.iter().find(|m| m.context.name == method_name) {
-            None => return Err(LeblancError::new("ClassMethodNotFoundException".to_string(), format!("Method {} not found in {}", method_name, self.typing), vec![]).create_mutex()),
-            Some(some) => some.handle
-        };
-        Ok(handle(self.clone(), vec![]))
-    }
-}
-
 
 pub trait Stringify {
     fn to_string(&self) -> String;
@@ -351,22 +299,24 @@ impl LeBlancObjectData {
 
     pub fn get_mut_inner_method(&mut self) -> Option<&mut Method> {
         match self {
-            LeBlancObjectData::Function(function) => Some(function),
+            //LeBlancObjectData::Function(function) => Some(function),
             _ => None
         }
     }
     pub fn get_inner_method(&self) -> Option<&Method> {
-        if let LeBlancObjectData::Function(func) = self {
+        /*if let LeBlancObjectData::Function(func) = self {
             Some(func)
-        } else { None }
+        } else { None }*/
+        None
     }
+
     pub fn as_i128(&self) -> i128 {
         match self {
             LeBlancObjectData::Char(item) => (*item).to_digit(10).unwrap() as i128,
             LeBlancObjectData::Short(item) => *item as i128,
             LeBlancObjectData::Int(item) => *item as i128,
             LeBlancObjectData::Int64(item) => *item as i128,
-            LeBlancObjectData::Int128(item) => *item as i128,
+            //LeBlancObjectData::Int128(item) => *item as i128,
             LeBlancObjectData::Arch(item) => *item as i128,
             LeBlancObjectData::Float(item) => *item as i128,
             LeBlancObjectData::Double(item) => *item as i128,
@@ -381,42 +331,12 @@ impl LeBlancObjectData {
             LeBlancObjectData::Short(item) => *item as i64,
             LeBlancObjectData::Int(item) => *item as i64,
             LeBlancObjectData::Int64(item) => *item as i64,
-            LeBlancObjectData::Int128(item) => *item as i64,
             LeBlancObjectData::Arch(item) => *item as i64,
             LeBlancObjectData::Float(item) => *item as i64,
             LeBlancObjectData::Double(item) => *item as i64,
             LeBlancObjectData::Boolean(item) => *item as i64,
             _ => 0
         }
-    }
-
-    pub fn simple_operation(&self, other: &Self, _operation: LBODOperation) -> LeBlancObjectData {
-        match self {
-            LeBlancObjectData::Int(data) => { LeBlancObjectData::Int(*data + other.as_i128() as i32)}
-            _ => LeBlancObjectData::Null,
-            /*LeBlancObjectData::Char(data) => {}
-            LeBlancObjectData::Flex(data) => {}
-            LeBlancObjectData::Short(data) => {}
-            LeBlancObjectData::Int64(data) => {}
-            LeBlancObjectData::Int128(data) => {}
-            LeBlancObjectData::Arch(data) => {}
-            LeBlancObjectData::Float(data) => {}
-            LeBlancObjectData::Double(data) => {}
-            LeBlancObjectData::Boolean(data) => {}
-            LeBlancObjectData::String(data) => {}*/
-        }
-    }
-}
-
-/*impl PartialOrd for LeBlancObject {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.data.partial_cmp(&other.data)
-    }
-}*/
-
-impl From<LeBlancObject> for Quantum<LeBlancObject> {
-    fn from(lbo: LeBlancObject) -> Self {
-        Quantum::new(lbo)
     }
 }
 
@@ -425,36 +345,5 @@ impl Clone for LeBlancObject {
         self._clone()
     }
 }
-
-pub enum LBODOperation {
-    BinaryAddition,
-    BinarySubtraction,
-    BinaryMultiplication,
-    BinaryDivision
-}
-
-pub trait ArcToRc<T: Clone> {
-    fn to_rc(self) -> Rc<RefCell<T>>;
-}
-
-pub trait QuickUnwrap<T: Clone + Default> {
-    fn arc_unwrap(self) -> T;
-    fn clone_if_locked(&self) -> Arc<Strawberry<T>>;
-}
-
-/*impl QuickUnwrap<LeBlancObject> for LBObject {
-    fn arc_unwrap(self) -> LeBlancObject {
-        self.force_unwrap()
-    }
-
-    fn clone_if_locked(&self) -> LBObject {
-        let lock_attempt = self.try_reference();
-        let cloned = self.clone();
-        match lock_attempt {
-            Some(_) => cloned,
-            None => cloned.arc_unwrap()
-        }
-    }
-}*/
 
 unsafe impl Sync for LeBlancObject {}

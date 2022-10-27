@@ -1,7 +1,7 @@
 use core::fmt::{Debug, Display, Formatter};
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
-use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
+use crate::leblanc::rustblanc::copystring::{CopyString};
 use crate::leblanc::rustblanc::lb_file::LBFile;
 use serde::{Serialize};
 
@@ -19,7 +19,7 @@ impl ZCPath {
 
     pub fn new<T: Display>(path: T) -> ZCPath {
         ZCPath {
-            path: CopyString::from(path.to_string().replace("\\", "/"))
+            path: CopyString::from(path.to_string().replace('\\', "/"))
         }
     }
 
@@ -66,7 +66,7 @@ impl ZCPath {
 impl From<String> for ZCPath {
     fn from(path: String) -> Self {
         ZCPath {
-            path: CopyString::from(path.replace("\\", "/"))
+            path: CopyString::from(path.replace('\\', "/"))
         }
     }
 }
@@ -74,7 +74,7 @@ impl From<String> for ZCPath {
 impl From<&String> for ZCPath {
     fn from(path: &String) -> Self {
         ZCPath {
-            path: CopyString::from(path.replace("\\", "/"))
+            path: CopyString::from(path.replace('\\', "/"))
         }
     }
 }
@@ -82,7 +82,7 @@ impl From<&String> for ZCPath {
 impl From<&str> for ZCPath {
     fn from(path: &str) -> Self {
         ZCPath {
-            path: CopyString::from(path.replace("\\", "/"))
+            path: CopyString::from(path.replace('\\', "/"))
         }
     }
 }

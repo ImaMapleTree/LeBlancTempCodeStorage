@@ -255,6 +255,6 @@ where T: PartialEq
     }
 
     fn ieq_not_none(&self, other: &Option<T>) -> bool {
-        (self.is_some() == other.is_some() && (self.as_ref().unwrap() == other.as_ref().unwrap()))
+        self.is_some() == other.is_some() && (self.as_ref().unwrap() == other.as_ref().unwrap())
     }
 }

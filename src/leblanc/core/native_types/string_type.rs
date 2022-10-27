@@ -1,13 +1,13 @@
 use std::ops::Deref;
 use fxhash::{FxHashMap, FxHashSet};
 use std::sync::{Arc};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 use smol_str::SmolStr;
 
 
-use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
+use crate::leblanc::core::internal::methods::internal_class::{_internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_string::_internal_add_string;
-use crate::leblanc::core::interpreter::HEAP;
+
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
@@ -18,23 +18,23 @@ use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equa
 use crate::leblanc::core::native_types::LeBlancType;
 
 use crate::leblanc::core::native_types::LeBlancType::Flex;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 pub fn leblanc_object_string(string: String) -> LBObject {
-    let mut hash_set = FxHashSet::default();
+    /*let mut hash_set = wild_heap().alloc_with(FxHashSet::default);
     hash_set.insert(Method::default(base_to_string_method(), _internal_to_string_));
-    hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
+    //hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
     hash_set.insert(Method::default(base_equals_method(), _internal_to_string_));
     hash_set.insert(Method::default(base_clone_method(), _internal_to_string_));
-    hash_set.insert(Method::default(base_field_method(), _internal_field_));
-    hash_set.insert( string_addition_method());
+    //hash_set.insert(Method::default(base_field_method(), _internal_field_));
+    hash_set.insert( string_addition_method());*/
 
     LeBlancObject::new(
         LeBlancObjectData::String(SmolStr::new(string)),
-        LeBlancType::String,
-        Arc::new(hash_set),
-        FxHashMap::default(),
-        VariableContext::empty(),
+        10,
+        UnsafeVec::default(),
     )
 }
 

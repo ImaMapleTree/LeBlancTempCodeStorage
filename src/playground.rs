@@ -1,26 +1,68 @@
-// 3 + 2
 
 
 
 
-
-use std::mem::size_of_val;
 use std::time::Instant;
-use bumpalo::Bump;
-use lazy_static::lazy_static;
-use crate::leblanc::core::interpreter::HEAP;
-use crate::leblanc::core::leblanc_object::{LeBlancObject};
-use crate::leblanc::core::native_types::double_type::leblanc_object_double;
-use crate::leblanc::core::native_types::int_type::leblanc_object_int;
-use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::blueberry::{Blueberry, BlueberryVec};
-use crate::leblanc::rustblanc::heap::{Heap, HeapRef};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+use crate::leblanc::configuration::HDEF_MB;
 
 
+use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
+use crate::leblanc::rustblanc::memory::byte::Byte;
 
+
+use crate::leblanc::rustblanc::memory::heap::{HeapRef, WildHeap};
+use crate::leblanc::rustblanc::memory::kilobyte::Kilobyte;
+use crate::leblanc::rustblanc::memory::MemoryFootprint;
+
+#[derive(Debug, Default)]
+pub struct Test {
+    word: String
+}
+
+#[derive(Debug, Default)]
+pub struct Other {
+    word: String
+}
+
+#[derive(Debug, Default)]
+pub struct SameSizeStruct {
+    a: usize,
+    b: usize,
+    c: usize
+}
+
+#[derive(Debug, Default)]
+pub struct BeegStruct {
+    a: SameSizeStruct,
+    b: Other,
+    c: Test
+}
 
 fn test() -> LeBlancObject {
+    println!("Size of LBO: {}", LeBlancObject::default().mem_size());
+    println!("LB Data: {}", LeBlancObjectData::Null.mem_size());
+
+    LeBlancObject::null()._clone()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fn test2() -> LeBlancObject {
     let run_amount = 100;
     let mut v: Vec<HeapRef<LeBlancObject>> = vec![];
     let mut v2: Vec<&mut LeBlancObject> = vec![];
@@ -30,9 +72,9 @@ fn test() -> LeBlancObject {
     //let mut heap: Heap<LeBlancObject> = Heap::new(count);
     println!("Starting test");
     //let bump = Bump::with_capacity(count);
-    for i in 0..run_amount {
+    for _i in 0..run_amount {
         let now = Instant::now();
-        for i in 0..count {
+        for _i in 0..count {
             v.push(LeBlancObject::null());
             //v3.push(LeBlancObject::null());
             //v2.push(bump.alloc(LeBlancObject::null()));
@@ -63,9 +105,9 @@ fn test() -> LeBlancObject {
 }
 
 fn bump_test(count: usize) {
-    let mut v2: Vec<&mut LeBlancObject> = vec![];
-    let mut bump = bumpalo::Bump::new();
-    for i in 0..count {
+    let _v2: Vec<&mut LeBlancObject> = vec![];
+    let _bump = bumpalo::Bump::new();
+    for _i in 0..count {
         //v.push(heap.alloc_with(LeBlancObject::null));
         //v3.push(LeBlancObject::null());
         //v2.push(bump.alloc(LeBlancObject::null()));

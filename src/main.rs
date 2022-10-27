@@ -15,10 +15,23 @@
 #![feature(unsized_locals, unsized_fn_params)]
 #![feature(pointer_byte_offsets)]
 #![feature(ptr_internals)]
+#![feature(allocator_api)]
+#![feature(try_reserve_kind)]
+#![feature(new_uninit)]
+#![feature(unchecked_math)]
+#![feature(const_trait_impl)]
 
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 #![allow(incomplete_features)]
+#![feature(let_chains)]
+#![feature(pointer_is_aligned)]
+#![feature(layout_for_ptr)]
+#![feature(ptr_to_from_bits)]
+#![feature(ptr_metadata)]
+#![feature(const_size_of_val_raw)]
+#![feature(const_align_of_val_raw)]
+#![feature(const_mut_refs)]
 
 
 
@@ -40,24 +53,25 @@ extern crate core;
 #[macro_use] extern crate lalrpop_util;
 //
 
-use alloc::rc::Rc;
-use std::{env, io};
-use std::path::Path;
+
+use std::{io};
+use std::mem::take;
+use std::process::exit;
+
 
 use std::time::Instant;
 use clicolors_control::set_colors_enabled;
-use lazy_static::lazy_static;
-use crate::leblanc::compiler::compile_types::CompilationMode;
-use crate::leblanc::core::native_types::LeBlancType;
-use mimalloc::MiMalloc;
-use crate::leblanc::core::module::CoreModule;
-use crate::leblanc::compiler::compile_types::full_reader::read_file;
+
+
+
+use crate::leblanc::compiler::file_system::read_file;
+
 use crate::leblanc::compiler::generator::CodeGenerator;
 use crate::leblanc::core::interpreter::leblanc_runner::get_handles;
-use crate::leblanc::core::interpreter::run;
+use crate::leblanc::core::interpreter::{run};
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
-use crate::leblanc::core::leblanc_object::LeBlancObject;
-use crate::leblanc::core::native_types::string_type::leblanc_object_string;
+
+
 use crate::leblanc::rustblanc::path::ZCPath;
 
 
@@ -68,6 +82,19 @@ static INTERACTIVE: bool = false;
 
 
 
+#[cfg(all(not(target_env = "msvc"), not(debug_assertions)))]
+use tikv_jemallocator::Jemalloc;
+
+#[cfg(all(not(target_env = "msvc"), not(debug_assertions)))]
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
+#[cfg(any(target_env = "msvc", debug_assertions))]
+use mimalloc::MiMalloc;
+use ::leblanc::leblanc::core::heap::HEAP;
+use crate::leblanc::core::heap::heap;
+
+#[cfg(any(target_env = "msvc", debug_assertions))]
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
@@ -76,26 +103,18 @@ fn main() -> io::Result<()> {
     get_handles().push(LeblancHandle::null());
     let _DEBUG = true;
     let now = Instant::now();
+
     //playground::playground();
-
-    /*if INTERACTIVE {
-        start();
-    }*/
-
-
+    //exit(0);
 
     set_colors_enabled(true);
     let mut generator = CodeGenerator::default();
 
     generator.compile(ZCPath::new("test/test.lb"));
-    //println!("{:#?}", generator.file_system);
-    //println!("{:#?}", generator.type_map);
-    //println!("{:#?}", generator.func_map);
     if generator.reporter.has_errors() {
         generator.reporter.report();
     }
 
-   //compile("test.lb".to_string(), CompilationMode::Full);
 
 
     let bc = read_file("test/test.lb".to_string());
@@ -104,6 +123,7 @@ fn main() -> io::Result<()> {
     let elapsed = now.elapsed();
     println!("Total Elapsed: {}", elapsed.as_secs_f64());
 
+    //drop(take(heap().access()));
     Ok(())
 }
 

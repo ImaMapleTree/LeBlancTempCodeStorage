@@ -1,6 +1,8 @@
+use alloc::vec::IntoIter;
+use std::iter::Filter;
 use std::mem::take;
 use crate::leblanc::compiler::bytecode::instruction_line_bytes::InstructionBytecode;
-use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
+use crate::leblanc::core::interpreter::instructions::{InstructionBase};
 use crate::leblanc::core::interpreter::instructions2::Instruction2;
 use crate::leblanc::rustblanc::Hexable;
 
@@ -9,7 +11,8 @@ pub struct InstructionGenerator {
     instructions: Vec<InstructionBytecode>,
     open: Vec<usize>,
     current: InstructionBytecode,
-    last_instruction: Instruction2
+    last_instruction: Instruction2,
+    holds: Vec<Vec<InstructionBytecode>>
 }
 
 impl InstructionGenerator {
@@ -29,12 +32,31 @@ impl InstructionGenerator {
         self.open.pop().unwrap_or(0)
     }
 
+    pub fn hold(&mut self) {
+        self.holds.push(Vec::new());
+    }
+
+    pub fn holds(&mut self) -> &mut Vec<Vec<InstructionBytecode>> {
+        &mut self.holds
+    }
+
+    pub fn close_holds(&mut self) -> Filter<IntoIter<Vec<InstructionBytecode>>, fn(&Vec<InstructionBytecode>) -> bool> {
+        take(&mut self.holds).into_iter().filter(|h| !h.is_empty())
+    }
+
+    pub fn line(&self) -> u32 {
+        self.current.line_number()
+    }
 
     fn check_line_number(&mut self, line: u32) {
         if self.current.line_number() != line {
             let current = take(&mut self.current);
             if current.line_number() != 0 {
-                self.instructions.push(current);
+                if !self.holds.is_empty() {
+                    self.holds.last_mut().unwrap().push(current);
+                } else {
+                    self.instructions.push(current);
+                }
             }
             self.current.set_line_number(line)
         }
@@ -52,8 +74,22 @@ impl InstructionGenerator {
         self.increment_open_count();
     }
 
+    pub fn add_instruction_bytecode(&mut self, bytecode: &mut Vec<InstructionBytecode>) {
+        self.instructions.append(bytecode);
+    }
+
+    pub fn bump_count(&mut self, count: usize) {
+        for i in 0..self.open.len() {
+            self.open[i] += count;
+        }
+    }
+
     pub fn instructions(&self) -> &Vec<InstructionBytecode> {
         &self.instructions
+    }
+
+    pub fn instructions_mut(&mut self) -> &mut Vec<InstructionBytecode> {
+        &mut self.instructions
     }
 
     pub fn take_instructions(&mut self) -> Vec<InstructionBytecode> {
@@ -76,8 +112,12 @@ impl InstructionGenerator {
     pub fn refresh(&mut self) {
         let current = take(&mut self.current);
         let line = current.line_number();
-        if line != 0 {
-            self.instructions.push(current);
+        if current.line_number() != 0 {
+            if !self.holds.is_empty() {
+                self.holds.last_mut().unwrap().push(current);
+            } else {
+                self.instructions.push(current);
+            }
         }
         self.current.set_line_number(line)
     }
@@ -98,9 +138,7 @@ impl InstructionGenerator {
     }
 
     fn increment_open_count(&mut self) {
-        for i in 0..self.open.len() {
-            self.open[i] += 1;
-        }
+        self.bump_count(1);
     }
 
 

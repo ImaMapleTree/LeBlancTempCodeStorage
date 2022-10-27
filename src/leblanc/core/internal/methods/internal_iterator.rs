@@ -1,28 +1,29 @@
-use alloc::rc::Rc;
-use std::cell::RefCell;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+
+
+
+
 use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
 
-use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
+use crate::leblanc::core::leblanc_object::{LeBlancObjectData, RustDataCast};
 
 use crate::leblanc::core::native_types::derived::iterator_type::{leblanc_object_iterator, LeblancIterator};
 use crate::leblanc::core::native_types::derived::list_type::{leblanc_object_list};
-use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::types::LBObject;
+
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 
-pub fn _internal_iterator_next(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
+pub fn _internal_iterator_next(_self: LBObject, _arguments: LBObjArgs) -> LBObject {
     let mut borrowed = _self;
     let iterator: &mut LeblancIterator = borrowed.data.mut_data().unwrap();
     iterator.next()
 }
 
-pub fn _internal_iterator_to_list_(mut _self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
+pub fn _internal_iterator_to_list_(mut _self: LBObject, _arguments: LBObjArgs) -> LBObject {
     leblanc_object_list(<LeBlancObjectData as RustDataCast<LeblancIterator>>::mut_data(&mut _self.data).unwrap().to_list())
 }
 
-pub fn _internal_iterator_filter_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
+pub fn _internal_iterator_filter_(_self: LBObject, _arguments: LBObjArgs) -> LBObject {
     let mut borrowed = _self.clone();
     let iterator: &mut LeblancIterator = borrowed.data.mut_data().unwrap();
 
@@ -40,7 +41,7 @@ pub fn _internal_iterator_filter_(_self: LBObject, _arguments: Vec<LBObject>) ->
     }
 }
 
-pub fn _internal_iterator_reverse_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
+pub fn _internal_iterator_reverse_(_self: LBObject, _arguments: LBObjArgs) -> LBObject {
     let mut borrowed = _self.clone();
     let iterator: &mut LeblancIterator = borrowed.data.mut_data().unwrap();
     iterator.reverse();
@@ -48,7 +49,7 @@ pub fn _internal_iterator_reverse_(_self: LBObject, _arguments: Vec<LBObject>) -
     _self
 }
 
-pub fn _internal_iterator_map_(_self: LBObject, _arguments: Vec<LBObject>) -> LBObject {
+pub fn _internal_iterator_map_(_self: LBObject, _arguments: LBObjArgs) -> LBObject {
     let mut borrowed = _self.clone();
     let iterator: &mut LeblancIterator = borrowed.data.mut_data().unwrap();
 

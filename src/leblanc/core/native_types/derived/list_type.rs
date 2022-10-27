@@ -1,10 +1,10 @@
 use core::fmt::{Display, Formatter};
 use std::cmp::Ordering;
-use fxhash::{FxHashMap, FxHashSet};
-use std::collections::BTreeSet;
+use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
+use std::collections::{BTreeSet, HashSet};
 use std::sync::Arc;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
+
+use crate::leblanc::core::internal::methods::internal_class::{_internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_list::{_internal_list_append_, _internal_list_iterate_, _internal_list_length_};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 
@@ -15,7 +15,9 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::derived::DerivedType;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 #[derive(Clone, Debug)]
 pub struct LeblancList {
@@ -41,24 +43,23 @@ pub fn leblanc_object_list_empty() -> LBObject {
 
     LeBlancObject::new(
         LeBlancObjectData::List(LeblancList::empty()),
-        LeBlancType::Derived(DerivedType::List),
-        base_methods,
-        FxHashMap::default(),
-        VariableContext::empty(),
+        19,
+        UnsafeVec::default()
     )
 }
 
-pub fn list_methods() -> Arc<FxHashSet<Method>> {
-    let mut hash_set = FxHashSet::default();
+pub fn list_methods() -> HeapRef<'static, HashSet<Method, FxBuildHasher>> {
+    /*let mut hash_set = wild_heap().alloc_with(FxHashSet::default);
     hash_set.insert(Method::default(base_to_string_method(), _internal_to_string_));
-    hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
+    //hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
     hash_set.insert(Method::default(base_equals_method(), _internal_to_string_));
     hash_set.insert(Method::default(base_clone_method(), _internal_to_string_));
-    hash_set.insert(Method::default(base_field_method(), _internal_field_));
+    //hash_set.insert(Method::default(base_field_method(), _internal_field_));
     hash_set.insert(list_iterate_method());
     hash_set.insert(list_append_method());
     hash_set.insert(list_length_method());
-    Arc::new(hash_set)
+    hash_set*/
+    HeapRef::default()
 }
 
 pub fn list_iterate_method() -> Method {
@@ -89,14 +90,11 @@ pub fn list_length_method() -> Method {
 }
 
 pub fn leblanc_object_list(list: LeblancList) -> LBObject {
-    let base_methods = list_methods();
 
     LeBlancObject::new(
         LeBlancObjectData::List(list),
-        LeBlancType::Derived(DerivedType::List),
-        base_methods,
-        FxHashMap::default(),
-        VariableContext::empty(),
+        19,
+        UnsafeVec::default()
     )
 }
 
@@ -109,7 +107,9 @@ impl ToLeblanc for LeblancList {
 
 impl Display for LeblancList {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().data.to_string()).collect::<Vec<String>>().join(", "))
+        //write!(f, "[{}]", self.internal_vec.iter().map(|item| item.clone().call_name("to_string").unwrap().data.to_string()).collect::<Vec<String>>().join(", "))
+        write!(f, "NOT IMPLEMENTED");
+        todo!()
     }
 }
 

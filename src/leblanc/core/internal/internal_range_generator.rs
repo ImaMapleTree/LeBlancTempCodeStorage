@@ -1,18 +1,19 @@
-use alloc::rc::Rc;
+
 
 use core::fmt::{Debug, Formatter};
-use std::cell::RefCell;
+
 use std::mem::swap;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+
+
 use crate::leblanc::core::internal::internal_range_generator::RangeGeneratorStepType::{ConditionalStep, FunctionStep, NegativeStep, PositiveStep};
 use crate::leblanc::core::internal::transformed_iterator::TransformedIterator;
-use crate::leblanc::core::leblanc_object::{LBODOperation, LeBlancObject, Reflect, Stringify};
+use crate::leblanc::core::leblanc_object::{Reflect, Stringify};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::derived::iterator_type::{leblanc_object_iterator, LeblancIterable};
 use crate::leblanc::core::native_types::derived::list_type::LeblancList;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::unsafe_vec;
 
 #[derive(Clone, PartialEq)]
 pub struct LeblancInternalRangeGenerator {
@@ -30,11 +31,12 @@ impl LeblancIterable for LeblancInternalRangeGenerator {
         match &mut self.step_type {
             PositiveStep | NegativeStep => {
                 swap(&mut self.value, &mut self.next_value);
-                self.next_value.data = self.value.data.simple_operation(&self.step.data, LBODOperation::BinaryAddition);
+                //self.next_value.data = self.value.data.simple_operation(&self.step.data, LBODOperation::BinaryAddition);
+                // TODO
             }
             FunctionStep(method) => {
                 swap(&mut self.value, &mut self.next_value);
-                self.next_value.data = method.run(self.step.clone(), vec![self.value.clone()]).cast(self.boundary_type).data.clone()}
+                self.next_value.data = method.run(self.step.clone(), unsafe_vec![self.value.clone()]).cast(self.boundary_type).data.clone()}
             ConditionalStep => { }
         }
         //println!("{}", self.value.to_string());
@@ -73,23 +75,15 @@ impl LeblancInternalRangeGenerator {
         let value = value;
         let boundary = boundary.to_owned();
         let mut step = step.to_owned();
-        let step_type = match step.typing {
+        let step_type = match LeBlancType::from_enum_id(step.typing as u16) {
             LeBlancType::Int | LeBlancType::Int64 | LeBlancType::Int128 | LeBlancType::Short | LeBlancType::Float |
             LeBlancType::Double | LeBlancType::Arch => if step.data.as_i128() >= 0 { PositiveStep } else { NegativeStep },
             LeBlancType::String => PositiveStep,
             LeBlancType::Boolean => ConditionalStep,
             LeBlancType::Function => FunctionStep(step.data.get_mut_inner_method().unwrap().clone()),
-            LeBlancType::Class(_) => { let matched_method = step.methods.iter().filter(|m| {
-                m.matches("_".to_string(), &vec![value.to_leblanc_arg(0)])
-                }).next().cloned();
-                match matched_method {
-                    None => { return Err(step) }
-                    Some(method) => FunctionStep(method)
-                 }
-            },
             _ => return Err(step)
         };
-        let boundary_type = boundary.typing;
+        let boundary_type = LeBlancType::from_enum_id(boundary.typing as u16);
         let value = value.cast(boundary_type);
         let next_value = value.clone();
         Ok(leblanc_object_iterator(Box::new(LeblancInternalRangeGenerator {

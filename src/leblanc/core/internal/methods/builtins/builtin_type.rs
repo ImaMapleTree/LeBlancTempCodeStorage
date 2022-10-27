@@ -1,18 +1,19 @@
-use alloc::rc::Rc;
-use std::cell::RefCell;
+
+
 use std::collections::BTreeSet;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+
+
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
-use crate::leblanc::core::leblanc_object::LeBlancObject;
+
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{internal_method, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::types::LBObject;
 
-fn _BUILTIN_TYPE_(_self: LBObject, args: Vec<LBObject>) -> LBObject {
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
+
+fn _BUILTIN_TYPE_(_self: LBObject, args: LBObjArgs) -> LBObject {
     args[0].typing.to_string().create_mutex()
 }
 

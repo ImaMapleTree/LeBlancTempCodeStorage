@@ -1,7 +1,7 @@
 use lalrpop_util::lexer::Token;
 use lalrpop_util::ParseError;
 use crate::leblanc::compiler::lalrpop;
-use crate::leblanc::compiler::parser::ast::{Component, push_byte_location, Required, set_file};
+use crate::leblanc::compiler::parser::ast::{clear_byte_location, Component, push_byte_location, Required, set_file};
 use crate::leblanc::rustblanc::lb_file::{LBFile, LBFileTrait, LBVirtualFile};
 use crate::leblanc::rustblanc::path::ZCPath;
 
@@ -12,7 +12,7 @@ pub struct CompileModule {
 }
 
 impl CompileModule {
-    pub fn new(mut file: LBFile) -> CompileModule {
+    pub fn new(file: LBFile) -> CompileModule {
         let content = if !file.is_dir() {
             file.read().unwrap()
         } else { "".to_string() };
@@ -20,13 +20,16 @@ impl CompileModule {
     }
 
     fn prep_parser(&self) {
-        unsafe { set_file(self.file.path()) }
+        unsafe {
+            set_file(self.file.path());
+            clear_byte_location();
+        }
         let bytes = self.content.as_bytes();
 
         let mut line_number: usize = 1;
         let mut symbol_number: usize = 0;
         for byte in bytes {
-            unsafe { push_byte_location((line_number, symbol_number)); }
+            unsafe { push_byte_location((line_number, *byte as usize)); }
             symbol_number += 1;
             if *byte == 10 {
                 line_number += 1;

@@ -5,10 +5,11 @@ pub(crate) mod leblanc_context;
 pub mod leblanc_argument;
 #[macro_use]
 pub mod method;
-pub mod module;
 pub(crate) mod method_tag;
 pub(crate) mod internal;
-pub(crate) mod interpreter;
+pub mod interpreter;
 #[macro_use]
 pub(crate) mod leblanc_handle;
 pub(crate) mod leblanc_default_data;
+pub mod heap;
+pub(crate) mod utils;

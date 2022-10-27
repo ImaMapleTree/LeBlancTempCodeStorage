@@ -1,10 +1,10 @@
 use core::fmt::{Display, Formatter};
 use std::cmp::Ordering;
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
 use crate::leblanc::rustblanc::strawberry::Strawberry;
 use std::sync::{Arc};
-use fxhash::{FxHashMap, FxHashSet};
-use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
+use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
+use crate::leblanc::core::internal::methods::internal_class::{_internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_promise::_internal_promise_consume_;
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
@@ -13,7 +13,9 @@ use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
 use crate::leblanc::core::native_types::error_type::LeblancError;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 #[derive(Debug, Clone, Default)]
 pub struct ArcLeblancPromise {
@@ -49,7 +51,7 @@ pub struct LeblancPromise {
 
 impl PartialEq for LeblancPromise {
     fn eq(&self, other: &Self) -> bool {
-        self.result.as_ref().unwrap().eq(&other.result.as_ref().unwrap())
+        self.result.as_ref().unwrap().eq(other.result.as_ref().unwrap())
     }
 }
 
@@ -68,7 +70,7 @@ impl LeblancPromise {
             false => Err(LeblancError::new("PromiseNotFulfilledException".to_string(), "Attempted to consume a non-complete promise.".to_string(), vec![]).create_mutex()),
             true => {
                 self.consumed = true;
-                let res = Ok(LBObject::from(self.result.as_ref().unwrap().to_owned()));
+                let res = Ok(self.result.as_ref().unwrap().to_owned());
                 self.result = None;
                 res
             }
@@ -111,24 +113,24 @@ impl ToLeblanc for ArcLeblancPromise {
 }
 
 pub fn leblanc_object_promise(promise: ArcLeblancPromise) -> LBObject {
-    LeBlancObject::new(
+    /*LeBlancObject::new(
         LeBlancObjectData::Promise(promise),
         LeBlancType::Promise,
-        promise_methods(),
-        FxHashMap::default(),
-        VariableContext::empty(),
-    )
+        UnsafeVec::default()
+    )*/
+    panic!()
 }
 
-pub fn promise_methods() -> Arc<FxHashSet<Method>> {
-    let mut hash_set = FxHashSet::default();
+pub fn promise_methods() -> HeapRef<'static, HashSet<Method, FxBuildHasher>> {
+    /*let mut hash_set = wild_heap().alloc_with(FxHashSet::default);
     hash_set.insert(Method::default(base_to_string_method(), _internal_to_string_));
-    hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
+    //hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
     hash_set.insert(Method::default(base_equals_method(), _internal_to_string_));
     hash_set.insert(Method::default(base_clone_method(), _internal_to_string_));
-    hash_set.insert(Method::default(base_field_method(), _internal_field_));
+    //hash_set.insert(Method::default(base_field_method(), _internal_field_));
     hash_set.insert(promise_consume_method());
-    Arc::new(hash_set)
+    hash_set*/
+    HeapRef::default()
 }
 
 pub fn promise_consume_method() -> Method {
@@ -143,21 +145,21 @@ pub fn promise_consume_method() -> Method {
 impl RustDataCast<ArcLeblancPromise> for LeBlancObjectData {
     fn clone_data(&self) -> Option<ArcLeblancPromise> {
         match self {
-            LeBlancObjectData::Promise(promise) => Some(promise.clone()),
+            //LeBlancObjectData::Promise(promise) => Some(promise.clone()),
             _ => None
         }
     }
 
     fn ref_data(&self) -> Option<&ArcLeblancPromise> {
         match self {
-            LeBlancObjectData::Promise(promise) => Some(promise),
+            //LeBlancObjectData::Promise(promise) => Some(promise),
             _ => None
         }
     }
 
     fn mut_data(&mut self) -> Option<&mut ArcLeblancPromise> {
         match self {
-            LeBlancObjectData::Promise(promise) => Some(promise),
+           // LeBlancObjectData::Promise(promise) => Some(promise),
             _ => None
         }
     }

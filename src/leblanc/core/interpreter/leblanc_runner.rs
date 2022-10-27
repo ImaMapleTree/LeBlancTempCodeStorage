@@ -1,42 +1,37 @@
-
-
-use alloc::rc::Rc;
-use std::cell::RefCell;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+use std::mem::take;
 use std::time::Instant;
 use crate::leblanc::core::leblanc_handle::LeblancHandle;
 
-use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, Reflect, RustDataCast};
+use crate::leblanc::core::leblanc_object::{Callable, Reflect, RustDataCast};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::error_type::LeblancError;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::core::utils::call_global_by_name;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
+use crate::unsafe_vec;
 
-static mut GLOBALS: Vec<LBObject> = vec![];
-static mut HANDLES: Vec<LeblancHandle> = vec![];
+static mut GLOBALS: UnsafeVec<Method> = unsafe_vec![];
+pub static mut HANDLES: UnsafeVec<LeblancHandle> = unsafe_vec![];
 
 pub struct LeBlancRunner {
-    globals: Vec<LBObject>,
+    globals: UnsafeVec<Method>,
 }
 
 impl LeBlancRunner {
-    pub fn new(globals: Vec<LBObject>) -> LeBlancRunner {
+    pub fn new(globals: UnsafeVec<Method>) -> LeBlancRunner {
         LeBlancRunner {
             globals,
         }
     }
 
     pub fn run_main(&mut self) {
-        println!("Running");
-        unsafe { GLOBALS = self.globals.to_vec(); }
-        println!("Running2");
-        let main_object = self.globals.iter_mut().filter(|g| g.typing == LeBlancType::Function).find(|g| g.reflect().downcast_ref::<Box<Method>>().unwrap().context.name == "main");
-        println!("Running3");
+        unsafe { GLOBALS = UnsafeVec::from(self.globals.clone()); }
+        //let main_object = self.globals.iter_mut().filter(|g| g.typing == LeBlancType::Function).find(|g| g.reflect().downcast_ref::<Box<Method>>().unwrap().context.name == "main");
 
         let main_elapsed = Instant::now();
-        let f = main_object.unwrap().call("main", vec![]).unwrap();
-        if f.typing == LeBlancType::Exception {
+        let f = call_global_by_name("main", unsafe_vec![]).unwrap();
+        if f.typing == 16 {
             let borrowed = f;
             let error: &LeblancError = borrowed.data.ref_data().unwrap();
             error.print_stack_trace();
@@ -47,11 +42,13 @@ impl LeBlancRunner {
     }
 }
 
-pub unsafe fn get_globals() -> &'static mut Vec<LBObject> {
+#[inline(always)]
+pub unsafe fn get_globals() -> &'static mut UnsafeVec<Method> {
     &mut GLOBALS
 }
 
-pub fn get_handles() -> &'static mut Vec<LeblancHandle> {
+#[inline(always)]
+pub fn get_handles() -> &'static mut UnsafeVec<LeblancHandle> {
     unsafe { &mut HANDLES }
 }
 

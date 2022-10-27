@@ -11,29 +11,33 @@ mod instruction_generator;
 
 
 use core::fmt::{Debug, Formatter};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 use std::fs::File;
 use std::io::Write;
+
 use std::mem::take;
+use crate::bytes;
 use crate::leblanc::compiler::bytecode::file_body::FileBodyBytecode;
 use crate::leblanc::compiler::bytecode::file_header::FileHeaderBytecode;
 use crate::leblanc::compiler::bytecode::function_bytes::FunctionBytecode;
-use crate::leblanc::compiler::bytecode::instruction_line_bytes::InstructionBytecode;
+
 use crate::leblanc::compiler::bytecode::{LeblancBytecode, ToBytecode};
 use crate::leblanc::compiler::error::{ErrorReporter};
 use crate::leblanc::compiler::error::snippet::ErrorSnippet;
 use crate::leblanc::compiler::file_system::LBFileSystem;
 use crate::leblanc::compiler::generator::context::{CompileInfo, TypeContext};
-use crate::leblanc::compiler::generator::dependency::Dependency;
+
 use crate::leblanc::compiler::generator::generator_types::{GeneratedClass, FunctionSignature};
 use crate::leblanc::compiler::generator::instruction_generator::InstructionGenerator;
-use crate::leblanc::compiler::parser::ast::{Component, Conditional, Const, Constant, Id, Ident, Location};
+use crate::leblanc::compiler::parser::ast::{Component, Const, Ident, Location};
 use crate::leblanc::core::internal::methods::builtins::create_lazy_functions;
+use crate::leblanc::core::interpreter::instructions2::Instruction2::LOAD_FUNCTION;
+use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::native_types::LeBlancType;
 
 use crate::leblanc::rustblanc::component_map::ComponentMap;
 use crate::leblanc::rustblanc::lazy_store::{LazyStore, Strategy};
-use crate::leblanc::rustblanc::lb_file::{LBFile, LBFileTrait};
+use crate::leblanc::rustblanc::lb_file::{LBFileTrait};
 use crate::leblanc::rustblanc::outcome::Outcome;
 use crate::leblanc::rustblanc::outcome::Outcome::{Failure, Success};
 use crate::leblanc::rustblanc::path::ZCPath;
@@ -62,13 +66,13 @@ pub struct CodeGenerator {
 
 impl CodeGenerator {
     pub fn generate(&mut self, components: Vec<Component>) {
-        //let component_file = File::options().truncate(true).write(true).create(true).open("components.json");
-        let s: String = serde_json::to_string(&components).unwrap();
-        //component_file.unwrap().write_all(s.as_bytes()).unwrap();
-        for component in components.iter() {
+        let component_file = File::options().truncate(true).write(true).create(true).open("components.json");
+        let _s: String = serde_json::to_string(&components).unwrap();
+        component_file.unwrap().write_all(_s.as_bytes()).unwrap();
+        for component in &components {
             self.determine_dependencies(component);
         }
-        for component in components.iter() {
+        for component in &components {
             self.determine_component(component);
         }
     }
@@ -119,7 +123,7 @@ impl CodeGenerator {
     }
 
     pub fn get_idents_for_function(&self, number: u64) -> Vec<(String, usize)> {
-        self.type_map.iter().filter_map(|(key, (ty, id))| {
+        self.type_map.iter().filter_map(|(key, (_ty, id))| {
             if key.function == number {
                 Some((key.ident.resolve(), *id))
             } else {
@@ -135,7 +139,7 @@ impl CodeGenerator {
         let context = TypeContext::new(self.level, self.function_number,id.clone());
         //noinspection RsExternalLinter
         if let Some((old_context, existing_data)) = self.type_map.get_key_value(&context) {
-            let (old_type, var_id) = existing_data;
+            let (old_type, _var_id) = existing_data;
             let mut snippet = ErrorSnippet::new(file_path, "Analysis Error");
             let (start, end) = id.location.byte_pos;
             let (start2, end2) = old_context.ident.location.byte_pos;
@@ -153,7 +157,11 @@ impl CodeGenerator {
     pub fn get_type(&self, id: &Ident) -> Result<CompileInfo, ()> {
         let mut context = TypeContext::new(self.level, self.function_number,id.clone());
         let existing = self.type_map.get(&context);
-        if existing.is_none() { return Err(()); }
+        if existing.is_none() {
+            if let Some(other_func) = self.func_map.index(&FunctionSignature::new(&id.resolve(), vec![], vec![], Default::default()), Strategy::LAZY) {
+                return Ok(CompileInfo::new(take(&mut context.ident), LeBlancType::Function, other_func))
+            }
+            return Err(()); }
         let (ty, id) = existing.unwrap();
         Ok(CompileInfo::new(take(&mut context.ident), *ty, *id))
     }

@@ -3,33 +3,33 @@
 
 
 
-use alloc::rc::Rc;
-use std::cell::{BorrowError, Ref, RefCell};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
-use arrayvec::ArrayVec;
-use crate::leblanc::core::internal::internal_range_generator::LeblancInternalRangeGenerator;
-
-use crate::leblanc::core::interpreter::instructions::{Instruction, InstructionBase};
-use crate::leblanc::core::interpreter::instructions::InstructionBase::{ComparatorElse, ComparatorElseIf, ComparatorIf};
-use crate::leblanc::core::interpreter::leblanc_runner::get_globals;
-use crate::leblanc::core::leblanc_object::{Callable, LeBlancObject, QuickUnwrap, RustDataCast};
-use crate::leblanc::core::leblanc_handle::LeblancHandle;
-
-use crate::leblanc::core::method_tag::MethodTag;
-use crate::leblanc::core::native_types::attributes::can_add_self;
-use crate::leblanc::core::native_types::base_type::ToLeblanc;
-use crate::leblanc::core::native_types::derived::DerivedType;
-use crate::leblanc::core::native_types::derived::iterator_type::LeblancIterator;
-use crate::leblanc::core::native_types::derived::list_type::LeblancList;
-use crate::leblanc::core::native_types::error_type::LeblancError;
-use crate::leblanc::core::native_types::int_type::leblanc_object_int;
 
 
-use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::core::native_types::double_type::leblanc_object_double;
-use crate::leblanc::core::native_types::float_type::leblanc_object_float;
-use crate::leblanc::core::native_types::group_type::{leblanc_object_group, LeblancGroup};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[cfg(feature = "example")]
@@ -241,7 +241,7 @@ fn _INSTRUCT_BINARY_OR_(_handle: &mut LeblancHandle, _arg: &Instruction, stack: 
     Ok(())
 }
 
-#[inline]
+#[inline(always)]
 #[cfg(feature = "example")]
 fn _INSTRUCT_LOAD_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<LBObject, 80>) -> Result<(), LBObject> {
     let result= unsafe { get_globals() }[arg.arg as usize].clone();
@@ -252,7 +252,7 @@ fn _INSTRUCT_LOAD_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stac
     Ok(())
 }
 
-#[inline]
+#[inline(always)]
 #[cfg(feature = "example")]
 fn _INSTRUCT_LOAD_CONSTANT_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<LBObject, 80>) -> Result<(), LBObject> {
     let result= handle.constants.get(arg.arg as usize);
@@ -266,7 +266,7 @@ fn _INSTRUCT_LOAD_CONSTANT_(handle: &mut LeblancHandle, arg: &Instruction, stack
 
 }
 
-#[inline]
+#[inline(always)]
 #[cfg(feature = "example")]
 fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<LBObject, 80>) -> Result<(), LBObject> {
     let result= handle.variables.get(arg.arg as usize);
@@ -290,7 +290,7 @@ fn _INSTRUCT_LOAD_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &
     Ok(())
 }
 
-#[inline]
+#[inline(always)]
 #[cfg(feature = "example")]
 fn _INSTRUCT_STORE_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<LBObject, 80>) -> Result<(), LBObject> {
     let result = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };
@@ -302,7 +302,7 @@ fn _INSTRUCT_STORE_LOCAL_(handle: &mut LeblancHandle, arg: &Instruction, stack: 
     Ok(())
 }
 
-#[inline]
+#[inline(always)]
 #[cfg(feature = "example")]
 fn _CALL_FUNCTION_(_handle: &mut LeblancHandle, arg: &Instruction, stack: &mut ArrayVec<LBObject, 80>) -> Result<(), LBObject> {
     let func = match safe_stack_pop(stack) { Ok(res) => res, Err(err) => return Err(err) };

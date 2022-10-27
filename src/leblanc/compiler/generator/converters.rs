@@ -1,6 +1,6 @@
-use crate::leblanc::compiler::generator::generator_types::FunctionSignature;
-use crate::leblanc::compiler::parser::ast::{Cmpnt, Component, Conditional, Expr, Expression, LConditional, Statement, Stmnt};
-use crate::leblanc::compiler::parser::ast_structs::{Function, Property, TypedVariable};
+
+use crate::leblanc::compiler::parser::ast::{Expr, Expression, LConditional, Statement, Stmnt};
+use crate::leblanc::compiler::parser::ast_structs::{TypedVariable};
 
 pub fn expr_to_typed_var(expr: &Vec<Expression>) -> Vec<TypedVariable> {
     expr.iter().filter_map(|e|

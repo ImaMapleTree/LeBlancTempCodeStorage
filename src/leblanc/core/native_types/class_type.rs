@@ -1,16 +1,18 @@
 use std::fmt::{Display, Formatter};
 use std::sync::Arc;
-use fxhash::FxHashMap;
-use parking_lot::Mutex;
+use fxhash::{FxHashMap, FxHashSet};
+
 use crate::leblanc::core::leblanc_context::VariableContext;
-use crate::leblanc::core::leblanc_default_data::EMPTY_MEMBERS;
+
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::native_types::base_type::base_methods;
 use crate::leblanc::rustblanc::copystring::{CopyString, CopyStringable};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
+
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 #[derive(Clone, Debug, PartialEq, Eq, Ord, PartialOrd, Hash)]
 pub struct ClassMeta {
@@ -24,15 +26,13 @@ pub fn leblanc_object_custom(meta: ClassMeta) -> LBObject {
     let name = meta.name;
     LeBlancObject::new(
         LeBlancObjectData::Class(Box::new(meta)),
-        LeBlancType::Class(name),
-        base_methods,
-        FxHashMap::default(),
-        VariableContext::empty(),
+        26,
+        UnsafeVec::default()
     )
 }
 
 impl ClassMeta {
-    pub fn new<'a>(name: CopyString, supertypes: Vec<ClassMeta>, parse_id: u32) -> ClassMeta {
+    pub fn new(name: CopyString, supertypes: Vec<ClassMeta>, parse_id: u32) -> ClassMeta {
         ClassMeta {
             name,
             supertypes,
@@ -40,7 +40,7 @@ impl ClassMeta {
         }
     }
 
-    pub fn default<'a>(name: String, parse_id: u32) -> ClassMeta {
+    pub fn default(name: String, parse_id: u32) -> ClassMeta {
         ClassMeta {
             name: CopyString::new(name),
             supertypes: vec![],
@@ -58,7 +58,7 @@ impl ClassMeta {
     }
 
     pub fn builder() -> ClassMetaBuilder {
-        return ClassMetaBuilder::default()
+        ClassMetaBuilder::default()
     }
 }
 
@@ -102,11 +102,11 @@ impl ClassMetaBuilder {
         ClassMeta::new(self.name.clone().to_cstring(), self.supertypes.clone(), self.parse_id)
     }
 
-    pub fn build_object(&self) -> LBObject {
+    /*pub fn build_object(&self) -> LBObject {
         let mut obj = leblanc_object_custom(self.build());
         let mut methods = (*(obj.methods)).clone();
         self.methods.iter().cloned().for_each(|m| {methods.insert(m);});
-        obj.methods = Arc::new(methods);
+        obj.methods = wild_heap().alloc(methods);
         obj
-    }
+    }*/
 }

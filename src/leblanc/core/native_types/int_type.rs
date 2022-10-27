@@ -1,29 +1,38 @@
-
-
-
-use alloc::rc::Rc;
-use std::cell::RefCell;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
-use fxhash::FxHashMap;
-use crate::leblanc::core::interpreter::HEAP;
+use std::sync::{Arc};
+use fxhash::{FxHashMap, FxHashSet};
+use lazy_static::lazy_static;
+use parking_lot::Mutex;
 
 
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
-pub fn leblanc_object_int(integer: i32) -> LBObject {
-    let base_methods = base_methods();
+lazy_static! {
+    static ref INT_BASE: LBObject = base_int();
+}
+
+
+
+pub fn base_int() -> LBObject {
 
     LeBlancObject::new(
+        LeBlancObjectData::Int64(0),
+        4,
+        UnsafeVec::default(),
+    )
+}
+
+#[inline(always)]
+pub fn leblanc_object_int(integer: i32) -> LBObject {
+    LeBlancObject::new(
         LeBlancObjectData::Int(integer),
-        LeBlancType::Int,
-        base_methods,
-        FxHashMap::default(),
-        VariableContext::empty(),
+        3,
+        UnsafeVec::default()
     )
 }
 

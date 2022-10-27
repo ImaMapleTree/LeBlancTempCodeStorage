@@ -1,4 +1,4 @@
-mod _functions_;
+/*mod _functions_;
 
 use std::collections::BTreeSet;
 use crate::leblanc::core::leblanc_argument::{number_argset};
@@ -47,4 +47,4 @@ pub fn random_two_arg() -> Method {
         _random_two_arg_,
         BTreeSet::new()
     )
-}
+}*/

@@ -1,17 +1,17 @@
-use alloc::rc::Rc;
-use std::cell::RefCell;
+
+
 use std::ops::{Add, Div, Mul};
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+
+
 
 use chrono::Local;
 use rand_chacha::{ChaCha8Rng};
 use rand_chacha::rand_core::{RngCore, SeedableRng};
-use crate::leblanc::core::leblanc_object::LeBlancObject;
+
 use crate::leblanc::core::native_types::base_type::ToLeblanc;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::types::LBObject;
+
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
 
 static mut RNG_GENERATOR: Option<ChaCha8Rng> = None;
 
@@ -27,11 +27,11 @@ fn random_number() -> f64 {
     (generator.next_u64() as f64).div(u64::MAX as f64)
 }
 
-pub fn _random_no_arg_(_self: LBObject, _args: Vec<LBObject>) -> LBObject {
+pub fn _random_no_arg_(_self: LBObject, _args: LBObjArgs) -> LBObject {
     random_number().create_mutex()
 }
 
-pub fn _random_one_arg_(_self: LBObject, args: Vec<LBObject>) -> LBObject {
+pub fn _random_one_arg_(_self: LBObject, args: LBObjArgs) -> LBObject {
     let borrowed = &args[0];
     let value = borrowed.data.as_i128();
 
@@ -42,7 +42,7 @@ pub fn _random_one_arg_(_self: LBObject, args: Vec<LBObject>) -> LBObject {
     }
 }
 
-pub fn _random_two_arg_(_self: LBObject, args: Vec<LBObject>) -> LBObject {
+pub fn _random_two_arg_(_self: LBObject, args: LBObjArgs) -> LBObject {
     let borrowed1 = &args[0];
     let borrowed2 = &args[1];
     let lower_bound = borrowed1.data.as_i128();

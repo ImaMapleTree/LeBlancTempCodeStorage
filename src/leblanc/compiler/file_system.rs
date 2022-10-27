@@ -2,18 +2,22 @@ pub mod cached_directory;
 pub mod dependency_path;
 pub mod module;
 
-use std::collections::{HashMap, HashSet};
-use std::hash::Hash;
-use std::path::Path;
+use std::collections::{HashMap};
+use std::fs::File;
+use std::io::{BufReader, Read};
+use crate::leblanc::compiler::bytecode::LeblancBytecode;
+
+
 use crate::leblanc::compiler::error::ErrorReporter;
 use crate::leblanc::compiler::file_system::cached_directory::CachedDirectory;
-use crate::leblanc::compiler::file_system::dependency_path::DependencyPath;
+
 use crate::leblanc::compiler::file_system::module::CompileModule;
 use crate::leblanc::compiler::generator::dependency::Dependency;
-use crate::leblanc::compiler::parser::ast::{Reqs, Required};
+use crate::leblanc::compiler::parser::ast::{Reqs};
+use crate::leblanc::rustblanc::hex::Hexadecimal;
 use crate::leblanc::rustblanc::lb_file::{LBFile, LBFileTrait, LBVirtualFile};
 use crate::leblanc::rustblanc::path::ZCPath;
-use crate::leblanc::rustblanc::rust_override::OptionEquality;
+use crate::leblanc::rustblanc::utils::encode_hex;
 
 
 #[derive(Debug, Default)]
@@ -100,8 +104,8 @@ impl LBFileSystem {
         }
     }
 
-    pub fn load_file(path: ZCPath) -> CompileModule {
-        return CompileModule::default()
+    pub fn load_file(_path: ZCPath) -> CompileModule {
+        CompileModule::default()
     }
 
     pub fn is_loaded_path(&self, path: ZCPath) -> bool {
@@ -162,4 +166,18 @@ impl LBFileSystem {
     pub fn loaded_file_exists(&self, path: ZCPath) -> bool {
         self.loaded_files.contains_key(&path)
     }
+}
+
+pub fn read_file(path: String) -> LeblancBytecode {
+    let file = File::open(path.replace(".lb", ".lbbc")).unwrap();
+    let file_reader = BufReader::new(file);
+    let hex = encode_hex(&file_reader.bytes().map(|l| l.unwrap()).collect::<Vec<u8>>());
+
+
+
+    LeblancBytecode::from(hex)
+}
+
+pub fn read_bytecode(hex: Hexadecimal) -> LeblancBytecode {
+    LeblancBytecode::from(hex)
 }

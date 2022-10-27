@@ -1,8 +1,8 @@
-use alloc::rc::Rc;
-use std::cell::RefCell;
+
+
 use std::collections::BTreeSet;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
+
+
 
 
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
@@ -11,12 +11,13 @@ use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
 use crate::leblanc::core::native_types::base_type::internal_method;
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::types::LBObject;
+
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 pub mod builtin_disassemble;
 
-fn _BUILTIN_DEBUG_(_self: LBObject, mut args: Vec<LBObject>) -> LBObject {
+fn _BUILTIN_DEBUG_(_self: LBObject, mut args: LBObjArgs) -> LBObject {
     let arg_length = args.len();
     println!("--------------------------------------------------------");
     println!("----------------------DEBUGGING-------------------------");

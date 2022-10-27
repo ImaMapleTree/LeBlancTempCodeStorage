@@ -1,27 +1,27 @@
-use fxhash::{FxHashMap};
+use fxhash::{FxHashMap, FxHashSet};
 
 
-use alloc::rc::Rc;
-use std::cell::RefCell;
-use std::sync::Arc;
-use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::Mutex;
+
+
+
+
+
 
 use crate::leblanc::core::leblanc_context::VariableContext;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData};
 use crate::leblanc::core::native_types::base_type::{base_methods, ToLeblanc};
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 pub fn leblanc_object_float(float: f32) -> LBObject {
     let base_methods = base_methods();
 
     LeBlancObject::new(
         LeBlancObjectData::Float(float),
-        LeBlancType::Float,
-        base_methods,
-        FxHashMap::default(),
-        VariableContext::empty(),
+        7,
+        UnsafeVec::default()
     )
 }
 

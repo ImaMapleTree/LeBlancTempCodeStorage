@@ -24,7 +24,6 @@ impl Hexadecimal {
         let mut hex_vec = vec![];
         for mut i in 0..string.len()/2 {
             hex_vec.push(string[(i*2)..(i*2)+2].to_string());
-            i += 1;
         }
         Hexadecimal::new(hex_vec)
     }

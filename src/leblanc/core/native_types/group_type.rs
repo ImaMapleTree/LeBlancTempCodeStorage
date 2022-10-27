@@ -1,19 +1,20 @@
-use alloc::rc::Rc;
+
 use core::fmt::{Debug, Display, Formatter};
-use std::cell::RefCell;
+
 use std::cmp::Ordering;
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashSet};
 use std::future::Future;
 use std::mem::take;
-use std::process::Output;
+
 use crate::leblanc::rustblanc::strawberry::Strawberry;
-use std::sync::{Arc, Mutex};
-use std::thread::spawn;
+use std::sync::{Arc};
+
 use async_std::task::JoinHandle;
 use futures::executor::block_on;
 use futures::future::join_all;
-use fxhash::{FxHashMap, FxHashSet};
-use crate::leblanc::core::internal::methods::internal_class::{_internal_expose_, _internal_field_, _internal_to_string_};
+use fxhash::{FxBuildHasher, FxHashMap, FxHashSet};
+use crate::leblanc::core::heap::{heap};
+use crate::leblanc::core::internal::methods::internal_class::{_internal_to_string_};
 use crate::leblanc::core::internal::methods::internal_group::{_internal_group_apply_, _internal_group_pipe_, _internal_group_pipe_async_};
 use crate::leblanc::core::leblanc_argument::LeBlancArgument;
 use crate::leblanc::core::leblanc_context::VariableContext;
@@ -21,11 +22,13 @@ use crate::leblanc::core::leblanc_handle::LeblancHandle;
 use crate::leblanc::core::leblanc_object::{LeBlancObject, LeBlancObjectData, RustDataCast};
 use crate::leblanc::core::method::Method;
 use crate::leblanc::core::method_store::MethodStore;
-use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method, ToLeblanc};
+use crate::leblanc::core::native_types::base_type::{base_clone_method, base_equals_method, base_expose_method, base_field_method, base_to_string_method};
 use crate::leblanc::core::native_types::promise_type::{LeblancPromise};
 use crate::leblanc::core::native_types::LeBlancType;
-use crate::leblanc::rustblanc::blueberry::Quantum;
-use crate::leblanc::rustblanc::types::LBObject;
+use crate::leblanc::rustblanc::memory::heap::HeapRef;
+
+use crate::leblanc::rustblanc::types::{LBObject, LBObjArgs};
+use crate::leblanc::rustblanc::unsafe_vec::UnsafeVec;
 
 #[derive(Clone, Debug, Default)]
 pub struct PromiseCell {
@@ -52,7 +55,7 @@ impl PromiseCell {
 #[derive(Clone, Debug, Default)]
 pub struct LeblancGroup {
     promises: Vec<Arc<Strawberry<PromiseCell>>>,
-    strict_type: Option<LeBlancType>,
+    strict_type: Option<u32>,
 }
 
 impl PartialEq for LeblancGroup {
@@ -62,13 +65,13 @@ impl PartialEq for LeblancGroup {
         for i in 0..self_length {
             if !self.promises[i].read().eq(&other.promises[i].read()) {return false}
         }
-        return true;
+        true
     }
 }
 
 impl PartialOrd for LeblancGroup {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self.eq(&other) {
+        match self.eq(other) {
             true => Some(Ordering::Equal),
             false => None
         }
@@ -83,13 +86,13 @@ impl LeblancGroup {
         promise
     }
 
-    pub fn apply(&mut self, function: LBObject, other_args: Vec<LBObject>) {
+    pub fn apply(&mut self, function: LBObject, other_args: LBObjArgs) {
         self.promises.iter_mut().for_each(|prom| {
-            let mutex = prom.underlying_pointer();
+            let mutex = prom.pointer();
             let consumed = mutex.promise.read().consumed;
             if !consumed {
                 mutex.promise.write().result = {
-                    let mut args = other_args.to_vec();
+                    let mut args = heap().clone_heap_vec(&other_args);
                     args.insert(0, take(&mut mutex.echo));
                     let result = function.data.get_inner_method().unwrap().run(function.clone(), args);
                     Some(result)
@@ -99,9 +102,9 @@ impl LeblancGroup {
         })
     }
 
-    pub fn pipe(&mut self, args: Vec<LBObject>) {
+    pub fn pipe(&mut self, args: LBObjArgs) {
         self.promises.iter_mut().for_each(|prom| {
-            let mutex = prom.underlying_pointer();
+            let mutex = prom.pointer();
             let consumed = mutex.promise.read().consumed;
             let truth = !consumed && if self.strict_type.is_some() { self.strict_type.unwrap() == mutex.echo.typing } else { true };
             if truth {
@@ -114,7 +117,7 @@ impl LeblancGroup {
         })
     }
 
-    pub fn pipe_async(&mut self, args: Vec<LBObject>) {
+    pub fn pipe_async(&mut self, args: LBObjArgs) {
         let mut consumers = vec![];
         let mut futures_functions = vec![];
         self.promises.iter_mut().for_each(|prom| {
@@ -127,9 +130,8 @@ impl LeblancGroup {
         });
         //let args = args.to_vec();
 
-        let mut nargs = args.to_vec();
         let real_futures: Vec<JoinHandle<LBObject>> = futures_functions.into_iter().map(|a| a.leblanc_handle.clone()).map(|mut f| {
-            let nargs_clone = nargs.clone();
+            let nargs_clone = heap().clone_heap_vec(&args);
             async_std::task::spawn(async move {
                 f.execute_async(nargs_clone).await}
         )}).collect();
@@ -171,21 +173,21 @@ unsafe impl Send for LeblancHandle {}
 impl RustDataCast<LeblancGroup> for LeBlancObjectData {
     fn clone_data(&self) -> Option<LeblancGroup> {
         match self {
-            LeBlancObjectData::Group(group) => Some(group.clone()),
+            //LeBlancObjectData::Group(group) => Some(group.clone()),
             _ => None
         }
     }
 
     fn ref_data(&self) -> Option<&LeblancGroup> {
         match self {
-            LeBlancObjectData::Group(group) => Some(group),
+            //LeBlancObjectData::Group(group) => Some(group),
             _ => None
         }
     }
 
     fn mut_data(&mut self) -> Option<&mut LeblancGroup> {
         match self {
-            LeBlancObjectData::Group(group) => Some(group),
+            //LeBlancObjectData::Group(group) => Some(group),
             _ => None
         }
     }
@@ -193,7 +195,7 @@ impl RustDataCast<LeblancGroup> for LeBlancObjectData {
 
 impl Display for PromiseCell {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "PromiseCell(Promise={}, Promised={})", self.promise.read().to_string(), self.echo.data.to_string())
+        write!(f, "PromiseCell(Promise={}, Promised={})", self.promise.read(), self.echo.data)
     }
 }
 
@@ -204,26 +206,26 @@ impl Display for LeblancGroup {
 }
 
 pub fn leblanc_object_group(group: LeblancGroup) -> LBObject {
-    LeBlancObject::new(
+    /*LeBlancObject::new(
         LeBlancObjectData::Group(group),
         LeBlancType::Group,
-        group_methods(),
-        FxHashMap::default(),
-        VariableContext::empty(),
-    )
+        UnsafeVec::default()
+    )*/
+    panic!()
 }
 
-pub fn group_methods() -> Arc<FxHashSet<Method>> {
-    let mut hash_set = FxHashSet::default();
+pub fn group_methods() -> HeapRef<'static, HashSet<Method, FxBuildHasher>> {
+    /*let mut hash_set = wild_heap().alloc_with(FxHashSet::default);
     hash_set.insert(Method::default(base_to_string_method(), _internal_to_string_));
-    hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
+    //hash_set.insert(Method::default(base_expose_method(), _internal_expose_));
     hash_set.insert(Method::default(base_equals_method(), _internal_to_string_));
     hash_set.insert(Method::default(base_clone_method(), _internal_to_string_));
-    hash_set.insert(Method::default(base_field_method(), _internal_field_));
+    //hash_set.insert(Method::default(base_field_method(), _internal_field_));
     hash_set.insert(group_apply_method());
     hash_set.insert(group_pipe_method());
     hash_set.insert(group_pipe_async_method());
-    Arc::new(hash_set)
+    hash_set*/
+    HeapRef::default()
 }
 
 pub fn group_apply_method() -> Method {
