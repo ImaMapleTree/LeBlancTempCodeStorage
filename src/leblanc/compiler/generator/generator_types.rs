@@ -87,6 +87,18 @@ impl FunctionSignature {
 }
 
 impl Lazy for FunctionSignature {
+    fn lazy() -> Strategy {
+        Strategy::LAZY
+    }
+
+    fn standard() -> Strategy {
+        Strategy::STANDARD
+    }
+
+    fn rust() -> Strategy {
+        Strategy::RUST
+    }
+
     fn scan(&self, other: &Self, strategy: Strategy) -> bool {
         match strategy {
             Strategy::LAZY => {

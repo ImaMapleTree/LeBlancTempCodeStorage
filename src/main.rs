@@ -32,6 +32,7 @@
 #![feature(const_size_of_val_raw)]
 #![feature(const_align_of_val_raw)]
 #![feature(const_mut_refs)]
+#![feature(arbitrary_enum_discriminant)]
 
 
 
@@ -117,8 +118,8 @@ fn main() -> io::Result<()> {
 
 
 
-    let bc = read_file("test/test.lb".to_string());
-    run(bc);
+    /*let bc = read_file("test/test.lb".to_string());
+    run(bc);*/
 
     let elapsed = now.elapsed();
     println!("Total Elapsed: {}", elapsed.as_secs_f64());

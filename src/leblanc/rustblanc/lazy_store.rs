@@ -1,9 +1,10 @@
 use core::fmt::{Debug, Formatter};
 use core::slice::{Iter, IterMut};
 use std::mem::{replace, take};
+use serde::Serialize;
 
 
-#[derive(Default)]
+#[derive(Default, Serialize, Clone)]
 pub struct LazyStore<T: PartialEq + Lazy> {
     items: Vec<T>
 }
@@ -15,11 +16,20 @@ impl<T: PartialEq + Lazy> LazyStore<T> {
         size
     }
 
-    pub fn get_or_add(&mut self, item: T, strategy: Strategy) -> (usize, bool) {
+    pub fn get_or_add(&mut self, item: T, strategy: Strategy) -> (usize, Option<T>) {
         if let Some(index) = self.index(&item, strategy) {
-            (index, true)
+            (index, Some(item))
         } else {
-            (self.add(item), false)
+            (self.add(item), None)
+        }
+    }
+
+    pub fn replace_or_add(&mut self, item: T , strategy: Strategy) -> (usize, Option<T>) {
+        let (index, reject) = self.get_or_add(item, strategy);
+        if let Some(item) = reject {
+            (index, Some(self.replace(index, item)))
+        } else {
+            (index, None)
         }
     }
 
@@ -63,6 +73,10 @@ impl<T: PartialEq + Lazy> LazyStore<T> {
     pub fn clear(&mut self) {
         self.items.clear();
     }
+
+    pub fn len(&self) -> usize {
+        self.items.len()
+    }
 }
 
 impl <T: PartialEq + Lazy + Default> LazyStore<T> {
@@ -88,6 +102,9 @@ pub enum Strategy {
 }
 
 pub trait Lazy {
+    fn lazy() -> Strategy;
+    fn standard() -> Strategy;
+    fn rust() -> Strategy;
     fn scan(&self, other: &Self, strategy: Strategy) -> bool;
 }
 

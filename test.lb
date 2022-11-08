@@ -4,4 +4,5 @@ func main() {
     int a = 3;
     a = "hello world";
 
+    int a = 4;
 }

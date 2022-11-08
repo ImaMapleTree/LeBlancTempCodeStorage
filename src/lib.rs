@@ -30,6 +30,7 @@
 #![feature(const_align_of_val_raw)]
 #![feature(const_size_of_val_raw)]
 #![feature(const_mut_refs)]
+#![feature(arbitrary_enum_discriminant)]
 
 pub mod leblanc;
 pub mod playground;

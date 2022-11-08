@@ -38,6 +38,10 @@ impl CopyString {
     pub fn str(&self) -> &str {
         self.string
     }
+
+    pub fn as_bytes(&self) -> Vec<u8> {
+        self.string.to_string().into_bytes()
+    }
 }
 
 impl From<String> for CopyString {

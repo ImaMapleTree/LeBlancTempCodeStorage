@@ -197,6 +197,18 @@ impl Instruction2 {
 }
 
 impl Lazy for Instruction2 {
+    fn lazy() -> Strategy {
+        Strategy::LAZY
+    }
+
+    fn standard() -> Strategy {
+        Strategy::STANDARD
+    }
+
+    fn rust() -> Strategy {
+        Strategy::RUST
+    }
+
     fn scan(&self, other: &Self, strategy: Strategy) -> bool {
         match strategy {
             Strategy::LAZY => {

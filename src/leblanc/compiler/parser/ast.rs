@@ -234,7 +234,7 @@ impl Display for Expr {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Serialize, Debug)]
+#[derive(Clone, PartialEq, Eq, Serialize, Debug, EnumAsInner, Default)]
 pub enum Expr {
     Break,
 
@@ -356,7 +356,10 @@ pub enum Expr {
 
     Constant {
         constant: Const
-    }
+    },
+
+    #[default]
+    None
 }
 
 impl Display for Id {
@@ -531,6 +534,18 @@ impl Const {
 }
 
 impl Lazy for Const {
+    fn lazy() -> Strategy {
+        Strategy::LAZY
+    }
+
+    fn standard() -> Strategy {
+        Strategy::STANDARD
+    }
+
+    fn rust() -> Strategy {
+        Strategy::RUST
+    }
+
     fn scan(&self, other: &Self, _strategy: Strategy) -> bool {
         self == other
     }

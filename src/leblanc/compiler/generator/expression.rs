@@ -177,6 +177,7 @@ impl CodeGenerator {
                 self.instruct_gen.add_instruction(constant.location().line, instruct);
                 return Ok(CompileInfo::of_type(res.ty))
             }
+            _ => {}
         }
         Ok(CompileInfo::of_type(LeBlancType::Null))
     }

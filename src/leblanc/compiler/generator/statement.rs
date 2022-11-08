@@ -121,6 +121,7 @@ impl CodeGenerator {
                 self.determine_statement(statement)?;
                 self.instruct_gen.add_instruction(statement.location.line, Instruction2::RETURN(0, [1]))
             },
+            Stmnt::None => {}
         }
         Ok(CompileInfo::default())
     }

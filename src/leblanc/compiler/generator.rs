@@ -16,7 +16,10 @@ use std::fs::File;
 use std::io::Write;
 
 use std::mem::take;
+use std::sync::Arc;
 use crate::bytes;
+use crate::leblanc::compiler3::symbols::bytecode_generator::generate_bytecode;
+use crate::leblanc::compiler3::symbols::table_generator::generate_symbol_table;
 use crate::leblanc::compiler::bytecode::file_body::FileBodyBytecode;
 use crate::leblanc::compiler::bytecode::file_header::FileHeaderBytecode;
 use crate::leblanc::compiler::bytecode::function_bytes::FunctionBytecode;
@@ -67,14 +70,19 @@ pub struct CodeGenerator {
 impl CodeGenerator {
     pub fn generate(&mut self, components: Vec<Component>) {
         let component_file = File::options().truncate(true).write(true).create(true).open("components.json");
-        let _s: String = serde_json::to_string(&components).unwrap();
+        let symbol_table = generate_symbol_table(components, None);
+        let _s: String = serde_json::to_string(unsafe { &mut *symbol_table.data_ptr()}).unwrap();
         component_file.unwrap().write_all(_s.as_bytes()).unwrap();
-        for component in &components {
+
+        generate_bytecode(symbol_table);
+
+
+        /*for component in &components {
             self.determine_dependencies(component);
         }
         for component in &components {
             self.determine_component(component);
-        }
+        }*/
     }
 
     pub fn add_function_bytecode(&mut self, bytecode: FunctionBytecode) {
