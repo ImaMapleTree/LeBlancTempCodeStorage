@@ -1,0 +1,3 @@
+func helping_function() returns string {
+    return "I AM HELPING";
+}

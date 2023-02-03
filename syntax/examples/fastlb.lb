@@ -1,0 +1,36 @@
+Trait Fruit {
+    func color() returns string;
+}
+
+Class Pineapple(Fruit) {
+    func color() returns string {
+        return "Yellow";
+    }
+}
+
+Class Orange(Fruit) {
+    func color() returns string {
+        return "Orange";
+    }
+}
+
+Trait Seeded(Fruit) {
+    auto func has_seeds() returns boolean {
+        return false;
+    }
+}
+
+Class Watermelon(Seeded) {
+    func color() returns string {
+        return "Green";
+    }
+}
+
+func main() {
+    List<Fruit!> fruits = [Pineapple(), Orange()];
+
+    for Fruit! fruit in fruits {
+        print(fruit.color());
+    }
+
+}

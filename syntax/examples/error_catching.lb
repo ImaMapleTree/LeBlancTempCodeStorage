@@ -1,0 +1,60 @@
+Enum Result<T> {
+    Success(T),
+    Failure(Exception!)
+}
+
+
+func Attempt($expr) returns Result {
+    try {
+        return Result::Success($expr.resolve());
+    }
+    except (Exception! e) {
+        return Failure(e);
+    }
+}
+
+func main() {
+    int s = null;
+    string result;
+    try {
+        result = s.to_string();
+    } except (NullPointerException e) {
+        // Catch NullPointer
+        result = "null";
+    } except (Exception! everything_else) {
+        // Other exceptions, exit the program
+        exit();
+    }
+
+    // Alternative
+
+    Result<string> result = Attempt(s.to_string());
+    string s = match result {
+        Success(str) => str,
+        Failure(e) => match e {
+            NullPointerException => "null",
+            other => exit();
+        }
+    }
+
+
+    Enum Coin {
+        Penney,
+        Nickel,
+        Dime,
+        Quarter
+    }
+
+    c = Coin.Penney;
+
+    int value = match c {
+        Penney => 1,
+        Nickel => 5,
+        Dime => 10,
+        Quarter => 25
+    }
+
+
+
+
+}

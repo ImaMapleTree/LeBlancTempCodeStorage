@@ -21,7 +21,7 @@ func testInputsAndReturns(int a, int b, int c, int d) returns int, int, int, int
 }
 
 func testConditional() {
-    if (0 == 0){
+    if (0 == 0) {
         print("Zero equals zero.");
     }
 

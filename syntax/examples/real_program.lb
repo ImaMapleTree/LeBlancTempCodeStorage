@@ -5,13 +5,14 @@ func main() {
         print("Guess a number between 0 and 10.");
         int guess = read_int();
         while guess != random_number {
-            if guess > random_number -> print("Too high! Try again!");
-            else -> print("Too low! Try again!");
+            if guess > random_number: print("Too high! Try again!");
+            else: print("Too low! Try again!");
             guess = read_int();
         }
         print("You got it good job!");
         print("Play again?");
-        play_again = read() == "y";
+        play_again = reference() == "y";
     }
     print("You quit!");
 }
+
